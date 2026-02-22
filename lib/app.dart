@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:secure_subscription_app/shared/layout/app_layout.dart';
-import 'package:secure_subscription_app/features/auth/presentation/login_screen.dart';
-import 'package:secure_subscription_app/features/dashboard/presentation/dashboard_screen.dart';
-import 'package:secure_subscription_app/features/chat/presentation/chat_list_screen.dart';
-import 'package:secure_subscription_app/features/chat/presentation/chat_conversation_screen.dart';
-import 'package:secure_subscription_app/features/profile/presentation/create_profile_screen.dart';
-import 'package:secure_subscription_app/features/profile/presentation/profile_details_screen.dart';
-import 'package:secure_subscription_app/features/subscription/presentation/premium_screen.dart';
+import 'package:app_project/shared/layout/app_layout.dart';
+import 'package:app_project/features/auth/presentation/login_screen.dart';
+import 'package:app_project/features/dashboard/presentation/dashboard_screen.dart';
+import 'package:app_project/features/chat/presentation/chat_list_screen.dart';
+import 'package:app_project/features/chat/presentation/chat_conversation_screen.dart';
+import 'package:app_project/features/profile/presentation/create_profile_screen.dart';
+import 'package:app_project/features/profile/presentation/profile_details_screen.dart';
+import 'package:app_project/features/subscription/presentation/premium_screen.dart';
 
 class MyApp extends StatelessWidget {
   MyApp({super.key});
 
-  final _router = GoRouter(
+  final GoRouter _router = GoRouter(
     initialLocation: "/login",
     routes: [
 
@@ -46,7 +46,7 @@ class MyApp extends StatelessWidget {
         ),
       ),
 
-      // CHAT CONVERSATION (dynamic)
+      // CHAT CONVERSATION
       GoRoute(
         path: "/chat/:id",
         builder: (context, state) {
@@ -57,7 +57,7 @@ class MyApp extends StatelessWidget {
         },
       ),
 
-      // PROFILE DETAILS (dynamic)
+      // PROFILE DETAILS
       GoRoute(
         path: "/profile/:id",
         builder: (context, state) {
