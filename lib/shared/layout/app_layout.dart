@@ -23,17 +23,17 @@ class _AppLayoutState extends State<AppLayout> {
     final currentRoute = GoRouterState.of(context).uri.toString();
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.black,
       body: Container(
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
+          gradient: RadialGradient(
+            radius: 1.3,
+            center: Alignment.topLeft,
             colors: [
               Color(0xFF0f2027),
-              Color(0xFF203a43),
-              Color(0xFF2c5364),
+              Color(0xFF1b2b34),
+              Color(0xFF000000),
             ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
           ),
         ),
         child: Column(
@@ -48,6 +48,7 @@ class _AppLayoutState extends State<AppLayout> {
                   key: ValueKey(currentRoute),
                   width: double.infinity,
                   height: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: widget.child,
                 ),
               ),
@@ -60,9 +61,21 @@ class _AppLayoutState extends State<AppLayout> {
     );
   }
 
+  // ================= TOP NAV =================
+
   Widget _buildNavbar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.4),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.cyanAccent.withOpacity(0.15),
+            blurRadius: 20,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: const [
@@ -73,10 +86,21 @@ class _AppLayoutState extends State<AppLayout> {
     );
   }
 
+  // ================= BOTTOM NAV =================
+
   Widget _buildBottomNav(BuildContext context, String route) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 15),
-      color: Colors.black.withOpacity(0.85),
+      padding: const EdgeInsets.symmetric(vertical: 18),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.9),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.cyanAccent.withOpacity(0.2),
+            blurRadius: 25,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
@@ -107,6 +131,8 @@ class _AppLayoutState extends State<AppLayout> {
   }
 }
 
+// ================= LOGO =================
+
 class _GradientLogo extends StatelessWidget {
   const _GradientLogo();
 
@@ -119,14 +145,17 @@ class _GradientLogo extends StatelessWidget {
       child: const Text(
         "Naxorah",
         style: TextStyle(
-          fontSize: 22,
+          fontSize: 24,
           fontWeight: FontWeight.bold,
           color: Colors.white,
+          letterSpacing: 1.2,
         ),
       ),
     );
   }
 }
+
+// ================= NAV ITEM =================
 
 class _NavItem extends StatelessWidget {
   final String label;
@@ -148,20 +177,37 @@ class _NavItem extends StatelessWidget {
 
     final color = active
         ? highlightColor ?? const Color(0xFF00F5A0)
-        : Colors.white60;
+        : Colors.white54;
 
     return GestureDetector(
       onTap: onTap,
-      child: Column(
-        children: [
-          Icon(icon, color: color),
-          const SizedBox(height: 4),
-          Text(label, style: TextStyle(color: color)),
-        ],
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: active
+            ? BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withOpacity(0.4),
+                    blurRadius: 15,
+                  )
+                ],
+              )
+            : null,
+        child: Column(
+          children: [
+            Icon(icon, color: color),
+            const SizedBox(height: 4),
+            Text(label, style: TextStyle(color: color)),
+          ],
+        ),
       ),
     );
   }
 }
+
+// ================= CHAT ITEM =================
 
 class _ChatNavItem extends StatelessWidget {
   final int unreadCount;
@@ -179,7 +225,7 @@ class _ChatNavItem extends StatelessWidget {
 
     final color = active
         ? const Color(0xFF00F5A0)
-        : Colors.white60;
+        : Colors.white54;
 
     return GestureDetector(
       onTap: onTap,
@@ -196,8 +242,8 @@ class _ChatNavItem extends StatelessWidget {
 
           if (unreadCount > 0)
             Positioned(
-              top: -4,
-              right: -8,
+              top: -6,
+              right: -10,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6),
                 height: 20,
@@ -209,7 +255,7 @@ class _ChatNavItem extends StatelessWidget {
                   child: Text(
                     unreadCount > 99 ? "99+" : "$unreadCount",
                     style: const TextStyle(
-                      fontSize: 12,
+                      fontSize: 11,
                       fontWeight: FontWeight.bold,
                       color: Colors.black,
                     ),
