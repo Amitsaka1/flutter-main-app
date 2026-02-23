@@ -13,8 +13,7 @@ class DashboardScreen extends StatefulWidget {
       _DashboardScreenState();
 }
 
-class _DashboardScreenState
-    extends State<DashboardScreen> {
+class _DashboardScreenState extends State<DashboardScreen> {
 
   List<dynamic> profiles = [];
   bool loading = true;
@@ -47,8 +46,7 @@ class _DashboardScreenState
       return;
     }
 
-    final profileRes =
-        await ApiClient.get("/profile/me");
+    final profileRes = await ApiClient.get("/profile/me");
 
     if (profileRes["success"] != true) {
       if (mounted) context.go("/create-profile");
@@ -63,8 +61,7 @@ class _DashboardScreenState
   Future<void> _fetchProfiles() async {
     try {
       final response =
-          await ApiClient.get("/profile/all",
-              queryParams: filters);
+          await ApiClient.get("/profile/all", queryParams: filters);
 
       if (response["success"] == true) {
         if (!mounted) return;
@@ -74,13 +71,14 @@ class _DashboardScreenState
         });
       }
     } catch (_) {
-      setState(() => loading = false);
+      if (mounted) {
+        setState(() => loading = false);
+      }
     }
   }
 
   Future<void> _fetchUnread() async {
-    final res =
-        await ApiClient.get("/chat/recent");
+    final res = await ApiClient.get("/chat/recent");
 
     if (res["success"] == true) {
       final data = res["data"] as List;
@@ -107,9 +105,7 @@ class _DashboardScreenState
     _socket = WebSocketService(userId: myId);
     _socket!.connect();
 
-    _socketSub =
-        _socket!.messages.listen((message) {
-
+    _socketSub = _socket!.messages.listen((message) {
       if (message["type"] == "NEW_PROFILE") {
         setState(() {
           if (!profiles.any(
@@ -145,176 +141,178 @@ class _DashboardScreenState
     }
 
     return SafeArea(
-      top: true,
-      bottom: false,
       child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      child: Column(
-        children: [
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        child: Column(
+          children: [
 
-          // ================= SEARCH + FILTER =================
+            // ================= SEARCH + FILTER =================
 
-          Row(
-            children: [
+            Row(
+              children: [
 
-              Expanded(
-                child: Container(
-                  height: 50,
-                  padding: const EdgeInsets.symmetric(horizontal: 15),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1a1a1a),
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: Row(
-                    children: [
+                Expanded(
+                  child: Container(
+                    height: 48,
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1a1a1a),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Row(
+                      children: [
 
-                      const Icon(Icons.search, color: Colors.white54),
+                        const Icon(Icons.search,
+                            color: Colors.white54, size: 20),
 
-                      const SizedBox(width: 10),
+                        const SizedBox(width: 8),
 
-                      const Expanded(
-                        child: TextField(
-                          style: TextStyle(color: Colors.white),
-                          decoration: InputDecoration(
-                            hintText: "Search...",
-                            hintStyle: TextStyle(color: Colors.white54),
-                            border: InputBorder.none,
+                        const Expanded(
+                          child: TextField(
+                            style: TextStyle(color: Colors.white),
+                            decoration: InputDecoration(
+                              hintText: "Search...",
+                              hintStyle:
+                                  TextStyle(color: Colors.white54),
+                              border: InputBorder.none,
+                            ),
                           ),
                         ),
-                      ),
 
-                      Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          const Icon(Icons.card_giftcard,
-                              color: Colors.white70),
+                        Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            const Icon(Icons.card_giftcard,
+                                color: Colors.white70, size: 22),
 
-                          Positioned(
-                            right: -6,
-                            top: -6,
-                            child: Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: const BoxDecoration(
-                                color: Colors.orange,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Text(
-                                "2",
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.white,
+                            Positioned(
+                              right: -6,
+                              top: -6,
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: Colors.orange,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Text(
+                                  "2",
+                                  style: TextStyle(
+                                    fontSize: 9,
+                                    color: Colors.white,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(width: 12),
-
-              GestureDetector(
-                onTap: () =>
-                    setState(() => filterOpen = !filterOpen),
-                child: Container(
-                  height: 50,
-                  width: 50,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1a1a1a),
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: const Icon(Icons.tune,
-                      color: Colors.white70),
-                ),
-              ),
-            ],
-          ),
-
-          if (filterOpen) _buildFilterPanel(),
-
-          const SizedBox(height: 20),
-
-          // ================= ACTIVE / GIFTS =================
-
-          Row(
-            children: [
-
-              Expanded(
-                child: GestureDetector(
-                  onTap: () =>
-                      setState(() => showActive = true),
-                  child: Container(
-                    height: 45,
-                    decoration: BoxDecoration(
-                      color: showActive
-                          ? const Color(0xFF2a2a2a)
-                          : const Color(0xFF1a1a1a),
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: const Center(
-                      child: Text(
-                        "🔥 Active",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
+                          ],
                         ),
-                      ),
+                      ],
                     ),
                   ),
                 ),
-              ),
 
-              const SizedBox(width: 15),
+                const SizedBox(width: 10),
 
-              Expanded(
-                child: GestureDetector(
+                GestureDetector(
                   onTap: () =>
-                      setState(() => showActive = false),
+                      setState(() => filterOpen = !filterOpen),
                   child: Container(
-                    height: 45,
+                    height: 48,
+                    width: 48,
                     decoration: BoxDecoration(
-                      color: !showActive
-                          ? const Color(0xFF2a2a2a)
-                          : const Color(0xFF1a1a1a),
-                      borderRadius: BorderRadius.circular(15),
+                      color: const Color(0xFF1a1a1a),
+                      borderRadius: BorderRadius.circular(14),
                     ),
-                    child: const Center(
-                      child: Text(
-                        "🌟 Gifts",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
+                    child: const Icon(Icons.tune,
+                        color: Colors.white70, size: 20),
                   ),
                 ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 20),
-
-          // ================= PROFILE GRID =================
-
-          Expanded(
-            child: GridView.builder(
-              itemCount: profiles.length,
-              gridDelegate:
-                  const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: 15,
-                crossAxisSpacing: 15,
-                childAspectRatio: 0.85,
-              ),
-              itemBuilder: (context, index) {
-                final p = profiles[index];
-                return _ProfileCard(profile: p);
-              },
+              ],
             ),
-          ),
-        ],
+
+            if (filterOpen) _buildFilterPanel(),
+
+            const SizedBox(height: 12),
+
+            // ================= ACTIVE / GIFTS =================
+
+            Row(
+              children: [
+
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () =>
+                        setState(() => showActive = true),
+                    child: Container(
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: showActive
+                            ? const Color(0xFF2a2a2a)
+                            : const Color(0xFF1a1a1a),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Center(
+                        child: Text(
+                          "🔥 Active",
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(width: 12),
+
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () =>
+                        setState(() => showActive = false),
+                    child: Container(
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: !showActive
+                            ? const Color(0xFF2a2a2a)
+                            : const Color(0xFF1a1a1a),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Center(
+                        child: Text(
+                          "🌟 Gifts",
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 14),
+
+            // ================= PROFILE GRID =================
+
+            Expanded(
+              child: GridView.builder(
+                padding: EdgeInsets.zero,
+                itemCount: profiles.length,
+                gridDelegate:
+                    const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: 0.85,
+                ),
+                itemBuilder: (context, index) {
+                  final p = profiles[index];
+                  return _ProfileCard(profile: p);
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -330,25 +328,21 @@ class _DashboardScreenState
       child: Column(
         children: [
           DropdownButtonFormField<String>(
-            decoration:
-                const InputDecoration(labelText: "Gender"),
+            decoration: const InputDecoration(labelText: "Gender"),
             items: const [
               DropdownMenuItem(value: "Male", child: Text("Male")),
               DropdownMenuItem(value: "Female", child: Text("Female")),
             ],
-            onChanged: (val) =>
-                filters["gender"] = val ?? "",
+            onChanged: (val) => filters["gender"] = val ?? "",
           ),
           DropdownButtonFormField<String>(
-            decoration:
-                const InputDecoration(labelText: "Role"),
+            decoration: const InputDecoration(labelText: "Role"),
             items: const [
               DropdownMenuItem(value: "Top", child: Text("Top")),
               DropdownMenuItem(value: "Bottom", child: Text("Bottom")),
               DropdownMenuItem(value: "Lesbian", child: Text("Lesbian")),
             ],
-            onChanged: (val) =>
-                filters["roleType"] = val ?? "",
+            onChanged: (val) => filters["roleType"] = val ?? "",
           ),
           const SizedBox(height: 10),
           ElevatedButton(
@@ -377,7 +371,7 @@ class _ProfileCard extends StatelessWidget {
       onTap: () =>
           context.go("/profile/${profile["userId"]}"),
       child: Container(
-        padding: const EdgeInsets.all(15),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: const Color(0xFF0f0f0f),
           borderRadius: BorderRadius.circular(18),
@@ -394,8 +388,7 @@ class _ProfileCard extends StatelessWidget {
                 ),
               ),
             Column(
-              mainAxisAlignment:
-                  MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(profile["name"],
                     style: const TextStyle(
