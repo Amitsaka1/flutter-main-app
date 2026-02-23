@@ -22,43 +22,64 @@ class _MyAppState extends State<MyApp> {
   final GoRouter _router = GoRouter(
     initialLocation: "/login",
     routes: [
+
+      // ===== LOGIN (No Bottom Nav) =====
       GoRoute(
         path: "/login",
-        builder: (context, state) => const LoginScreen(),
-      ),
-      GoRoute(
-        path: "/dashboard",
         builder: (context, state) =>
-            AppLayout(child: const DashboardScreen()),
+            const LoginScreen(),
       ),
+
+      // ===== CREATE PROFILE (No Bottom Nav) =====
       GoRoute(
         path: "/create-profile",
         builder: (context, state) =>
             const CreateProfileScreen(),
       ),
-      GoRoute(
-        path: "/chat",
-        builder: (context, state) =>
-            AppLayout(child: const ChatListScreen()),
+
+      // ===== SHELL ROUTE (Bottom Nav Wrapper) =====
+      ShellRoute(
+        builder: (context, state, child) {
+          return AppLayout(child: child);
+        },
+        routes: [
+
+          GoRoute(
+            path: "/dashboard",
+            builder: (context, state) =>
+                const DashboardScreen(),
+          ),
+
+          GoRoute(
+            path: "/chat",
+            builder: (context, state) =>
+                const ChatListScreen(),
+          ),
+
+          GoRoute(
+            path: "/premium",
+            builder: (context, state) =>
+                const PremiumScreen(),
+          ),
+
+          GoRoute(
+            path: "/profile/:id",
+            builder: (context, state) {
+              final id = state.pathParameters["id"]!;
+              return ProfileDetailsScreen(userId: id);
+            },
+          ),
+
+        ],
       ),
+
+      // ===== CHAT CONVERSATION (Full Screen, No Bottom Nav) =====
       GoRoute(
         path: "/chat/:id",
         builder: (context, state) {
           final id = state.pathParameters["id"]!;
           return ChatConversationScreen(chatUserId: id);
         },
-      ),
-      GoRoute(
-        path: "/profile/:id",
-        builder: (context, state) {
-          final id = state.pathParameters["id"]!;
-          return ProfileDetailsScreen(userId: id);
-        },
-      ),
-      GoRoute(
-        path: "/premium",
-        builder: (context, state) =>
-            AppLayout(child: const PremiumScreen()),
       ),
     ],
   );
