@@ -28,28 +28,38 @@ class _AppLayoutState extends State<AppLayout> {
       body: Column(
         children: [
 
+          // ====== CONTENT ======
           Expanded(
             child: widget.child,
           ),
 
-          _buildBottomNav(context, currentRoute),
+          // ====== BOTTOM NAV ======
+          SafeArea(
+            top: false,
+            child: _buildBottomNav(context, currentRoute),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildBottomNav(
-      BuildContext context,
-      String route,
-      ) {
+    BuildContext context,
+    String route,
+  ) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14),
+      padding: const EdgeInsets.only(
+        top: 6,
+        bottom: 6,
+      ),
       decoration: const BoxDecoration(
         color: Color(0xFF111111),
       ),
       child: Row(
         mainAxisAlignment:
             MainAxisAlignment.spaceAround,
+        crossAxisAlignment:
+            CrossAxisAlignment.center,
         children: [
 
           _NavItem(
@@ -118,15 +128,18 @@ class _NavItem extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
+      behavior: HitTestBehavior.opaque,
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment:
+            MainAxisAlignment.center,
         children: [
 
           AnimatedContainer(
             duration:
                 const Duration(milliseconds: 250),
             padding:
-                const EdgeInsets.all(8),
+                const EdgeInsets.all(6),
             decoration: active
                 ? BoxDecoration(
                     shape: BoxShape.circle,
@@ -134,7 +147,7 @@ class _NavItem extends StatelessWidget {
                       BoxShadow(
                         color:
                             color.withOpacity(0.5),
-                        blurRadius: 15,
+                        blurRadius: 14,
                       ),
                     ],
                   )
@@ -142,17 +155,17 @@ class _NavItem extends StatelessWidget {
             child: Icon(
               icon,
               color: color,
-              size: 26,
+              size: 24,
             ),
           ),
 
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
 
           Text(
             label,
             style: TextStyle(
               color: color,
-              fontSize: 12,
+              fontSize: 11,
             ),
           ),
         ],
@@ -181,6 +194,7 @@ class _ChatNavItem extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
+      behavior: HitTestBehavior.opaque,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -188,30 +202,34 @@ class _ChatNavItem extends StatelessWidget {
           Column(
             mainAxisSize:
                 MainAxisSize.min,
+            mainAxisAlignment:
+                MainAxisAlignment.center,
             children: [
               Icon(
                 Icons.chat_bubble,
                 color: color,
-                size: 26,
+                size: 24,
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 2),
               Text(
                 "Chat",
-                style:
-                    TextStyle(color: color),
+                style: TextStyle(
+                  color: color,
+                  fontSize: 11,
+                ),
               ),
             ],
           ),
 
           if (unreadCount > 0)
             Positioned(
-              top: -5,
-              right: -10,
+              top: -4,
+              right: -8,
               child: Container(
                 padding:
                     const EdgeInsets.symmetric(
                         horizontal: 6),
-                height: 20,
+                height: 18,
                 decoration: BoxDecoration(
                   color:
                       const Color(0xFF00F5A0),
@@ -226,7 +244,7 @@ class _ChatNavItem extends StatelessWidget {
                         : "$unreadCount",
                     style:
                         const TextStyle(
-                      fontSize: 11,
+                      fontSize: 10,
                       fontWeight:
                           FontWeight.bold,
                       color: Colors.black,
