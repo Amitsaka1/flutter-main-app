@@ -20,154 +20,78 @@ class _AppLayoutState extends State<AppLayout> {
   @override
   Widget build(BuildContext context) {
 
-    final currentRoute = GoRouterState.of(context).uri.toString();
+    final currentRoute =
+        GoRouterState.of(context).uri.toString();
 
     return Scaffold(
-      backgroundColor: Colors.black,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: RadialGradient(
-            radius: 1.3,
-            center: Alignment.topLeft,
-            colors: [
-              Color(0xFF0f2027),
-              Color(0xFF1b2b34),
-              Color(0xFF000000),
-            ],
+      backgroundColor: const Color(0xFF0a0a0a),
+      body: Column(
+        children: [
+
+          Expanded(
+            child: widget.child,
           ),
-        ),
-        child: Column(
-          children: [
 
-            _buildNavbar(),
-
-            Expanded(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 250),
-                child: Container(
-                  key: ValueKey(currentRoute),
-                  width: double.infinity,
-                  height: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: widget.child,
-                ),
-              ),
-            ),
-
-            _buildBottomNav(context, currentRoute),
-          ],
-        ),
+          _buildBottomNav(context, currentRoute),
+        ],
       ),
     );
   }
 
-  // ================= TOP NAV =================
-
-  Widget _buildNavbar() {
+  Widget _buildBottomNav(
+      BuildContext context,
+      String route,
+      ) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-      decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.4),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.cyanAccent.withOpacity(0.15),
-            blurRadius: 20,
-            spreadRadius: 1,
-          ),
-        ],
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      decoration: const BoxDecoration(
+        color: Color(0xFF111111),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: const [
-          _GradientLogo(),
-          Icon(Icons.menu, color: Colors.white, size: 24),
+        mainAxisAlignment:
+            MainAxisAlignment.spaceAround,
+        children: [
+
+          _NavItem(
+            label: "Home",
+            icon: Icons.home_rounded,
+            active: route.startsWith("/dashboard"),
+            onTap: () => context.go("/dashboard"),
+          ),
+
+          _ChatNavItem(
+            unreadCount: widget.unreadCount,
+            active: route.startsWith("/chat"),
+            onTap: () => context.go("/chat"),
+          ),
+
+          _NavItem(
+            label: "Rooms",
+            icon: Icons.meeting_room_rounded,
+            active: false,
+            onTap: () {},
+          ),
+
+          _NavItem(
+            label: "Premium",
+            icon: Icons.workspace_premium_rounded,
+            active: route.startsWith("/premium"),
+            highlightColor:
+                const Color(0xFFFFD700),
+            onTap: () => context.go("/premium"),
+          ),
+
+          _NavItem(
+            label: "Profile",
+            icon: Icons.person_rounded,
+            active: false,
+            onTap: () {},
+          ),
         ],
-      ),
-    );
-  }
-
-  // ================= BOTTOM NAV =================
-
-  Widget _buildBottomNav(BuildContext context, String route) {
-  return Container(
-    padding: const EdgeInsets.symmetric(vertical: 14),
-    decoration: BoxDecoration(
-      color: const Color(0xFF0a0a0a),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.cyanAccent.withOpacity(0.15),
-          blurRadius: 25,
-        )
-      ],
-    ),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: [
-
-        _NavItem(
-          label: "Home",
-          icon: Icons.home_rounded,
-          active: route.startsWith("/dashboard"),
-          onTap: () => context.go("/dashboard"),
-        ),
-
-        _ChatNavItem(
-          unreadCount: widget.unreadCount,
-          active: route.startsWith("/chat"),
-          onTap: () => context.go("/chat"),
-        ),
-
-        _NavItem(
-          label: "Rooms",
-          icon: Icons.meeting_room_rounded,
-          active: route.startsWith("/rooms"),
-          onTap: () {},
-        ),
-
-        _NavItem(
-          label: "Premium",
-          icon: Icons.workspace_premium_rounded,
-          active: route.startsWith("/premium"),
-          highlightColor: const Color(0xFFFFD700),
-          onTap: () => context.go("/premium"),
-        ),
-
-        _NavItem(
-          label: "Profile",
-          icon: Icons.person_rounded,
-          active: route.startsWith("/profile"),
-          onTap: () {},
-        ),
-      ],
-    ),
-  );
-  }
-
-// ================= LOGO =================
-
-class _GradientLogo extends StatelessWidget {
-  const _GradientLogo();
-
-  @override
-  Widget build(BuildContext context) {
-    return ShaderMask(
-      shaderCallback: (bounds) => const LinearGradient(
-        colors: [Color(0xFF00F5A0), Color(0xFFFF00C8)],
-      ).createShader(bounds),
-      child: const Text(
-        "Naxorah",
-        style: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-          letterSpacing: 1.2,
-        ),
       ),
     );
   }
 }
-
-// ================= NAV ITEM =================
 
 class _NavItem extends StatelessWidget {
   final String label;
@@ -187,31 +111,43 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
-    final color = active
-        ? highlightColor ?? const Color(0xFF00F5A0)
-        : Colors.white54;
+    final Color color = active
+        ? highlightColor ??
+            const Color(0xFF00F5A0)
+        : Colors.white60;
 
     return GestureDetector(
       onTap: onTap,
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
+
           AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            padding: const EdgeInsets.all(10),
+            duration:
+                const Duration(milliseconds: 250),
+            padding:
+                const EdgeInsets.all(8),
             decoration: active
                 ? BoxDecoration(
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: color.withOpacity(0.6),
-                        blurRadius: 18,
-                      )
+                        color:
+                            color.withOpacity(0.5),
+                        blurRadius: 15,
+                      ),
                     ],
                   )
                 : null,
-            child: Icon(icon, color: color, size: 26),
+            child: Icon(
+              icon,
+              color: color,
+              size: 26,
+            ),
           ),
+
           const SizedBox(height: 4),
+
           Text(
             label,
             style: TextStyle(
@@ -224,8 +160,6 @@ class _NavItem extends StatelessWidget {
     );
   }
 }
-
-// ================= CHAT ITEM =================
 
 class _ChatNavItem extends StatelessWidget {
   final int unreadCount;
@@ -241,40 +175,60 @@ class _ChatNavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
-    final color = active
+    final Color color = active
         ? const Color(0xFF00F5A0)
-        : Colors.white54;
+        : Colors.white60;
 
     return GestureDetector(
       onTap: onTap,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
+
           Column(
+            mainAxisSize:
+                MainAxisSize.min,
             children: [
-              Icon(Icons.chat_bubble, color: color),
+              Icon(
+                Icons.chat_bubble,
+                color: color,
+                size: 26,
+              ),
               const SizedBox(height: 4),
-              Text("Chat", style: TextStyle(color: color)),
+              Text(
+                "Chat",
+                style:
+                    TextStyle(color: color),
+              ),
             ],
           ),
 
           if (unreadCount > 0)
             Positioned(
-              top: -6,
+              top: -5,
               right: -10,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6),
+                padding:
+                    const EdgeInsets.symmetric(
+                        horizontal: 6),
                 height: 20,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF00F5A0),
-                  borderRadius: BorderRadius.circular(20),
+                  color:
+                      const Color(0xFF00F5A0),
+                  borderRadius:
+                      BorderRadius.circular(
+                          20),
                 ),
                 child: Center(
                   child: Text(
-                    unreadCount > 99 ? "99+" : "$unreadCount",
-                    style: const TextStyle(
+                    unreadCount > 99
+                        ? "99+"
+                        : "$unreadCount",
+                    style:
+                        const TextStyle(
                       fontSize: 11,
-                      fontWeight: FontWeight.bold,
+                      fontWeight:
+                          FontWeight.bold,
                       color: Colors.black,
                     ),
                   ),
