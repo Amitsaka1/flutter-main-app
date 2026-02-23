@@ -50,7 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       final res =
           await ApiClient.post("/send-otp", {
-        "phone": "$countryCode$trimmed"
+        "phone": trimmed,
       });
 
       if (res["success"] == true) {
@@ -90,7 +90,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       final res =
           await ApiClient.post("/verify-otp", {
-        "phone": "$countryCode$trimmed",
+        "phone": trimmed,
         "otp": _otpController.text.trim()
       });
 
