@@ -167,14 +167,34 @@ class _ChatConversationScreenState
 
   Future<void> sendMessage() async {
 
-    if (newMessage.trim().isEmpty) return;
+  if (newMessage.trim().isEmpty) return;
 
+  final messageText = newMessage;
+
+  // 🔥 Optimistic UI update
+  final tempMessage = {
+    "id": DateTime.now().millisecondsSinceEpoch.toString(),
+    "senderId": myId,
+    "receiverId": widget.chatUserId,
+    "content": messageText,
+    "isRead": false,
+  };
+
+  setState(() {
+    messages.add(tempMessage);
+    newMessage = "";
+  });
+
+  _scrollBottom();
+
+  try {
     await ApiClient.post("/chat/send", {
       "receiverId": widget.chatUserId,
-      "content": newMessage
+      "content": messageText
     });
-
-    setState(() => newMessage = "");
+  } catch (e) {
+    debugPrint("Send error: $e");
+  }
   }
 
   Future<void> deleteMessage(String mode) async {
