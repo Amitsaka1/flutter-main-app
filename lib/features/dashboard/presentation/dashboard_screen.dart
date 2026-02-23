@@ -144,8 +144,11 @@ class _DashboardScreenState
       );
     }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+    return SafeArea(
+      top: true,
+      bottom: false,
+      child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       child: Column(
         children: [
 
