@@ -66,10 +66,10 @@ class _MyAppState extends State<MyApp> {
             path: "/profile/:id",
             builder: (context, state) {
               final id = state.pathParameters["id"]!;
-              return ProfileDetailsScreen(userId: id);
+              return AppLayout(
+                child: ProfileDetailsScreen(userId: id),
             },
           ),
-
         ],
       ),
 
