@@ -91,6 +91,9 @@ class _MyAppState extends State<MyApp> {
         final serverVersion = data["version"] ?? 0;
         final apkUrl = data["apkUrl"];
 
+        // 🔥 DEBUG POPUP (PC ke bina numbers dekhne ke liye)
+        _showDebugDialog(currentBuild, serverVersion);
+
         if (serverVersion > currentBuild) {
           _showUpdateDialog(apkUrl);
         }
@@ -98,6 +101,24 @@ class _MyAppState extends State<MyApp> {
     } catch (e) {
       debugPrint("Update check failed: $e");
     }
+  }
+
+  void _showDebugDialog(int currentBuild, int serverVersion) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Debug Info"),
+        content: Text(
+          "Current Build: $currentBuild\nServer Version: $serverVersion",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("OK"),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showUpdateDialog(String apkUrl) {
@@ -116,11 +137,12 @@ class _MyAppState extends State<MyApp> {
             child: const Text("Later"),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              // Open APK link in browser
-              // ignore: deprecated_member_use
-              launchUrl(Uri.parse(apkUrl));
+              final uri = Uri.parse(apkUrl);
+              if (await canLaunchUrl(uri)) {
+                await launchUrl(uri, mode: LaunchMode.externalApplication);
+              }
             },
             child: const Text("Update"),
           ),
