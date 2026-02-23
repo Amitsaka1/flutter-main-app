@@ -149,76 +149,64 @@ class _DashboardScreenState
   // UI
   // =========================
   @override
-  Widget build(BuildContext context) {
+Widget build(BuildContext context) {
 
-    if (loading) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
-
-    return AppLayout(
-      unreadCount: unreadCount,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-
-            // FILTER BUTTON
-            Align(
-              alignment: Alignment.centerRight,
-              child: ElevatedButton(
-                onPressed: () =>
-                    setState(() =>
-                        filterOpen = !filterOpen),
-                child: const Text("🔎 Filter"),
-              ),
-            ),
-
-            if (filterOpen)
-              _buildFilterPanel(),
-
-            const SizedBox(height: 20),
-
-            // STATS
-            Row(
-              children: const [
-                Expanded(
-                  child: _StatBox("🔥 Active"),
-                ),
-                SizedBox(width: 15),
-                Expanded(
-                  child: _StatBox("🌟 Gifts"),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 20),
-
-            // GRID
-            Expanded(
-              child: GridView.builder(
-                itemCount: profiles.length,
-                gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 15,
-                  crossAxisSpacing: 15,
-                  childAspectRatio: 0.85,
-                ),
-                itemBuilder: (context, index) {
-                  final p = profiles[index];
-                  return _ProfileCard(profile: p);
-                },
-              ),
-            )
-          ],
-        ),
-      ),
+  if (loading) {
+    return const Center(
+      child: CircularProgressIndicator(),
     );
   }
+
+  return Padding(
+    padding: const EdgeInsets.all(20),
+    child: Column(
+      children: [
+
+        Align(
+          alignment: Alignment.centerRight,
+          child: ElevatedButton(
+            onPressed: () =>
+                setState(() =>
+                    filterOpen = !filterOpen),
+            child: const Text("🔎 Filter"),
+          ),
+        ),
+
+        if (filterOpen)
+          _buildFilterPanel(),
+
+        const SizedBox(height: 20),
+
+        Row(
+          children: const [
+            Expanded(child: _StatBox("🔥 Active")),
+            SizedBox(width: 15),
+            Expanded(child: _StatBox("🌟 Gifts")),
+          ],
+        ),
+
+        const SizedBox(height: 20),
+
+        Expanded(
+          child: GridView.builder(
+            itemCount: profiles.length,
+            gridDelegate:
+                const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: 15,
+              crossAxisSpacing: 15,
+              childAspectRatio: 0.85,
+            ),
+            itemBuilder: (context, index) {
+              final p = profiles[index];
+              return _ProfileCard(profile: p);
+            },
+          ),
+        )
+      ],
+    ),
+  );
+}
 
   Widget _buildFilterPanel() {
     return Container(
