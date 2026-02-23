@@ -89,47 +89,59 @@ class _AppLayoutState extends State<AppLayout> {
   // ================= BOTTOM NAV =================
 
   Widget _buildBottomNav(BuildContext context, String route) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 18),
-      decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.9),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.cyanAccent.withOpacity(0.2),
-            blurRadius: 25,
-            spreadRadius: 1,
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
+  return Container(
+    padding: const EdgeInsets.symmetric(vertical: 14),
+    decoration: BoxDecoration(
+      color: const Color(0xFF0a0a0a),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.cyanAccent.withOpacity(0.15),
+          blurRadius: 25,
+        )
+      ],
+    ),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      children: [
 
-          _NavItem(
-            label: "Friends",
-            icon: Icons.people,
-            active: route.startsWith("/dashboard"),
-            onTap: () => context.go("/dashboard"),
-          ),
+        _NavItem(
+          label: "Home",
+          icon: Icons.home_rounded,
+          active: route.startsWith("/dashboard"),
+          onTap: () => context.go("/dashboard"),
+        ),
 
-          _ChatNavItem(
-            unreadCount: widget.unreadCount,
-            active: route.startsWith("/chat"),
-            onTap: () => context.go("/chat"),
-          ),
+        _ChatNavItem(
+          unreadCount: widget.unreadCount,
+          active: route.startsWith("/chat"),
+          onTap: () => context.go("/chat"),
+        ),
 
-          _NavItem(
-            label: "Premium",
-            icon: Icons.star,
-            active: route.startsWith("/premium"),
-            highlightColor: const Color(0xFFFFD700),
-            onTap: () => context.go("/premium"),
-          ),
-        ],
-      ),
-    );
+        _NavItem(
+          label: "Rooms",
+          icon: Icons.meeting_room_rounded,
+          active: route.startsWith("/rooms"),
+          onTap: () {},
+        ),
+
+        _NavItem(
+          label: "Premium",
+          icon: Icons.workspace_premium_rounded,
+          active: route.startsWith("/premium"),
+          highlightColor: const Color(0xFFFFD700),
+          onTap: () => context.go("/premium"),
+        ),
+
+        _NavItem(
+          label: "Profile",
+          icon: Icons.person_rounded,
+          active: route.startsWith("/profile"),
+          onTap: () {},
+        ),
+      ],
+    ),
+  );
   }
-}
 
 // ================= LOGO =================
 
