@@ -14,7 +14,6 @@ class ChatListScreen extends StatefulWidget {
 }
 
 class _ChatListScreenState extends State<ChatListScreen> {
-
   List<dynamic> chats = [];
   bool loading = true;
   int totalUnread = 0;
@@ -40,9 +39,6 @@ class _ChatListScreenState extends State<ChatListScreen> {
     _initSocket(token);
   }
 
-  // =========================
-  // FETCH RECENT CHATS
-  // =========================
   Future<void> _fetchChats() async {
     try {
       final response = await ApiClient.get("/chat/recent");
@@ -63,18 +59,13 @@ class _ChatListScreenState extends State<ChatListScreen> {
           loading = false;
         });
       }
-
     } catch (e) {
       debugPrint("Chat fetch error: $e");
       setState(() => loading = false);
     }
   }
 
-  // =========================
-  // WEBSOCKET
-  // =========================
   void _initSocket(String token) async {
-
     final payload = jsonDecode(
       utf8.decode(base64Url.decode(base64Url.normalize(token.split(".")[1])))
     );
@@ -88,21 +79,17 @@ class _ChatListScreenState extends State<ChatListScreen> {
   }
 
   void _handleSocketMessage(dynamic message) {
-
     final type = message["type"];
 
     if (type == "NEW_MESSAGE") {
       final msg = message["data"];
 
       if (msg["receiverId"] == _socket!.userId) {
-
         setState(() {
           for (var chat in chats) {
             if (chat["user"]["id"] == msg["senderId"]) {
               chat["lastMessage"] =
-                  msg["type"] == "image"
-                      ? "📷 Image"
-                      : msg["content"];
+                  msg["type"] == "image" ? "📷 Image" : msg["content"];
               chat["unreadCount"] =
                   (chat["unreadCount"] ?? 0) + 1;
             }
@@ -138,38 +125,40 @@ class _ChatListScreenState extends State<ChatListScreen> {
     super.dispose();
   }
 
-  // =========================
-  // UI
-  // =========================
-@override
-Widget build(BuildContext context) {
+  @override
+  Widget build(BuildContext context) {
+    if (loading) {
+      return AppLayout(
+        unreadCount: totalUnread,
+        child: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
 
-  if (loading) {
-    return const Center(
-      child: CircularProgressIndicator(),
+    return AppLayout(
+      unreadCount: totalUnread,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(20),
+        itemCount: chats.length,
+        itemBuilder: (context, index) {
+          final chat = chats[index];
+
+          return _ChatCard(
+            chat: chat,
+            onTap: () =>
+                context.go("/chat/${chat["user"]["id"]}"),
+          );
+        },
+      ),
     );
   }
-
-  return ListView.builder(
-    padding: const EdgeInsets.all(20),
-    itemCount: chats.length,
-    itemBuilder: (context, index) {
-      final chat = chats[index];
-
-      return _ChatCard(
-        chat: chat,
-        onTap: () =>
-            context.go("/chat/${chat["user"]["id"]}"),
-      );
-    },
-  );
 }
 
 // =============================
-// CHAT CARD
+// CHAT CARD (OUTSIDE STATE CLASS)
 // =============================
 class _ChatCard extends StatelessWidget {
-
   final dynamic chat;
   final VoidCallback onTap;
 
@@ -180,7 +169,6 @@ class _ChatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     final unread = chat["unreadCount"] ?? 0;
 
     return GestureDetector(
@@ -200,7 +188,6 @@ class _ChatCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-
             Container(
               width: 45,
               height: 45,
@@ -218,8 +205,7 @@ class _ChatCard extends StatelessWidget {
                   chat["user"]["phone"]
                       .toString()
                       .substring(
-                        chat["user"]["phone"].length - 2
-                      ),
+                        chat["user"]["phone"].length - 2),
                   style: const TextStyle(
                     color: Colors.black,
                     fontWeight: FontWeight.bold,
@@ -227,13 +213,10 @@ class _ChatCard extends StatelessWidget {
                 ),
               ),
             ),
-
             const SizedBox(width: 15),
-
             Expanded(
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     mainAxisAlignment:
@@ -248,10 +231,8 @@ class _ChatCard extends StatelessWidget {
                       ),
                       if (unread > 0)
                         Container(
-                          padding:
-                              const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: const Color(0xFF00F5A0),
                             borderRadius:
