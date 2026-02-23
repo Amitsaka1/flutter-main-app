@@ -141,35 +141,28 @@ class _ChatListScreenState extends State<ChatListScreen> {
   // =========================
   // UI
   // =========================
-  @override
-  Widget build(BuildContext context) {
+@override
+Widget build(BuildContext context) {
 
-    if (loading) {
-      return AppLayout(
-        unreadCount: totalUnread,
-        child: const Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
-
-    return AppLayout(
-      unreadCount: totalUnread,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(20),
-        itemCount: chats.length,
-        itemBuilder: (context, index) {
-          final chat = chats[index];
-
-          return _ChatCard(
-            chat: chat,
-            onTap: () =>
-                context.go("/chat/${chat["user"]["id"]}"),
-          );
-        },
-      ),
+  if (loading) {
+    return const Center(
+      child: CircularProgressIndicator(),
     );
   }
+
+  return ListView.builder(
+    padding: const EdgeInsets.all(20),
+    itemCount: chats.length,
+    itemBuilder: (context, index) {
+      final chat = chats[index];
+
+      return _ChatCard(
+        chat: chat,
+        onTap: () =>
+            context.go("/chat/${chat["user"]["id"]}"),
+      );
+    },
+  );
 }
 
 // =============================
