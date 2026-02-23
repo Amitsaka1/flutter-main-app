@@ -210,7 +210,7 @@ class _ChatNavItem extends StatelessWidget {
                 color: color,
                 size: 24,
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 4),
               Text(
                 "Chat",
                 style: TextStyle(
