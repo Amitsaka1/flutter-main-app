@@ -39,17 +39,13 @@ class _AppLayoutState extends State<AppLayout> {
         child: Column(
           children: [
 
-            // 🔥 TOP NAVBAR
             _buildNavbar(),
 
-            // 🔥 PAGE CONTENT
             Expanded(
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 250),
-                switchInCurve: Curves.easeOut,
-                switchOutCurve: Curves.easeIn,
                 child: Container(
-                  key: ValueKey(currentRoute), // ✅ VERY IMPORTANT FIX
+                  key: ValueKey(currentRoute),
                   width: double.infinity,
                   height: double.infinity,
                   child: widget.child,
@@ -57,7 +53,6 @@ class _AppLayoutState extends State<AppLayout> {
               ),
             ),
 
-            // 🔥 BOTTOM NAV
             _buildBottomNav(context, currentRoute),
           ],
         ),
@@ -106,6 +101,122 @@ class _AppLayoutState extends State<AppLayout> {
             highlightColor: const Color(0xFFFFD700),
             onTap: () => context.go("/premium"),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GradientLogo extends StatelessWidget {
+  const _GradientLogo();
+
+  @override
+  Widget build(BuildContext context) {
+    return ShaderMask(
+      shaderCallback: (bounds) => const LinearGradient(
+        colors: [Color(0xFF00F5A0), Color(0xFFFF00C8)],
+      ).createShader(bounds),
+      child: const Text(
+        "Naxorah",
+        style: TextStyle(
+          fontSize: 22,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool active;
+  final VoidCallback onTap;
+  final Color? highlightColor;
+
+  const _NavItem({
+    required this.label,
+    required this.icon,
+    required this.active,
+    required this.onTap,
+    this.highlightColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+
+    final color = active
+        ? highlightColor ?? const Color(0xFF00F5A0)
+        : Colors.white60;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Icon(icon, color: color),
+          const SizedBox(height: 4),
+          Text(label, style: TextStyle(color: color)),
+        ],
+      ),
+    );
+  }
+}
+
+class _ChatNavItem extends StatelessWidget {
+  final int unreadCount;
+  final bool active;
+  final VoidCallback onTap;
+
+  const _ChatNavItem({
+    required this.unreadCount,
+    required this.active,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+
+    final color = active
+        ? const Color(0xFF00F5A0)
+        : Colors.white60;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Column(
+            children: [
+              Icon(Icons.chat_bubble, color: color),
+              const SizedBox(height: 4),
+              Text("Chat", style: TextStyle(color: color)),
+            ],
+          ),
+
+          if (unreadCount > 0)
+            Positioned(
+              top: -4,
+              right: -8,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                height: 20,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF00F5A0),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Center(
+                  child: Text(
+                    unreadCount > 99 ? "99+" : "$unreadCount",
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
