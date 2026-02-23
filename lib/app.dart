@@ -1,5 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:http/http.dart' as http;
+import 'package:package_info_plus/package_info_plus.dart';
 
 import 'package:app_project/shared/layout/app_layout.dart';
 import 'package:app_project/features/auth/presentation/login_screen.dart';
@@ -10,73 +13,120 @@ import 'package:app_project/features/profile/presentation/create_profile_screen.
 import 'package:app_project/features/profile/presentation/profile_details_screen.dart';
 import 'package:app_project/features/subscription/presentation/premium_screen.dart';
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
 
   final GoRouter _router = GoRouter(
     initialLocation: "/login",
     routes: [
-
-      // LOGIN
       GoRoute(
         path: "/login",
         builder: (context, state) => const LoginScreen(),
       ),
-
-      // DASHBOARD
       GoRoute(
         path: "/dashboard",
-        builder: (context, state) => AppLayout(
-          child: const DashboardScreen(),
-        ),
+        builder: (context, state) =>
+            AppLayout(child: const DashboardScreen()),
       ),
-
-      // CREATE PROFILE
       GoRoute(
         path: "/create-profile",
         builder: (context, state) =>
             const CreateProfileScreen(),
       ),
-
-      // CHAT LIST
       GoRoute(
         path: "/chat",
-        builder: (context, state) => AppLayout(
-          child: const ChatListScreen(),
-        ),
+        builder: (context, state) =>
+            AppLayout(child: const ChatListScreen()),
       ),
-
-      // CHAT CONVERSATION
       GoRoute(
         path: "/chat/:id",
         builder: (context, state) {
           final id = state.pathParameters["id"]!;
-          return ChatConversationScreen(
-            chatUserId: id,
-          );
+          return ChatConversationScreen(chatUserId: id);
         },
       ),
-
-      // PROFILE DETAILS
       GoRoute(
         path: "/profile/:id",
         builder: (context, state) {
           final id = state.pathParameters["id"]!;
-          return ProfileDetailsScreen(
-            userId: id,
-          );
+          return ProfileDetailsScreen(userId: id);
         },
       ),
-
-      // PREMIUM
       GoRoute(
         path: "/premium",
-        builder: (context, state) => AppLayout(
-          child: const PremiumScreen(),
-        ),
+        builder: (context, state) =>
+            AppLayout(child: const PremiumScreen()),
       ),
     ],
   );
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkForUpdate();
+    });
+  }
+
+  Future<void> _checkForUpdate() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      final currentBuild =
+          int.tryParse(packageInfo.buildNumber) ?? 0;
+
+      final response = await http.get(
+        Uri.parse("https://momo-1etm.onrender.com/app/version"),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        final serverVersion = data["version"] ?? 0;
+        final apkUrl = data["apkUrl"];
+
+        if (serverVersion > currentBuild) {
+          _showUpdateDialog(apkUrl);
+        }
+      }
+    } catch (e) {
+      debugPrint("Update check failed: $e");
+    }
+  }
+
+  void _showUpdateDialog(String apkUrl) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        title: const Text("Update Available"),
+        content: const Text(
+            "A new version of the app is available. Please update."),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: const Text("Later"),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // Open APK link in browser
+              // ignore: deprecated_member_use
+              launchUrl(Uri.parse(apkUrl));
+            },
+            child: const Text("Update"),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
