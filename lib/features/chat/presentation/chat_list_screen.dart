@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/websocket_service.dart';
-import '../../../shared/layout/app_layout.dart';
 
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({super.key});
@@ -61,13 +60,16 @@ class _ChatListScreenState extends State<ChatListScreen> {
       }
     } catch (e) {
       debugPrint("Chat fetch error: $e");
-      setState(() => loading = false);
+      if (mounted) {
+        setState(() => loading = false);
+      }
     }
   }
 
   void _initSocket(String token) async {
     final payload = jsonDecode(
-      utf8.decode(base64Url.decode(base64Url.normalize(token.split(".")[1])))
+      utf8.decode(base64Url.decode(
+          base64Url.normalize(token.split(".")[1])))
     );
 
     final myId = payload["id"];
@@ -94,7 +96,6 @@ class _ChatListScreenState extends State<ChatListScreen> {
                   (chat["unreadCount"] ?? 0) + 1;
             }
           }
-
           totalUnread++;
         });
       }
@@ -127,37 +128,33 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
   @override
   Widget build(BuildContext context) {
+
     if (loading) {
-      return AppLayout(
-        unreadCount: totalUnread,
-        child: const Center(
-          child: CircularProgressIndicator(),
-        ),
+      return const Center(
+        child: CircularProgressIndicator(),
       );
     }
 
-    return AppLayout(
-      unreadCount: totalUnread,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(20),
-        itemCount: chats.length,
-        itemBuilder: (context, index) {
-          final chat = chats[index];
+    return ListView.builder(
+      padding: const EdgeInsets.all(20),
+      itemCount: chats.length,
+      itemBuilder: (context, index) {
+        final chat = chats[index];
 
-          return _ChatCard(
-            chat: chat,
-            onTap: () =>
-                context.go("/chat/${chat["user"]["id"]}"),
-          );
-        },
-      ),
+        return _ChatCard(
+          chat: chat,
+          onTap: () =>
+              context.go("/chat/${chat["user"]["id"]}"),
+        );
+      },
     );
   }
 }
 
 // =============================
-// CHAT CARD (OUTSIDE STATE CLASS)
+// CHAT CARD
 // =============================
+
 class _ChatCard extends StatelessWidget {
   final dynamic chat;
   final VoidCallback onTap;
