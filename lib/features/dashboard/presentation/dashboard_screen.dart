@@ -148,7 +148,11 @@ class _DashboardScreenState
   // =========================
   // UI
   // =========================
-  @override
+
+  // =========================
+// UI
+// =========================
+@override
 Widget build(BuildContext context) {
 
   if (loading) {
@@ -158,30 +162,56 @@ Widget build(BuildContext context) {
   }
 
   return Padding(
-    padding: const EdgeInsets.all(20),
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
     child: Column(
       children: [
 
+        // 🔥 FILTER BUTTON (Neon Style)
         Align(
           alignment: Alignment.centerRight,
-          child: ElevatedButton(
-            onPressed: () =>
+          child: GestureDetector(
+            onTap: () =>
                 setState(() =>
                     filterOpen = !filterOpen),
-            child: const Text("🔎 Filter"),
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 18, vertical: 10),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(25),
+                gradient: const LinearGradient(
+                  colors: [
+                    Color(0xFF00F5A0),
+                    Color(0xFFFF00C8),
+                  ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.cyanAccent.withOpacity(0.5),
+                    blurRadius: 15,
+                  )
+                ],
+              ),
+              child: const Text(
+                "🔎 Filter",
+                style: TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
           ),
         ),
 
-        if (filterOpen)
-          _buildFilterPanel(),
+        if (filterOpen) _buildFilterPanel(),
 
         const SizedBox(height: 20),
 
+        // 🔥 CYBER STAT BOXES
         Row(
           children: const [
-            Expanded(child: _StatBox("🔥 Active")),
+            Expanded(child: _CyberStatBox("🔥 Active")),
             SizedBox(width: 15),
-            Expanded(child: _StatBox("🌟 Gifts")),
+            Expanded(child: _CyberStatBox("🌟 Gifts")),
           ],
         ),
 
@@ -207,6 +237,7 @@ Widget build(BuildContext context) {
     ),
   );
 }
+  
 
   Widget _buildFilterPanel() {
     return Container(
