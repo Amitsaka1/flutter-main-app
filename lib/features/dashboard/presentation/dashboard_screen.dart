@@ -385,22 +385,36 @@ class _ProfileCard extends StatelessWidget {
 }
 
 // =============================
-class _StatBox extends StatelessWidget {
+class _CyberStatBox extends StatelessWidget {
   final String text;
-  const _StatBox(this.text);
+  const _CyberStatBox(this.text);
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF121212),
         borderRadius: BorderRadius.circular(18),
+        gradient: const LinearGradient(
+          colors: [
+            Color(0xFF111111),
+            Color(0xFF1b1b1b),
+          ],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.cyanAccent.withOpacity(0.3),
+            blurRadius: 20,
+          )
+        ],
       ),
       child: Center(
-        child: Text(text,
-            style: const TextStyle(
-                fontWeight: FontWeight.bold)),
+        child: Text(
+          text,
+          style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16),
+        ),
       ),
     );
   }
