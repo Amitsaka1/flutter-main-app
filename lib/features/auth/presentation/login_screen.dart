@@ -1,5 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:http/http.dart' as http;
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/network/api_client.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -20,15 +24,75 @@ class _LoginScreenState extends State<LoginScreen> {
   String countryCode = "+91";
   bool loading = false;
   String message = "";
-  String step = "phone"; // phone | otp
+  String step = "phone";
 
   @override
   void initState() {
     super.initState();
 
-    // ✅ Strict login mode (same as your code)
     ApiClient.clearToken();
+
+    // 🔥 Update Check (Router Safe)
+    Future.delayed(const Duration(seconds: 1), () {
+      _checkForUpdate();
+    });
   }
+
+  // ================= UPDATE SYSTEM =================
+
+  Future<void> _checkForUpdate() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      final currentBuild =
+          int.tryParse(packageInfo.buildNumber) ?? 0;
+
+      final response = await http.get(
+        Uri.parse("https://momo-1etm.onrender.com/app/version"),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        final serverVersion = data["version"] ?? 0;
+        final apkUrl = data["apkUrl"];
+
+        if (serverVersion > currentBuild) {
+          _showUpdateDialog(apkUrl);
+        }
+      }
+    } catch (_) {}
+  }
+
+  void _showUpdateDialog(String apkUrl) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        title: const Text("Update Available"),
+        content: const Text(
+            "A new version of the app is available. Please update."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Later"),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final uri = Uri.parse(apkUrl);
+              if (await canLaunchUrl(uri)) {
+                await launchUrl(uri,
+                    mode: LaunchMode.externalApplication);
+              }
+            },
+            child: const Text("Update"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ================= OTP SYSTEM =================
 
   Future<void> _sendOtp() async {
 
@@ -122,6 +186,8 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  // ================= UI =================
+
   @override
   Widget build(BuildContext context) {
 
@@ -142,7 +208,6 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             children: [
 
-              // ================= TOP =================
               const SizedBox(height: 15),
 
               Row(
