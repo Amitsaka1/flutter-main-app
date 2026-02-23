@@ -335,8 +335,14 @@ class _ProfileCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(15),
         decoration: BoxDecoration(
-          color: const Color(0xFF121212),
+          color: const Color(0xFF0f0f0f),
           borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.cyanAccent.withOpacity(0.2),
+              blurRadius: 15,
+            )
+          ],
         ),
         child: Stack(
           children: [
@@ -357,14 +363,18 @@ class _ProfileCard extends StatelessWidget {
               children: [
                 Text(profile["name"],
                     style: const TextStyle(
-                        fontWeight: FontWeight.bold)),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16)),
                 const SizedBox(height: 5),
                 Text(
-                    "${profile["gender"]} • ${profile["age"]}"),
-                Text(profile["roleType"]),
+                    "${profile["gender"]} • ${profile["age"]}",
+                    style: const TextStyle(color: Colors.white70)),
+                Text(profile["roleType"],
+                    style: const TextStyle(color: Colors.white60)),
                 Text(profile["havePlace"]
                     ? "Has Place"
-                    : "No Place"),
+                    : "No Place",
+                    style: const TextStyle(color: Colors.white54)),
               ],
             ),
           ],
