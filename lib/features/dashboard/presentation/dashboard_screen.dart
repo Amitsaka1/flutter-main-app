@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/websocket_service.dart';
-import '../../../shared/layout/app_layout.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -22,6 +21,7 @@ class _DashboardScreenState
 
   bool filterOpen = false;
   int unreadCount = 0;
+  bool showActive = true;
 
   Map<String, String> filters = {
     "gender": "",
@@ -60,12 +60,8 @@ class _DashboardScreenState
     _initSocket(token);
   }
 
-  // =========================
-  // FETCH PROFILES
-  // =========================
   Future<void> _fetchProfiles() async {
     try {
-
       final response =
           await ApiClient.get("/profile/all",
               queryParams: filters);
@@ -77,23 +73,19 @@ class _DashboardScreenState
           loading = false;
         });
       }
-
     } catch (_) {
       setState(() => loading = false);
     }
   }
 
-  // =========================
-  // FETCH UNREAD
-  // =========================
   Future<void> _fetchUnread() async {
     final res =
         await ApiClient.get("/chat/recent");
 
     if (res["success"] == true) {
       final data = res["data"] as List;
-
       int total = 0;
+
       for (var c in data) {
         total += (c["unreadCount"] ?? 0) as int;
       }
@@ -104,11 +96,7 @@ class _DashboardScreenState
     }
   }
 
-  // =========================
-  // SOCKET
-  // =========================
   void _initSocket(String token) {
-
     final payload = jsonDecode(
       utf8.decode(base64Url.decode(
           base64Url.normalize(token.split(".")[1]))),
@@ -145,99 +133,188 @@ class _DashboardScreenState
     super.dispose();
   }
 
-  // =========================
-  // UI
-  // =========================
+  // ================= UI =================
 
-  // =========================
-// UI
-// =========================
-@override
-Widget build(BuildContext context) {
+  @override
+  Widget build(BuildContext context) {
 
-  if (loading) {
-    return const Center(
-      child: CircularProgressIndicator(),
+    if (loading) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Column(
+        children: [
+
+          // ================= SEARCH + FILTER =================
+
+          Row(
+            children: [
+
+              Expanded(
+                child: Container(
+                  height: 50,
+                  padding: const EdgeInsets.symmetric(horizontal: 15),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1a1a1a),
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Row(
+                    children: [
+
+                      const Icon(Icons.search, color: Colors.white54),
+
+                      const SizedBox(width: 10),
+
+                      const Expanded(
+                        child: TextField(
+                          style: TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                            hintText: "Search...",
+                            hintStyle: TextStyle(color: Colors.white54),
+                            border: InputBorder.none,
+                          ),
+                        ),
+                      ),
+
+                      Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          const Icon(Icons.card_giftcard,
+                              color: Colors.white70),
+
+                          Positioned(
+                            right: -6,
+                            top: -6,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: Colors.orange,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Text(
+                                "2",
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              GestureDetector(
+                onTap: () =>
+                    setState(() => filterOpen = !filterOpen),
+                child: Container(
+                  height: 50,
+                  width: 50,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1a1a1a),
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: const Icon(Icons.tune,
+                      color: Colors.white70),
+                ),
+              ),
+            ],
+          ),
+
+          if (filterOpen) _buildFilterPanel(),
+
+          const SizedBox(height: 20),
+
+          // ================= ACTIVE / GIFTS =================
+
+          Row(
+            children: [
+
+              Expanded(
+                child: GestureDetector(
+                  onTap: () =>
+                      setState(() => showActive = true),
+                  child: Container(
+                    height: 45,
+                    decoration: BoxDecoration(
+                      color: showActive
+                          ? const Color(0xFF2a2a2a)
+                          : const Color(0xFF1a1a1a),
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        "🔥 Active",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(width: 15),
+
+              Expanded(
+                child: GestureDetector(
+                  onTap: () =>
+                      setState(() => showActive = false),
+                  child: Container(
+                    height: 45,
+                    decoration: BoxDecoration(
+                      color: !showActive
+                          ? const Color(0xFF2a2a2a)
+                          : const Color(0xFF1a1a1a),
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        "🌟 Gifts",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 20),
+
+          // ================= PROFILE GRID =================
+
+          Expanded(
+            child: GridView.builder(
+              itemCount: profiles.length,
+              gridDelegate:
+                  const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 15,
+                crossAxisSpacing: 15,
+                childAspectRatio: 0.85,
+              ),
+              itemBuilder: (context, index) {
+                final p = profiles[index];
+                return _ProfileCard(profile: p);
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
-
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-    child: Column(
-      children: [
-
-        // 🔥 FILTER BUTTON (Neon Style)
-        Align(
-          alignment: Alignment.centerRight,
-          child: GestureDetector(
-            onTap: () =>
-                setState(() =>
-                    filterOpen = !filterOpen),
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 18, vertical: 10),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(25),
-                gradient: const LinearGradient(
-                  colors: [
-                    Color(0xFF00F5A0),
-                    Color(0xFFFF00C8),
-                  ],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.cyanAccent.withOpacity(0.5),
-                    blurRadius: 15,
-                  )
-                ],
-              ),
-              child: const Text(
-                "🔎 Filter",
-                style: TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-        ),
-
-        if (filterOpen) _buildFilterPanel(),
-
-        const SizedBox(height: 20),
-
-        // 🔥 CYBER STAT BOXES
-        Row(
-          children: const [
-            Expanded(child: _CyberStatBox("🔥 Active")),
-            SizedBox(width: 15),
-            Expanded(child: _CyberStatBox("🌟 Gifts")),
-          ],
-        ),
-
-        const SizedBox(height: 20),
-
-        Expanded(
-          child: GridView.builder(
-            itemCount: profiles.length,
-            gridDelegate:
-                const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisSpacing: 15,
-              crossAxisSpacing: 15,
-              childAspectRatio: 0.85,
-            ),
-            itemBuilder: (context, index) {
-              final p = profiles[index];
-              return _ProfileCard(profile: p);
-            },
-          ),
-        )
-      ],
-    ),
-  );
-}
-  
 
   Widget _buildFilterPanel() {
     return Container(
@@ -249,58 +326,28 @@ Widget build(BuildContext context) {
       ),
       child: Column(
         children: [
-
           DropdownButtonFormField<String>(
             decoration:
                 const InputDecoration(labelText: "Gender"),
             items: const [
-              DropdownMenuItem(
-                  value: "Male",
-                  child: Text("Male")),
-              DropdownMenuItem(
-                  value: "Female",
-                  child: Text("Female")),
+              DropdownMenuItem(value: "Male", child: Text("Male")),
+              DropdownMenuItem(value: "Female", child: Text("Female")),
             ],
             onChanged: (val) =>
                 filters["gender"] = val ?? "",
           ),
-
           DropdownButtonFormField<String>(
             decoration:
                 const InputDecoration(labelText: "Role"),
             items: const [
-              DropdownMenuItem(
-                  value: "Top",
-                  child: Text("Top")),
-              DropdownMenuItem(
-                  value: "Bottom",
-                  child: Text("Bottom")),
-              DropdownMenuItem(
-                  value: "Lesbian",
-                  child: Text("Lesbian")),
+              DropdownMenuItem(value: "Top", child: Text("Top")),
+              DropdownMenuItem(value: "Bottom", child: Text("Bottom")),
+              DropdownMenuItem(value: "Lesbian", child: Text("Lesbian")),
             ],
             onChanged: (val) =>
                 filters["roleType"] = val ?? "",
           ),
-
-          TextField(
-            decoration:
-                const InputDecoration(labelText: "Min Age"),
-            keyboardType: TextInputType.number,
-            onChanged: (val) =>
-                filters["minAge"] = val,
-          ),
-
-          TextField(
-            decoration:
-                const InputDecoration(labelText: "Max Age"),
-            keyboardType: TextInputType.number,
-            onChanged: (val) =>
-                filters["maxAge"] = val,
-          ),
-
           const SizedBox(height: 10),
-
           ElevatedButton(
             onPressed: () {
               _fetchProfiles();
@@ -314,18 +361,12 @@ Widget build(BuildContext context) {
   }
 }
 
-// =============================
-// PROFILE CARD
-// =============================
 class _ProfileCard extends StatelessWidget {
-
   final dynamic profile;
-
   const _ProfileCard({required this.profile});
 
   @override
   Widget build(BuildContext context) {
-
     final online =
         profile["user"]?["isOnline"] == true;
 
@@ -337,16 +378,9 @@ class _ProfileCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: const Color(0xFF0f0f0f),
           borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.cyanAccent.withOpacity(0.2),
-              blurRadius: 15,
-            )
-          ],
         ),
         child: Stack(
           children: [
-
             if (online)
               const Positioned(
                 top: 0,
@@ -356,64 +390,22 @@ class _ProfileCard extends StatelessWidget {
                   backgroundColor: Colors.green,
                 ),
               ),
-
             Column(
               mainAxisAlignment:
                   MainAxisAlignment.center,
               children: [
                 Text(profile["name"],
                     style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16)),
+                        fontWeight: FontWeight.bold)),
                 const SizedBox(height: 5),
-                Text(
-                    "${profile["gender"]} • ${profile["age"]}",
-                    style: const TextStyle(color: Colors.white70)),
-                Text(profile["roleType"],
-                    style: const TextStyle(color: Colors.white60)),
+                Text("${profile["gender"]} • ${profile["age"]}"),
+                Text(profile["roleType"]),
                 Text(profile["havePlace"]
                     ? "Has Place"
-                    : "No Place",
-                    style: const TextStyle(color: Colors.white54)),
+                    : "No Place"),
               ],
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-// =============================
-class _CyberStatBox extends StatelessWidget {
-  final String text;
-  const _CyberStatBox(this.text);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        gradient: const LinearGradient(
-          colors: [
-            Color(0xFF111111),
-            Color(0xFF1b1b1b),
-          ],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.cyanAccent.withOpacity(0.3),
-            blurRadius: 20,
-          )
-        ],
-      ),
-      child: Center(
-        child: Text(
-          text,
-          style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16),
         ),
       ),
     );
