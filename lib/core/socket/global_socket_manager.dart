@@ -1,7 +1,8 @@
 import 'dart:async';
+import 'package:flutter/widgets.dart';
 import 'websocket_service.dart';
 
-class GlobalSocketManager {
+class GlobalSocketManager with WidgetsBindingObserver {
   GlobalSocketManager._internal();
   static final GlobalSocketManager _instance =
       GlobalSocketManager._internal();
@@ -11,6 +12,7 @@ class GlobalSocketManager {
 
   String? _userId;
   bool _initialized = false;
+  bool _foreground = true;
 
   final StreamController<Map<String, dynamic>>
       _messageController = StreamController.broadcast();
@@ -33,6 +35,8 @@ class GlobalSocketManager {
       _messageController.add(event);
     });
 
+    WidgetsBinding.instance.addObserver(this);
+
     await _socketService!.connect();
 
     _initialized = true;
@@ -42,6 +46,26 @@ class GlobalSocketManager {
 
   void send(Map<String, dynamic> data) {
     _socketService?.send(data);
+  }
+
+  // ================= APP LIFECYCLE =================
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (_userId == null) return;
+
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      _foreground = false;
+      _socketService?.disconnect();
+    }
+
+    if (state == AppLifecycleState.resumed) {
+      if (!_foreground) {
+        _foreground = true;
+        _socketService?.connect();
+      }
+    }
   }
 
   // ================= DISCONNECT =================
@@ -58,6 +82,7 @@ class GlobalSocketManager {
   // ================= DISPOSE =================
 
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _socketService?.dispose();
     _messageController.close();
   }
