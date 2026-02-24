@@ -45,7 +45,6 @@ class _ProfileDetailsScreenState
           });
         }
       }
-
     } catch (_) {}
 
     if (mounted) {
@@ -53,77 +52,30 @@ class _ProfileDetailsScreenState
     }
   }
 
-  String formatLastSeen(String dateString) {
-    final date = DateTime.parse(dateString);
-    final now = DateTime.now();
-
-    final sameDay =
-        date.year == now.year &&
-        date.month == now.month &&
-        date.day == now.day;
-
-    final yesterday =
-        now.subtract(const Duration(days: 1));
-
-    final isYesterday =
-        date.year == yesterday.year &&
-        date.month == yesterday.month &&
-        date.day == yesterday.day;
-
-    if (sameDay) {
-      return "Last seen today at ${_formatTime(date)}";
-    }
-
-    if (isYesterday) {
-      return "Last seen yesterday at ${_formatTime(date)}";
-    }
-
-    return "Last seen ${date.day}/${date.month}/${date.year} ${_formatTime(date)}";
-  }
-
-  String _formatTime(DateTime date) {
-    final hour =
-        date.hour > 12 ? date.hour - 12 : date.hour;
-    final minute =
-        date.minute.toString().padLeft(2, '0');
-    final period =
-        date.hour >= 12 ? "PM" : "AM";
-
-    return "$hour:$minute $period";
-  }
-
   @override
   Widget build(BuildContext context) {
 
     if (loading) {
       return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
+        body: Center(child: CircularProgressIndicator()),
       );
     }
 
     if (profile == null) {
-      return Scaffold(
-        appBar: AppBar(),
-        body: const Center(
-          child: Text("Profile not found"),
-        ),
+      return const Scaffold(
+        body: Center(child: Text("Profile not found")),
       );
     }
 
     final user = profile!["user"];
-    final bool online = user?["isOnline"] == true;
 
     return Scaffold(
-      backgroundColor: Colors.black,
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color(0xFF1a002b),
-              Color(0xFF000000),
-              Color(0xFF001f2f),
+              Color(0xFF0F1115),
+              Color(0xFF0B0C10),
             ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
@@ -136,150 +88,224 @@ class _ProfileDetailsScreenState
             child: Column(
               children: [
 
-                // 🔥 PROFILE IMAGE
+                // 🔙 BACK BUTTON
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: IconButton(
+                    onPressed: () => context.pop(),
+                    icon: const Icon(Icons.arrow_back),
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
+                // 🧑 PROFILE IMAGE
                 Stack(
                   alignment: Alignment.center,
                   children: [
+
                     Container(
-                      width: 130,
-                      height: 130,
-                      decoration: const BoxDecoration(
+                      width: 150,
+                      height: 150,
+                      decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: [
-                            Color(0xFF00F5A0),
-                            Color(0xFFFF00C8),
-                          ],
+                        border: Border.all(
+                          width: 3,
+                          color: const Color(0xFF2E8BFF),
                         ),
                       ),
                     ),
+
                     const CircleAvatar(
-                      radius: 60,
+                      radius: 70,
                       backgroundImage:
                           AssetImage("assets/profile_placeholder.png"),
                     ),
                   ],
                 ),
 
-                const SizedBox(height: 18),
+                const SizedBox(height: 20),
 
-                // 🔹 NAME
                 Text(
                   profile!["name"] ?? "",
                   style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
 
                 const SizedBox(height: 6),
 
-                if (online)
-                  const Text(
-                    "● Online",
-                    style: TextStyle(
-                      color: Colors.green,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-
-                if (!online && user?["lastSeen"] != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      formatLastSeen(user["lastSeen"]),
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: Colors.white70,
-                      ),
-                    ),
-                  ),
+                Text(
+                  "@${profile!["name"] ?? "username"}",
+                  style: const TextStyle(color: Colors.white54),
+                ),
 
                 const SizedBox(height: 25),
 
-                // 🔹 INFO CARD
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    borderRadius:
-                        BorderRadius.circular(20),
-                    gradient: const LinearGradient(
-                      colors: [
-                        Color(0xFF2a003f),
-                        Color(0xFF001f2f),
-                      ],
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                          "${profile!["gender"] ?? ""} • ${profile!["age"] ?? ""}"),
-                      const SizedBox(height: 6),
-                      Text(profile!["roleType"] ?? ""),
-                      const SizedBox(height: 6),
-                      Text(profile!["havePlace"] == true
-                          ? "Has Place"
-                          : "No Place"),
-                    ],
-                  ),
+                // 👥 FOLLOW STATS (STATIC 0 for now)
+                const Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _PillStat(title: "Followed", value: "0"),
+                    _PillStat(title: "Followers", value: "0"),
+                  ],
                 ),
 
                 const SizedBox(height: 30),
 
-                // 🔹 BUTTONS
-                Row(
-                  children: [
+                // ⭐ LEVEL CARD (STATIC)
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF16181D),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
 
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
+                      Row(
+                        children: [
+                          Icon(Icons.star, color: Colors.amber),
+                          SizedBox(width: 8),
+                          Text(
+                            "Level 1",
+                            style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16),
+                          ),
+                        ],
+                      ),
+
+                      SizedBox(height: 14),
+
+                      ClipRRect(
+                        borderRadius: BorderRadius.all(Radius.circular(20)),
+                        child: LinearProgressIndicator(
+                          value: 0,
+                          minHeight: 8,
                           backgroundColor: Colors.white12,
-                          padding:
-                              const EdgeInsets.all(14),
-                        ),
-                        onPressed: () {},
-                        child: const Text("Follow"),
-                      ),
-                    ),
-
-                    const SizedBox(width: 15),
-
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              Colors.cyanAccent,
-                          padding:
-                              const EdgeInsets.all(14),
-                        ),
-                        onPressed: () {
-                          final chatUserId =
-                              user?["id"]?.toString();
-
-                          if (chatUserId != null &&
-                              chatUserId.isNotEmpty) {
-                            context.go(
-                                "/chat/$chatUserId");
-                          }
-                        },
-                        child: const Text(
-                          "💬 Message",
-                          style: TextStyle(
-                              fontWeight:
-                                  FontWeight.bold),
+                          valueColor: AlwaysStoppedAnimation(
+                              Color(0xFF2E8BFF)),
                         ),
                       ),
-                    ),
-                  ],
+
+                      SizedBox(height: 8),
+
+                      Text(
+                        "0 / 100 XP",
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white54,
+                        ),
+                      )
+                    ],
+                  ),
                 ),
 
-                const SizedBox(height: 50),
+                const SizedBox(height: 35),
+
+                // ➕ FOLLOW BUTTON
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1C1F26),
+                      padding:
+                          const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                    ),
+                    onPressed: () {},
+                    child: const Text(
+                      "+ Follow",
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 15),
+
+                // 💬 MESSAGE BUTTON
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2E8BFF),
+                      padding:
+                          const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                    ),
+                    onPressed: () {
+                      final chatUserId =
+                          user?["id"]?.toString();
+
+                      if (chatUserId != null &&
+                          chatUserId.isNotEmpty) {
+                        context.go("/chat/$chatUserId");
+                      }
+                    },
+                    child: const Text(
+                      "Message",
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 80),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _PillStat extends StatelessWidget {
+  final String title;
+  final String value;
+
+  const _PillStat({
+    required this.title,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding:
+          const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(30),
+        color: const Color(0xFF1C1F26),
+      ),
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.white54,
+            ),
+          ),
+        ],
       ),
     );
   }
