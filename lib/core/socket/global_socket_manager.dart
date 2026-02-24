@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'socket_service.dart';
+import 'websocket_service.dart';
 
 class GlobalSocketManager {
   GlobalSocketManager._internal();
@@ -7,46 +7,58 @@ class GlobalSocketManager {
       GlobalSocketManager._internal();
   static GlobalSocketManager get instance => _instance;
 
+  WebSocketService? _socketService;
+
   String? _userId;
-  bool _connected = false;
-  bool _initializing = false;
+  bool _initialized = false;
 
-  final StreamController<dynamic> _messageController =
-      StreamController.broadcast();
+  final StreamController<Map<String, dynamic>>
+      _messageController = StreamController.broadcast();
 
-  Stream<dynamic> get messages => _messageController.stream;
+  Stream<Map<String, dynamic>> get messages =>
+      _messageController.stream;
 
   // ================= INIT =================
 
   Future<void> init(String userId) async {
-    if (_connected || _initializing) return;
+    if (_initialized && _userId == userId) return;
 
-    _initializing = true;
     _userId = userId;
 
-    SocketService.connect(userId);
+    _socketService?.dispose();
 
-    SocketService.onMessage((data) {
-      _messageController.add(data);
+    _socketService = WebSocketService(userId: userId);
+
+    _socketService!.messages.listen((event) {
+      _messageController.add(event);
     });
 
-    _connected = true;
-    _initializing = false;
+    await _socketService!.connect();
+
+    _initialized = true;
+  }
+
+  // ================= SEND =================
+
+  void send(Map<String, dynamic> data) {
+    _socketService?.send(data);
   }
 
   // ================= DISCONNECT =================
 
   void disconnect() {
-    if (!_connected) return;
-
-    SocketService.disconnect();
-    _connected = false;
+    _socketService?.disconnect();
+    _initialized = false;
     _userId = null;
   }
 
-  bool get isConnected => _connected;
+  bool get isConnected =>
+      _socketService?.isConnected ?? false;
+
+  // ================= DISPOSE =================
 
   void dispose() {
+    _socketService?.dispose();
     _messageController.close();
   }
 }
