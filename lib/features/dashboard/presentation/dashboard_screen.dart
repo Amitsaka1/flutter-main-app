@@ -129,8 +129,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     super.dispose();
   }
 
-  // ================= UI =================
-
   @override
   Widget build(BuildContext context) {
 
@@ -366,8 +364,9 @@ class _ProfileCard extends StatelessWidget {
   Widget build(BuildContext context) {
 
     final online = profile["user"]?["isOnline"] == true;
+
     final String? userId =
-        profile["user"]?["id"]?.toString();
+        profile["userId"]?.toString();   // ✅ CORRECT FIELD
 
     return GestureDetector(
       onTap: () {
