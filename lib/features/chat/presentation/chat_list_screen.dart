@@ -1,10 +1,8 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/network/api_client.dart';
-import '../../../core/network/websocket_service.dart';
 
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({super.key});
@@ -17,9 +15,6 @@ class _ChatListScreenState extends State<ChatListScreen> {
   List<dynamic> chats = [];
   bool loading = true;
   int totalUnread = 0;
-
-  WebSocketService? _socket;
-  StreamSubscription? _socketSub;
 
   @override
   void initState() {
@@ -36,7 +31,6 @@ class _ChatListScreenState extends State<ChatListScreen> {
     }
 
     await _fetchChats();
-    _initSocket(token);
   }
 
   Future<void> _fetchChats() async {
@@ -65,66 +59,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
     }
   }
 
-  void _initSocket(String token) async {
-    final payload = jsonDecode(
-        utf8.decode(base64Url.decode(
-            base64Url.normalize(token.split(".")[1]))));
-
-    final myId = payload["id"];
-
-    _socket = WebSocketService(userId: myId);
-    await _socket!.connect();
-
-    _socketSub = _socket!.messages.listen(_handleSocketMessage);
-  }
-
-  void _handleSocketMessage(dynamic message) {
-    final type = message["type"];
-
-    if (type == "NEW_MESSAGE") {
-      final msg = message["data"];
-
-      if (msg["receiverId"] == _socket!.userId) {
-        setState(() {
-          for (var chat in chats) {
-            if (chat["user"]["id"] == msg["senderId"]) {
-              chat["lastMessage"] =
-                  msg["type"] == "image" ? "📷 Image" : msg["content"];
-              chat["unreadCount"] =
-                  (chat["unreadCount"] ?? 0) + 1;
-            }
-          }
-          totalUnread++;
-        });
-      }
-    }
-
-    if (type == "MESSAGES_READ") {
-      final senderId = message["by"];
-
-      setState(() {
-        for (var chat in chats) {
-          if (chat["user"]["id"] == senderId) {
-            chat["unreadCount"] = 0;
-          }
-        }
-
-        totalUnread = chats.fold(
-            0, (sum, c) => sum + (c["unreadCount"] ?? 0) as int);
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    _socketSub?.cancel();
-    _socket?.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
-
     if (loading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -162,9 +98,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
                   child: Row(
                     mainAxisAlignment:
                         MainAxisAlignment.spaceBetween,
-                    children: [
+                    children: const [
                       Row(
-                        children: const [
+                        children: [
                           Icon(Icons.local_fire_department,
                               color: Colors.pinkAccent),
                           SizedBox(width: 8),
@@ -178,7 +114,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                         ],
                       ),
                       Row(
-                        children: const [
+                        children: [
                           Icon(Icons.search,
                               color: Colors.white70),
                           SizedBox(width: 20),
