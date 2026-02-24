@@ -20,6 +20,7 @@ class _ProfileDetailsScreenState
 
   Map<String, dynamic>? profile;
   bool loading = true;
+  bool actionLoading = false;
 
   @override
   void initState() {
@@ -29,26 +30,55 @@ class _ProfileDetailsScreenState
 
   Future<void> _fetchProfile() async {
     try {
-      if (widget.userId.isEmpty) {
-        setState(() => loading = false);
-        return;
-      }
-
       final response =
           await ApiClient.get("/profile/user/${widget.userId}");
 
       if (response["success"] == true &&
           response["data"] != null) {
-        if (mounted) {
-          setState(() {
-            profile = response["data"];
-          });
-        }
+        setState(() {
+          profile = response["data"];
+        });
       }
     } catch (_) {}
 
     if (mounted) {
       setState(() => loading = false);
+    }
+  }
+
+  Future<void> _toggleFollow() async {
+    if (profile == null) return;
+
+    final bool isFollowing = profile!["isFollowing"] ?? false;
+
+    setState(() => actionLoading = true);
+
+    try {
+      if (isFollowing) {
+        await ApiClient.post(
+            "/profile/unfollow/${widget.userId}", {});
+      } else {
+        await ApiClient.post(
+            "/profile/follow/${widget.userId}", {});
+      }
+
+      // 🔥 Optimistic UI Update
+      setState(() {
+        profile!["isFollowing"] = !isFollowing;
+
+        if (isFollowing) {
+          profile!["followers"] =
+              (profile!["followers"] ?? 1) - 1;
+        } else {
+          profile!["followers"] =
+              (profile!["followers"] ?? 0) + 1;
+        }
+      });
+
+    } catch (_) {}
+
+    if (mounted) {
+      setState(() => actionLoading = false);
     }
   }
 
@@ -69,6 +99,17 @@ class _ProfileDetailsScreenState
 
     final user = profile!["user"];
 
+    final name = profile!["name"] ?? "";
+    final username = profile!["username"] ?? name;
+    final avatar = profile!["avatarUrl"];
+    final followers = profile!["followers"] ?? 0;
+    final following = profile!["following"] ?? 0;
+    final xp = user?["xp"] ?? 0;
+    final level = user?["level"] ?? 1;
+    final isFollowing = profile!["isFollowing"] ?? false;
+
+    final progress = (xp % 100) / 100;
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -88,7 +129,6 @@ class _ProfileDetailsScreenState
             child: Column(
               children: [
 
-                // 🔙 BACK BUTTON
                 Align(
                   alignment: Alignment.centerLeft,
                   child: IconButton(
@@ -99,7 +139,6 @@ class _ProfileDetailsScreenState
 
                 const SizedBox(height: 10),
 
-                // 🧑 PROFILE IMAGE
                 Stack(
                   alignment: Alignment.center,
                   children: [
@@ -116,10 +155,13 @@ class _ProfileDetailsScreenState
                       ),
                     ),
 
-                    const CircleAvatar(
+                    CircleAvatar(
                       radius: 70,
-                      backgroundImage:
-                          AssetImage("assets/profile_placeholder.png"),
+                      backgroundImage: avatar != null
+                          ? NetworkImage(avatar)
+                          : const AssetImage(
+                              "assets/profile_placeholder.png")
+                              as ImageProvider,
                     ),
                   ],
                 ),
@@ -127,7 +169,7 @@ class _ProfileDetailsScreenState
                 const SizedBox(height: 20),
 
                 Text(
-                  profile!["name"] ?? "",
+                  name,
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w600,
@@ -137,65 +179,75 @@ class _ProfileDetailsScreenState
                 const SizedBox(height: 6),
 
                 Text(
-                  "@${profile!["name"] ?? "username"}",
+                  "@$username",
                   style: const TextStyle(color: Colors.white54),
                 ),
 
                 const SizedBox(height: 25),
 
-                // 👥 FOLLOW STATS (STATIC 0 for now)
-                const Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                Row(
+                  mainAxisAlignment:
+                      MainAxisAlignment.spaceEvenly,
                   children: [
-                    _PillStat(title: "Followed", value: "0"),
-                    _PillStat(title: "Followers", value: "0"),
+                    _PillStat(
+                        title: "Followed",
+                        value: following.toString()),
+                    _PillStat(
+                        title: "Followers",
+                        value: followers.toString()),
                   ],
                 ),
 
                 const SizedBox(height: 30),
 
-                // ⭐ LEVEL CARD (STATIC)
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     color: const Color(0xFF16181D),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius:
+                        BorderRadius.circular(20),
                   ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
+                    children: [
 
                       Row(
                         children: [
-                          Icon(Icons.star, color: Colors.amber),
-                          SizedBox(width: 8),
+                          const Icon(Icons.star,
+                              color: Colors.amber),
+                          const SizedBox(width: 8),
                           Text(
-                            "Level 1",
-                            style: TextStyle(
-                                fontWeight: FontWeight.w600,
+                            "Level $level",
+                            style: const TextStyle(
+                                fontWeight:
+                                    FontWeight.w600,
                                 fontSize: 16),
                           ),
                         ],
                       ),
 
-                      SizedBox(height: 14),
+                      const SizedBox(height: 14),
 
                       ClipRRect(
-                        borderRadius: BorderRadius.all(Radius.circular(20)),
+                        borderRadius:
+                            BorderRadius.circular(20),
                         child: LinearProgressIndicator(
-                          value: 0,
+                          value: progress,
                           minHeight: 8,
-                          backgroundColor: Colors.white12,
-                          valueColor: AlwaysStoppedAnimation(
-                              Color(0xFF2E8BFF)),
+                          backgroundColor:
+                              Colors.white12,
+                          valueColor:
+                              const AlwaysStoppedAnimation(
+                                  Color(0xFF2E8BFF)),
                         ),
                       ),
 
-                      SizedBox(height: 8),
+                      const SizedBox(height: 8),
 
                       Text(
-                        "0 / 100 XP",
-                        style: TextStyle(
+                        "$xp XP",
+                        style: const TextStyle(
                           fontSize: 12,
                           color: Colors.white54,
                         ),
@@ -206,40 +258,60 @@ class _ProfileDetailsScreenState
 
                 const SizedBox(height: 35),
 
-                // ➕ FOLLOW BUTTON
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1C1F26),
+                      backgroundColor:
+                          isFollowing
+                              ? const Color(0xFF444B57)
+                              : const Color(0xFF1C1F26),
                       padding:
-                          const EdgeInsets.symmetric(vertical: 16),
+                          const EdgeInsets.symmetric(
+                              vertical: 16),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
+                        borderRadius:
+                            BorderRadius.circular(30),
                       ),
                     ),
-                    onPressed: () {},
-                    child: const Text(
-                      "+ Follow",
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    onPressed:
+                        actionLoading ? null : _toggleFollow,
+                    child: actionLoading
+                        ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child:
+                                CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Text(
+                            isFollowing
+                                ? "Following"
+                                : "+ Follow",
+                            style: const TextStyle(
+                              fontWeight:
+                                  FontWeight.w600,
+                            ),
+                          ),
                   ),
                 ),
 
                 const SizedBox(height: 15),
 
-                // 💬 MESSAGE BUTTON
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2E8BFF),
+                      backgroundColor:
+                          const Color(0xFF2E8BFF),
                       padding:
-                          const EdgeInsets.symmetric(vertical: 16),
+                          const EdgeInsets.symmetric(
+                              vertical: 16),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
+                        borderRadius:
+                            BorderRadius.circular(30),
                       ),
                     ),
                     onPressed: () {
@@ -254,7 +326,8 @@ class _ProfileDetailsScreenState
                     child: const Text(
                       "Message",
                       style: TextStyle(
-                        fontWeight: FontWeight.w600,
+                        fontWeight:
+                            FontWeight.w600,
                       ),
                     ),
                   ),
@@ -285,7 +358,8 @@ class _PillStat extends StatelessWidget {
       padding:
           const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(30),
+        borderRadius:
+            BorderRadius.circular(30),
         color: const Color(0xFF1C1F26),
       ),
       child: Column(
