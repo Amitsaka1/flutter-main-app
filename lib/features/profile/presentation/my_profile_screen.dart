@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/network/api_client.dart';
+import 'edit_profile_screen.dart';
 
 class MyProfileScreen extends StatefulWidget {
   const MyProfileScreen({super.key});
@@ -265,7 +266,18 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                         borderRadius: BorderRadius.circular(30),
                       ),
                     ),
-                    onPressed: () {},
+                    onPressed: () async {
+                     final result = await Navigator.push(
+                       context,
+                       MaterialPageRoute(
+                         builder: (_) => EditProfileScreen(profile: profile!),
+                       ),
+                     );
+
+                     if (result == true) {
+                       _fetchProfile(); // auto refresh after update
+                     }
+                   },
                     icon: const Icon(Icons.edit, color: Colors.white),
                     label: const Text(
                       "Edit Profile",
