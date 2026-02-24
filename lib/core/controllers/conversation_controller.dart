@@ -1,6 +1,7 @@
 import 'dart:async';
 import '../network/api_client.dart';
 import '../socket/socket_service.dart';
+import '../socket/global_socket_manager.dart';
 
 class ConversationController {
   ConversationController._internal();
@@ -14,12 +15,14 @@ class ConversationController {
   String? _myId;
 
   void init(String myId) {
-    _myId = myId;
-    SocketService.connect(myId);
+  _myId = myId;
 
-    SocketService.onMessage(_handleSocket);
+  GlobalSocketManager.instance.init(myId);
+
+  GlobalSocketManager.instance.messages
+      .listen(_handleSocket);
   }
-
+  
   Stream<List<dynamic>> stream(String userId) {
     _streams[userId] ??= StreamController.broadcast();
     return _streams[userId]!.stream;
