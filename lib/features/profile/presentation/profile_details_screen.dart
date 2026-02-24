@@ -28,7 +28,6 @@ class _ProfileDetailsScreenState
   }
 
   Future<void> _fetchProfile() async {
-
     try {
       if (widget.userId.isEmpty) {
         setState(() => loading = false);
@@ -55,7 +54,6 @@ class _ProfileDetailsScreenState
   }
 
   String formatLastSeen(String dateString) {
-
     final date = DateTime.parse(dateString);
     final now = DateTime.now();
 
@@ -115,20 +113,57 @@ class _ProfileDetailsScreenState
     }
 
     final user = profile!["user"];
+    final bool online = user?["isOnline"] == true;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(profile!["name"] ?? ""),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
-          children: [
-
-            Row(
+      backgroundColor: Colors.black,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFF1a002b),
+              Color(0xFF000000),
+              Color(0xFF001f2f),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+            child: Column(
               children: [
+
+                // 🔥 PROFILE IMAGE
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Container(
+                      width: 130,
+                      height: 130,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [
+                            Color(0xFF00F5A0),
+                            Color(0xFFFF00C8),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const CircleAvatar(
+                      radius: 60,
+                      backgroundImage:
+                          AssetImage("assets/profile_placeholder.png"),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 18),
+
+                // 🔹 NAME
                 Text(
                   profile!["name"] ?? "",
                   style: const TextStyle(
@@ -136,8 +171,10 @@ class _ProfileDetailsScreenState
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(width: 10),
-                if (user?["isOnline"] == true)
+
+                const SizedBox(height: 6),
+
+                if (online)
                   const Text(
                     "● Online",
                     style: TextStyle(
@@ -145,79 +182,103 @@ class _ProfileDetailsScreenState
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-              ],
-            ),
 
-            if (user?["isOnline"] != true &&
-                user?["lastSeen"] != null)
-              Padding(
-                padding:
-                    const EdgeInsets.only(top: 4),
-                child: Text(
-                  formatLastSeen(user["lastSeen"]),
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey,
+                if (!online && user?["lastSeen"] != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      formatLastSeen(user["lastSeen"]),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Colors.white70,
+                      ),
+                    ),
+                  ),
+
+                const SizedBox(height: 25),
+
+                // 🔹 INFO CARD
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    borderRadius:
+                        BorderRadius.circular(20),
+                    gradient: const LinearGradient(
+                      colors: [
+                        Color(0xFF2a003f),
+                        Color(0xFF001f2f),
+                      ],
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                          "${profile!["gender"] ?? ""} • ${profile!["age"] ?? ""}"),
+                      const SizedBox(height: 6),
+                      Text(profile!["roleType"] ?? ""),
+                      const SizedBox(height: 6),
+                      Text(profile!["havePlace"] == true
+                          ? "Has Place"
+                          : "No Place"),
+                    ],
                   ),
                 ),
-              ),
 
-            const SizedBox(height: 20),
+                const SizedBox(height: 30),
 
-            Container(
-              padding: const EdgeInsets.all(15),
-              decoration: BoxDecoration(
-                color: const Color(0xFF121212),
-                borderRadius:
-                    BorderRadius.circular(15),
-              ),
-              child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
-                children: [
-                  Text(
-                      "${profile!["gender"] ?? ""} • ${profile!["age"] ?? ""}"),
-                  const SizedBox(height: 6),
-                  Text(profile!["roleType"] ?? ""),
-                  const SizedBox(height: 6),
-                  Text(profile!["havePlace"] == true
-                      ? "Has Place"
-                      : "No Place"),
-                ],
-              ),
+                // 🔹 BUTTONS
+                Row(
+                  children: [
+
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white12,
+                          padding:
+                              const EdgeInsets.all(14),
+                        ),
+                        onPressed: () {},
+                        child: const Text("Follow"),
+                      ),
+                    ),
+
+                    const SizedBox(width: 15),
+
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              Colors.cyanAccent,
+                          padding:
+                              const EdgeInsets.all(14),
+                        ),
+                        onPressed: () {
+                          final chatUserId =
+                              user?["id"]?.toString();
+
+                          if (chatUserId != null &&
+                              chatUserId.isNotEmpty) {
+                            context.go(
+                                "/chat/$chatUserId");
+                          }
+                        },
+                        child: const Text(
+                          "💬 Message",
+                          style: TextStyle(
+                              fontWeight:
+                                  FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 50),
+              ],
             ),
-
-            const SizedBox(height: 25),
-
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor:
-                      Colors.cyanAccent,
-                  padding:
-                      const EdgeInsets.all(12),
-                ),
-                onPressed: () {
-                  final chatUserId =
-                      profile!["user"]?["id"]
-                          ?.toString();
-
-                  if (chatUserId != null &&
-                      chatUserId.isNotEmpty) {
-                    context.go(
-                        "/chat/$chatUserId");
-                  }
-                },
-                child: const Text(
-                  "💬 Message",
-                  style: TextStyle(
-                      fontWeight:
-                          FontWeight.bold),
-                ),
-              ),
-            )
-          ],
+          ),
         ),
       ),
     );
