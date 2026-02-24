@@ -1,10 +1,68 @@
 import 'package:flutter/material.dart';
+import '../../../core/network/api_client.dart';
 
-class MyProfileScreen extends StatelessWidget {
+class MyProfileScreen extends StatefulWidget {
   const MyProfileScreen({super.key});
 
   @override
+  State<MyProfileScreen> createState() => _MyProfileScreenState();
+}
+
+class _MyProfileScreenState extends State<MyProfileScreen> {
+
+  Map<String, dynamic>? profile;
+  bool loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProfile();
+  }
+
+  Future<void> _fetchProfile() async {
+    try {
+      final response = await ApiClient.get("/profile/me");
+
+      if (response["success"] == true) {
+        setState(() {
+          profile = response["data"];
+        });
+      }
+    } catch (_) {}
+
+    if (mounted) {
+      setState(() => loading = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+
+    if (loading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (profile == null) {
+      return const Scaffold(
+        body: Center(child: Text("Profile not found")),
+      );
+    }
+
+    final user = profile!["user"];
+
+    final name = profile!["name"] ?? "No Name";
+    final username = profile!["username"] ?? "username";
+    final avatar = profile!["avatarUrl"];
+    final followers = profile!["followers"] ?? 0;
+    final following = profile!["following"] ?? 0;
+    final xp = user?["xp"] ?? 0;
+    final level = user?["level"] ?? 1;
+    final wallet = user?["wallet"] ?? 0;
+
+    final progress = (xp % 100) / 100;
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -46,13 +104,14 @@ class MyProfileScreen extends StatelessWidget {
                           ],
                         ),
                       ),
-                      child: const Row(
+                      child: Row(
                         children: [
-                          Icon(Icons.add, size: 18, color: Colors.white),
-                          SizedBox(width: 6),
+                          const Icon(Icons.account_balance_wallet,
+                              size: 18, color: Colors.white),
+                          const SizedBox(width: 6),
                           Text(
-                            "0",
-                            style: TextStyle(
+                            wallet.toString(),
+                            style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
                             ),
@@ -82,10 +141,13 @@ class MyProfileScreen extends StatelessWidget {
                       ),
                     ),
 
-                    const CircleAvatar(
+                    CircleAvatar(
                       radius: 70,
-                      backgroundImage:
-                          AssetImage("assets/profile_placeholder.png"),
+                      backgroundImage: avatar != null
+                          ? NetworkImage(avatar)
+                          : const AssetImage(
+                              "assets/profile_placeholder.png")
+                              as ImageProvider,
                     ),
 
                     Positioned(
@@ -112,9 +174,9 @@ class MyProfileScreen extends StatelessWidget {
 
                 const SizedBox(height: 20),
 
-                const Text(
-                  "Your Name",
-                  style: TextStyle(
+                Text(
+                  name,
+                  style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w600,
                   ),
@@ -122,9 +184,9 @@ class MyProfileScreen extends StatelessWidget {
 
                 const SizedBox(height: 6),
 
-                const Text(
-                  "@username",
-                  style: TextStyle(color: Colors.white54),
+                Text(
+                  "@$username",
+                  style: const TextStyle(color: Colors.white54),
                 ),
 
                 const SizedBox(height: 30),
@@ -132,9 +194,9 @@ class MyProfileScreen extends StatelessWidget {
                 // 👥 FOLLOW STATS
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: const [
-                    _PillStat(title: "Followed", value: "0"),
-                    _PillStat(title: "Followers", value: "0"),
+                  children: [
+                    _PillStat(title: "Followed", value: following.toString()),
+                    _PillStat(title: "Followers", value: followers.toString()),
                   ],
                 ),
 
@@ -151,13 +213,13 @@ class MyProfileScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
 
-                      const Row(
+                      Row(
                         children: [
-                          Icon(Icons.star, color: Colors.amber),
-                          SizedBox(width: 8),
+                          const Icon(Icons.star, color: Colors.amber),
+                          const SizedBox(width: 8),
                           Text(
-                            "Level 1",
-                            style: TextStyle(
+                            "Level $level",
+                            style: const TextStyle(
                                 fontWeight: FontWeight.w600,
                                 fontSize: 16),
                           ),
@@ -169,7 +231,7 @@ class MyProfileScreen extends StatelessWidget {
                       ClipRRect(
                         borderRadius: BorderRadius.circular(20),
                         child: LinearProgressIndicator(
-                          value: 0,
+                          value: progress,
                           minHeight: 8,
                           backgroundColor: Colors.white12,
                           valueColor: const AlwaysStoppedAnimation(
@@ -179,9 +241,9 @@ class MyProfileScreen extends StatelessWidget {
 
                       const SizedBox(height: 8),
 
-                      const Text(
-                        "0 / 100 XP",
-                        style: TextStyle(
+                      Text(
+                        "$xp XP",
+                        style: const TextStyle(
                           fontSize: 12,
                           color: Colors.white54,
                         ),
