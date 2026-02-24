@@ -96,7 +96,25 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (res["success"] == true) {
 
-        await ApiClient.saveToken(res["token"]);
+        final token = res["token"];
+
+        await ApiClient.saveToken(token);
+
+        // 🔥 Extract userId from JWT
+        final payload = jsonDecode(
+          utf8.decode(
+            base64Url.decode(
+              base64Url.normalize(token.split(".")[1])
+            )
+          )
+        );
+
+        final userId = payload["id"];
+
+        // 🔥 Connect WebSocket
+        await SocketManager
+            .getInstance(userId)
+            .connect();
 
         if (res["profileRequired"] == true) {
           if (mounted)
@@ -108,19 +126,17 @@ class _LoginScreenState extends State<LoginScreen> {
 
       } else {
         setState(() => message =
-            res["message"] ??
-                "Invalid OTP");
+            res["message"] ?? "Invalid OTP");
       }
 
-    } catch (_) {
-      setState(() =>
-          message = "Verification failed");
-    }
+      } catch (_) {
+        setState(() =>
+            message = "Verification failed");
+      }
 
-    if (mounted) {
-      setState(() => loading = false);
-    }
-  }
+      if (mounted) {
+        setState(() => loading = false);
+      }
 
   // ================= UI =================
 
