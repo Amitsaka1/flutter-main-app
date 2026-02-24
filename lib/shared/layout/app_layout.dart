@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 
 class AppLayout extends StatefulWidget {
   final Widget child;
-  final int unreadCount;
+  final int unreadCount; // chat unread
 
   const AppLayout({
     super.key,
@@ -17,6 +17,20 @@ class AppLayout extends StatefulWidget {
 
 class _AppLayoutState extends State<AppLayout> {
 
+  int _notificationCount = 0; // 🔥 follow notification badge
+
+  void incrementNotification() {
+    setState(() {
+      _notificationCount++;
+    });
+  }
+
+  void clearNotifications() {
+    setState(() {
+      _notificationCount = 0;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
 
@@ -28,10 +42,83 @@ class _AppLayoutState extends State<AppLayout> {
       body: Column(
         children: [
 
+          // 🔥 TOP BAR WITH BELL
+          SafeArea(
+            bottom: false,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 10),
+              color: const Color(0xFF111111),
+              child: Row(
+                mainAxisAlignment:
+                    MainAxisAlignment.spaceBetween,
+                children: [
+
+                  const Text(
+                    "Naxorah",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  GestureDetector(
+                    onTap: clearNotifications,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+
+                        const Icon(
+                          Icons.notifications_none,
+                          size: 26,
+                        ),
+
+                        if (_notificationCount > 0)
+                          Positioned(
+                            right: -6,
+                            top: -6,
+                            child: Container(
+                              padding:
+                                  const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                              ),
+                              constraints:
+                                  const BoxConstraints(
+                                minWidth: 16,
+                                minHeight: 16,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  _notificationCount > 99
+                                      ? "99+"
+                                      : "$_notificationCount",
+                                  style:
+                                      const TextStyle(
+                                    fontSize: 10,
+                                    fontWeight:
+                                        FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  )
+                ],
+              ),
+            ),
+          ),
+
+          // ===== CONTENT =====
           Expanded(
             child: widget.child,
           ),
 
+          // ===== BOTTOM NAV =====
           SafeArea(
             top: false,
             child: _buildBottomNav(context, currentRoute),
@@ -60,7 +147,6 @@ class _AppLayoutState extends State<AppLayout> {
             CrossAxisAlignment.center,
         children: [
 
-          // ===== HOME =====
           _NavItem(
             label: "Home",
             icon: Icons.home_rounded,
@@ -68,14 +154,12 @@ class _AppLayoutState extends State<AppLayout> {
             onTap: () => context.go("/dashboard"),
           ),
 
-          // ===== CHAT =====
           _ChatNavItem(
             unreadCount: widget.unreadCount,
             active: route.startsWith("/chat"),
             onTap: () => context.go("/chat"),
           ),
 
-          // ===== ROOMS =====
           _NavItem(
             label: "Rooms",
             icon: Icons.meeting_room_rounded,
@@ -83,7 +167,6 @@ class _AppLayoutState extends State<AppLayout> {
             onTap: () {},
           ),
 
-          // ===== PREMIUM =====
           _NavItem(
             label: "Premium",
             icon: Icons.workspace_premium_rounded,
@@ -93,7 +176,6 @@ class _AppLayoutState extends State<AppLayout> {
             onTap: () => context.go("/premium"),
           ),
 
-          // ===== PROFILE (FIXED) =====
           _NavItem(
             label: "Profile",
             icon: Icons.person_rounded,
