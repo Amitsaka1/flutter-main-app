@@ -3,7 +3,6 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/network/api_client.dart';
-import '../../../core/cache/chat_cache.dart';
 
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({super.key});
@@ -12,10 +11,15 @@ class ChatListScreen extends StatefulWidget {
   State<ChatListScreen> createState() => _ChatListScreenState();
 }
 
-class _ChatListScreenState extends State<ChatListScreen> {
+class _ChatListScreenState extends State<ChatListScreen>
+    with AutomaticKeepAliveClientMixin {
+
   List<dynamic> chats = [];
   bool loading = true;
   int totalUnread = 0;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -31,26 +35,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
       return;
     }
 
-    // 🔥 Use cache instantly
-    if (ChatCache.hasCache && ChatCache.isFresh) {
-      final cached = ChatCache.chats!;
-
-      int unread = 0;
-      for (var chat in cached) {
-        unread += (chat["unreadCount"] ?? 0) as int;
-      }
-
-      setState(() {
-        chats = cached;
-        totalUnread = unread;
-        loading = false;
-      });
-
-      // background refresh
-      _fetchChats();
-    } else {
-      await _fetchChats();
-    }
+    await _fetchChats();
   }
 
   Future<void> _fetchChats() async {
@@ -72,9 +57,6 @@ class _ChatListScreenState extends State<ChatListScreen> {
           totalUnread = unread;
           loading = false;
         });
-
-        // 🔥 Save to memory cache
-        ChatCache.save(data);
       }
     } catch (e) {
       debugPrint("Chat fetch error: $e");
@@ -84,6 +66,12 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // 🔥 required for KeepAlive
+
+    if (loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -150,34 +138,20 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
           // ================= CHAT LIST =================
           Expanded(
-            child: loading
-                ? const Center(
-                    child: CircularProgressIndicator(),
-                  )
-                : chats.isEmpty
-                    ? const Center(
-                        child: Text(
-                          "No chats yet",
-                          style: TextStyle(
-                            color: Colors.white60,
-                            fontSize: 14,
-                          ),
-                        ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 10),
-                        itemCount: chats.length,
-                        itemBuilder: (context, index) {
-                          final chat = chats[index];
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 20, vertical: 10),
+              itemCount: chats.length,
+              itemBuilder: (context, index) {
+                final chat = chats[index];
 
-                          return _ChatCard(
-                            chat: chat,
-                            onTap: () =>
-                                context.go("/chat/${chat["user"]["id"]}"),
-                          );
-                        },
-                      ),
+                return _ChatCard(
+                  chat: chat,
+                  onTap: () =>
+                      context.go("/chat/${chat["user"]["id"]}"),
+                );
+              },
+            ),
           ),
         ],
       ),
