@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/controllers/chat_controller.dart';
+import '../../../core/controllers/conversation_controller.dart'; // 🔥 ADDED
 
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({super.key});
@@ -40,7 +41,6 @@ class _ChatListScreenState extends State<ChatListScreen>
       return;
     }
 
-    // 🔥 Listen to controller stream
     _subscription = _controller.chatStream.listen((data) {
       int unread = 0;
       for (var chat in data) {
@@ -56,7 +56,6 @@ class _ChatListScreenState extends State<ChatListScreen>
       });
     });
 
-    // 🔥 Trigger load (cache + fresh logic inside controller)
     await _controller.loadChats();
   }
 
@@ -159,138 +158,23 @@ class _ChatListScreenState extends State<ChatListScreen>
 
                       return _ChatCard(
                         chat: chat,
-                        onTap: () =>
-                            context.go("/chat/${chat["user"]["id"]}"),
+                        onTap: () async { // 🔥 UPDATED
+                          final userId = chat["user"]["id"];
+
+                          // 🔥 Preload conversation before navigation
+                          await ConversationController
+                              .instance
+                              .loadMessages(userId);
+
+                          if (mounted) {
+                            context.go("/chat/$userId");
+                          }
+                        },
                       );
                     },
                   ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// =============================
-// MODERN CHAT CARD
-// =============================
-
-class _ChatCard extends StatelessWidget {
-  final dynamic chat;
-  final VoidCallback onTap;
-
-  const _ChatCard({
-    required this.chat,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-
-    final unread = chat["unreadCount"] ?? 0;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 18),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(25),
-          gradient: const LinearGradient(
-            colors: [
-              Color(0xFF1A1A1A),
-              Color(0xFF111111),
-            ],
-          ),
-          boxShadow: const [
-            BoxShadow(
-              blurRadius: 25,
-              color: Colors.black54,
-              offset: Offset(0, 10),
-            )
-          ],
-        ),
-        child: Row(
-          children: [
-
-            Container(
-              width: 55,
-              height: 55,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [
-                    Color(0xFF00F5A0),
-                    Color(0xFFFF00C8),
-                  ],
-                ),
-              ),
-              child: Center(
-                child: Text(
-                  chat["user"]["phone"]
-                      .toString()
-                      .substring(
-                        chat["user"]["phone"].length - 2),
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(width: 15),
-
-            Expanded(
-              child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    chat["user"]["phone"],
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    chat["lastMessage"] ?? "",
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Colors.white60,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            if (unread > 0)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [
-                      Color(0xFF00F5A0),
-                      Color(0xFF00C9A7),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  "$unread",
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-              ),
-          ],
-        ),
       ),
     );
   }
