@@ -23,14 +23,14 @@ class _MyAppState extends State<MyApp> {
     initialLocation: "/login",
     routes: [
 
-      // ===== LOGIN (No Bottom Nav) =====
+      // ===== LOGIN =====
       GoRoute(
         path: "/login",
         builder: (context, state) =>
             const LoginScreen(),
       ),
 
-      // ===== CREATE PROFILE (No Bottom Nav) =====
+      // ===== CREATE PROFILE =====
       GoRoute(
         path: "/create-profile",
         builder: (context, state) =>
@@ -66,15 +66,13 @@ class _MyAppState extends State<MyApp> {
             path: "/profile/:id",
             builder: (context, state) {
               final id = state.pathParameters["id"]!;
-              return AppLayout(
-                child: ProfileDetailsScreen(userId: id),
-                );
-              },
-            ),
-          ],
-        ),
+              return ProfileDetailsScreen(userId: id);
+            },
+          ),
+        ],
+      ),
 
-      // ===== CHAT CONVERSATION (Full Screen, No Bottom Nav) =====
+      // ===== CHAT CONVERSATION (No Bottom Nav) =====
       GoRoute(
         path: "/chat/:id",
         builder: (context, state) {
