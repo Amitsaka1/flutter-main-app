@@ -364,12 +364,17 @@ class _ProfileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final online =
-        profile["user"]?["isOnline"] == true;
+
+    final online = profile["user"]?["isOnline"] == true;
+    final String? userId =
+        profile["user"]?["id"]?.toString();
 
     return GestureDetector(
-      onTap: () =>
-          context.go("/profile/${profile["userId"]}"),
+      onTap: () {
+        if (userId != null && userId.isNotEmpty) {
+          context.go("/profile/$userId");
+        }
+      },
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
@@ -390,13 +395,13 @@ class _ProfileCard extends StatelessWidget {
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(profile["name"],
+                Text(profile["name"] ?? "",
                     style: const TextStyle(
                         fontWeight: FontWeight.bold)),
                 const SizedBox(height: 5),
-                Text("${profile["gender"]} • ${profile["age"]}"),
-                Text(profile["roleType"]),
-                Text(profile["havePlace"]
+                Text("${profile["gender"] ?? ""} • ${profile["age"] ?? ""}"),
+                Text(profile["roleType"] ?? ""),
+                Text(profile["havePlace"] == true
                     ? "Has Place"
                     : "No Place"),
               ],
