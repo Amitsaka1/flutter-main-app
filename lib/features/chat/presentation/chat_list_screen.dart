@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/controllers/chat_controller.dart';
 
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({super.key});
@@ -13,6 +14,10 @@ class ChatListScreen extends StatefulWidget {
 
 class _ChatListScreenState extends State<ChatListScreen>
     with AutomaticKeepAliveClientMixin {
+
+  final ChatController _controller = ChatController.instance;
+
+  StreamSubscription? _subscription;
 
   List<dynamic> chats = [];
   bool loading = true;
@@ -35,38 +40,35 @@ class _ChatListScreenState extends State<ChatListScreen>
       return;
     }
 
-    await _fetchChats();
+    // 🔥 Listen to controller stream
+    _subscription = _controller.chatStream.listen((data) {
+      int unread = 0;
+      for (var chat in data) {
+        unread += (chat["unreadCount"] ?? 0) as int;
+      }
+
+      if (!mounted) return;
+
+      setState(() {
+        chats = data;
+        totalUnread = unread;
+        loading = false;
+      });
+    });
+
+    // 🔥 Trigger load (cache + fresh logic inside controller)
+    await _controller.loadChats();
   }
 
-  Future<void> _fetchChats() async {
-    try {
-      final response = await ApiClient.get("/chat/recent");
-
-      if (response["success"] == true) {
-        final data = response["data"] as List;
-
-        int unread = 0;
-        for (var chat in data) {
-          unread += (chat["unreadCount"] ?? 0) as int;
-        }
-
-        if (!mounted) return;
-
-        setState(() {
-          chats = data;
-          totalUnread = unread;
-          loading = false;
-        });
-      }
-    } catch (e) {
-      debugPrint("Chat fetch error: $e");
-      if (mounted) setState(() => loading = false);
-    }
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // 🔥 required for KeepAlive
+    super.build(context);
 
     if (loading) {
       return const Center(child: CircularProgressIndicator());
@@ -138,20 +140,30 @@ class _ChatListScreenState extends State<ChatListScreen>
 
           // ================= CHAT LIST =================
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 20, vertical: 10),
-              itemCount: chats.length,
-              itemBuilder: (context, index) {
-                final chat = chats[index];
+            child: chats.isEmpty
+                ? const Center(
+                    child: Text(
+                      "No chats yet",
+                      style: TextStyle(
+                        color: Colors.white60,
+                        fontSize: 14,
+                      ),
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 10),
+                    itemCount: chats.length,
+                    itemBuilder: (context, index) {
+                      final chat = chats[index];
 
-                return _ChatCard(
-                  chat: chat,
-                  onTap: () =>
-                      context.go("/chat/${chat["user"]["id"]}"),
-                );
-              },
-            ),
+                      return _ChatCard(
+                        chat: chat,
+                        onTap: () =>
+                            context.go("/chat/${chat["user"]["id"]}"),
+                      );
+                    },
+                  ),
           ),
         ],
       ),
