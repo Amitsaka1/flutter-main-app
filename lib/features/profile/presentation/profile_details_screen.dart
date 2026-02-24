@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/network/api_client.dart';
@@ -31,10 +30,16 @@ class _ProfileDetailsScreenState
   Future<void> _fetchProfile() async {
 
     try {
-      final response = await ApiClient.get(
-          "/profile/user/${widget.userId}");
+      if (widget.userId.isEmpty) {
+        setState(() => loading = false);
+        return;
+      }
 
-      if (response["success"] == true) {
+      final response =
+          await ApiClient.get("/profile/user/${widget.userId}");
+
+      if (response["success"] == true &&
+          response["data"] != null) {
         if (mounted) {
           setState(() {
             profile = response["data"];
@@ -68,29 +73,21 @@ class _ProfileDetailsScreenState
         date.day == yesterday.day;
 
     if (sameDay) {
-      return "Last seen today at "
-          "${_formatTime(date)}";
+      return "Last seen today at ${_formatTime(date)}";
     }
 
     if (isYesterday) {
-      return "Last seen yesterday at "
-          "${_formatTime(date)}";
+      return "Last seen yesterday at ${_formatTime(date)}";
     }
 
-    return "Last seen "
-        "${date.day}/${date.month}/${date.year} "
-        "${_formatTime(date)}";
+    return "Last seen ${date.day}/${date.month}/${date.year} ${_formatTime(date)}";
   }
 
   String _formatTime(DateTime date) {
     final hour =
-        date.hour > 12
-            ? date.hour - 12
-            : date.hour;
+        date.hour > 12 ? date.hour - 12 : date.hour;
     final minute =
-        date.minute
-            .toString()
-            .padLeft(2, '0');
+        date.minute.toString().padLeft(2, '0');
     final period =
         date.hour >= 12 ? "PM" : "AM";
 
@@ -103,15 +100,17 @@ class _ProfileDetailsScreenState
     if (loading) {
       return const Scaffold(
         body: Center(
-            child: Text("Loading...")),
+          child: CircularProgressIndicator(),
+        ),
       );
     }
 
     if (profile == null) {
-      return const Scaffold(
-        body: Center(
-            child:
-                Text("Profile not found")),
+      return Scaffold(
+        appBar: AppBar(),
+        body: const Center(
+          child: Text("Profile not found"),
+        ),
       );
     }
 
@@ -119,11 +118,10 @@ class _ProfileDetailsScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(profile!["name"]),
+        title: Text(profile!["name"] ?? ""),
       ),
       body: Padding(
-        padding:
-            const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment:
               CrossAxisAlignment.start,
@@ -132,45 +130,34 @@ class _ProfileDetailsScreenState
             Row(
               children: [
                 Text(
-                  profile!["name"],
-                  style:
-                      const TextStyle(
+                  profile!["name"] ?? "",
+                  style: const TextStyle(
                     fontSize: 22,
-                    fontWeight:
-                        FontWeight.bold,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(width: 10),
-                if (user?["isOnline"] ==
-                    true)
+                if (user?["isOnline"] == true)
                   const Text(
                     "● Online",
                     style: TextStyle(
-                      color:
-                          Colors.green,
-                      fontWeight:
-                          FontWeight.bold,
+                      color: Colors.green,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
               ],
             ),
 
-            if (user?["isOnline"] !=
-                    true &&
-                user?["lastSeen"] !=
-                    null)
+            if (user?["isOnline"] != true &&
+                user?["lastSeen"] != null)
               Padding(
                 padding:
-                    const EdgeInsets
-                        .only(top: 4),
+                    const EdgeInsets.only(top: 4),
                 child: Text(
-                  formatLastSeen(
-                      user["lastSeen"]),
-                  style:
-                      const TextStyle(
+                  formatLastSeen(user["lastSeen"]),
+                  style: const TextStyle(
                     fontSize: 13,
-                    color:
-                        Colors.grey,
+                    color: Colors.grey,
                   ),
                 ),
               ),
@@ -178,34 +165,22 @@ class _ProfileDetailsScreenState
             const SizedBox(height: 20),
 
             Container(
-              padding:
-                  const EdgeInsets
-                      .all(15),
-              decoration:
-                  BoxDecoration(
-                color:
-                    const Color(
-                        0xFF121212),
+              padding: const EdgeInsets.all(15),
+              decoration: BoxDecoration(
+                color: const Color(0xFF121212),
                 borderRadius:
-                    BorderRadius
-                        .circular(15),
+                    BorderRadius.circular(15),
               ),
               child: Column(
                 crossAxisAlignment:
-                    CrossAxisAlignment
-                        .start,
+                    CrossAxisAlignment.start,
                 children: [
                   Text(
-                      "${profile!["gender"]} • ${profile!["age"]}"),
-                  const SizedBox(
-                      height: 6),
-                  Text(profile![
-                      "roleType"]),
-                  const SizedBox(
-                      height: 6),
-                  Text(profile![
-                              "havePlace"] ==
-                          true
+                      "${profile!["gender"] ?? ""} • ${profile!["age"] ?? ""}"),
+                  const SizedBox(height: 6),
+                  Text(profile!["roleType"] ?? ""),
+                  const SizedBox(height: 6),
+                  Text(profile!["havePlace"] == true
                       ? "Has Place"
                       : "No Place"),
                 ],
@@ -217,19 +192,22 @@ class _ProfileDetailsScreenState
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                style:
-                    ElevatedButton
-                        .styleFrom(
+                style: ElevatedButton.styleFrom(
                   backgroundColor:
-                      Colors
-                          .cyanAccent,
+                      Colors.cyanAccent,
                   padding:
-                      const EdgeInsets
-                          .all(12),
+                      const EdgeInsets.all(12),
                 ),
                 onPressed: () {
-                  context.go(
-                      "/chat/${profile!["userId"]}");
+                  final chatUserId =
+                      profile!["user"]?["id"]
+                          ?.toString();
+
+                  if (chatUserId != null &&
+                      chatUserId.isNotEmpty) {
+                    context.go(
+                        "/chat/$chatUserId");
+                  }
                 },
                 child: const Text(
                   "💬 Message",
