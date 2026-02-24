@@ -47,39 +47,47 @@ class _ProfileDetailsScreenState
   }
 
   Future<void> _toggleFollow() async {
-    if (profile == null) return;
+  if (profile == null || actionLoading) return;
 
-    final bool isFollowing = profile!["isFollowing"] ?? false;
+  final bool isFollowing = profile!["isFollowing"] ?? false;
 
-    setState(() => actionLoading = true);
+  setState(() => actionLoading = true);
 
-    try {
-      if (isFollowing) {
-        await ApiClient.post(
-            "/profile/unfollow/${widget.userId}", {});
-      } else {
-        await ApiClient.post(
-            "/profile/follow/${widget.userId}", {});
-      }
-
-      // 🔥 Optimistic UI Update
-      setState(() {
-        profile!["isFollowing"] = !isFollowing;
-
-        if (isFollowing) {
-          profile!["followers"] =
-              (profile!["followers"] ?? 1) - 1;
-        } else {
-          profile!["followers"] =
-              (profile!["followers"] ?? 0) + 1;
-        }
-      });
-
-    } catch (_) {}
-
-    if (mounted) {
-      setState(() => actionLoading = false);
+  try {
+    if (isFollowing) {
+      await ApiClient.post(
+          "/profile/unfollow/${widget.userId}", {});
+    } else {
+      await ApiClient.post(
+          "/profile/follow/${widget.userId}", {});
     }
+
+    if (!mounted) return;
+
+    setState(() {
+      profile!["isFollowing"] = !isFollowing;
+
+      final currentFollowers =
+          profile!["followers"] ?? 0;
+
+      if (isFollowing) {
+        profile!["followers"] =
+            currentFollowers > 0
+                ? currentFollowers - 1
+                : 0;
+      } else {
+        profile!["followers"] =
+            currentFollowers + 1;
+      }
+    });
+
+  } catch (e) {
+    debugPrint("Follow error: $e");
+  }
+
+  if (mounted) {
+    setState(() => actionLoading = false);
+  }
   }
 
   @override
