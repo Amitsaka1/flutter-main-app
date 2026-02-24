@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/network/api_client.dart';
@@ -60,17 +61,14 @@ class _ChatListScreenState extends State<ChatListScreen> {
       }
     } catch (e) {
       debugPrint("Chat fetch error: $e");
-      if (mounted) {
-        setState(() => loading = false);
-      }
+      if (mounted) setState(() => loading = false);
     }
   }
 
   void _initSocket(String token) async {
     final payload = jsonDecode(
-      utf8.decode(base64Url.decode(
-          base64Url.normalize(token.split(".")[1])))
-    );
+        utf8.decode(base64Url.decode(
+            base64Url.normalize(token.split(".")[1]))));
 
     final myId = payload["id"];
 
@@ -112,9 +110,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
         }
 
         totalUnread = chats.fold(
-          0,
-          (sum, c) => sum + (c["unreadCount"] ?? 0) as int
-        );
+            0, (sum, c) => sum + (c["unreadCount"] ?? 0) as int);
       });
     }
   }
@@ -130,29 +126,98 @@ class _ChatListScreenState extends State<ChatListScreen> {
   Widget build(BuildContext context) {
 
     if (loading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(20),
-      itemCount: chats.length,
-      itemBuilder: (context, index) {
-        final chat = chats[index];
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Color(0xFF0A0A0A),
+            Color(0xFF001F1F),
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+      ),
+      child: Column(
+        children: [
 
-        return _ChatCard(
-          chat: chat,
-          onTap: () =>
-              context.go("/chat/${chat["user"]["id"]}"),
-        );
-      },
+          // ================= HEADER =================
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(25),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 20, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(25),
+                    border: Border.all(
+                        color: Colors.white.withOpacity(0.1)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment:
+                        MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: const [
+                          Icon(Icons.local_fire_department,
+                              color: Colors.pinkAccent),
+                          SizedBox(width: 8),
+                          Text(
+                            "Messages",
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: const [
+                          Icon(Icons.search,
+                              color: Colors.white70),
+                          SizedBox(width: 20),
+                          Icon(Icons.notifications_none,
+                              color: Colors.white70),
+                        ],
+                      )
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // ================= CHAT LIST =================
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 20, vertical: 10),
+              itemCount: chats.length,
+              itemBuilder: (context, index) {
+                final chat = chats[index];
+
+                return _ChatCard(
+                  chat: chat,
+                  onTap: () =>
+                      context.go("/chat/${chat["user"]["id"]}"),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
 // =============================
-// CHAT CARD
+// MODERN CHAT CARD
 // =============================
 
 class _ChatCard extends StatelessWidget {
@@ -166,97 +231,116 @@ class _ChatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
     final unread = chat["unreadCount"] ?? 0;
 
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(15),
+        margin: const EdgeInsets.only(bottom: 18),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFF0f0f0f),
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: BorderRadius.circular(25),
+          gradient: const LinearGradient(
+            colors: [
+              Color(0xFF1A1A1A),
+              Color(0xFF111111),
+            ],
+          ),
           boxShadow: const [
             BoxShadow(
-              blurRadius: 15,
+              blurRadius: 25,
               color: Colors.black54,
+              offset: Offset(0, 10),
             )
           ],
         ),
         child: Row(
           children: [
-            Container(
-              width: 45,
-              height: 45,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [
-                    Color(0xFF00F5A0),
-                    Color(0xFFFF00C8),
-                  ],
-                ),
-              ),
-              child: Center(
-                child: Text(
-                  chat["user"]["phone"]
-                      .toString()
-                      .substring(
-                        chat["user"]["phone"].length - 2),
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold,
+
+            // Avatar
+            Stack(
+              children: [
+                Container(
+                  width: 55,
+                  height: 55,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [
+                        Color(0xFF00F5A0),
+                        Color(0xFFFF00C8),
+                      ],
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      chat["user"]["phone"]
+                          .toString()
+                          .substring(
+                            chat["user"]["phone"].length - 2),
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
+
             const SizedBox(width: 15),
+
+            // Text Section
             Expanded(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment:
-                        MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        chat["user"]["phone"],
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                      if (unread > 0)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF00F5A0),
-                            borderRadius:
-                                BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            "$unread",
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
-                          ),
-                        ),
-                    ],
+                  Text(
+                    chat["user"]["phone"],
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Text(
                     chat["lastMessage"] ?? "",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 13,
-                      color: Colors.white70,
+                      color: Colors.white60,
                     ),
-                  )
+                  ),
                 ],
               ),
-            )
+            ),
+
+            // Unread badge
+            if (unread > 0)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [
+                      Color(0xFF00F5A0),
+                      Color(0xFF00C9A7),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  "$unread",
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+              ),
           ],
         ),
       ),
