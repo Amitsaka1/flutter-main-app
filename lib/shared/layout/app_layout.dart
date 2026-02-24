@@ -28,12 +28,10 @@ class _AppLayoutState extends State<AppLayout> {
       body: Column(
         children: [
 
-          // ====== CONTENT ======
           Expanded(
             child: widget.child,
           ),
 
-          // ====== BOTTOM NAV ======
           SafeArea(
             top: false,
             child: _buildBottomNav(context, currentRoute),
@@ -62,6 +60,7 @@ class _AppLayoutState extends State<AppLayout> {
             CrossAxisAlignment.center,
         children: [
 
+          // ===== HOME =====
           _NavItem(
             label: "Home",
             icon: Icons.home_rounded,
@@ -69,12 +68,14 @@ class _AppLayoutState extends State<AppLayout> {
             onTap: () => context.go("/dashboard"),
           ),
 
+          // ===== CHAT =====
           _ChatNavItem(
             unreadCount: widget.unreadCount,
             active: route.startsWith("/chat"),
             onTap: () => context.go("/chat"),
           ),
 
+          // ===== ROOMS =====
           _NavItem(
             label: "Rooms",
             icon: Icons.meeting_room_rounded,
@@ -82,6 +83,7 @@ class _AppLayoutState extends State<AppLayout> {
             onTap: () {},
           ),
 
+          // ===== PREMIUM =====
           _NavItem(
             label: "Premium",
             icon: Icons.workspace_premium_rounded,
@@ -91,11 +93,12 @@ class _AppLayoutState extends State<AppLayout> {
             onTap: () => context.go("/premium"),
           ),
 
+          // ===== PROFILE (FIXED) =====
           _NavItem(
             label: "Profile",
             icon: Icons.person_rounded,
-            active: false,
-            onTap: () {},
+            active: route == "/profile",
+            onTap: () => context.go("/profile"),
           ),
         ],
       ),
