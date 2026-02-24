@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../shared/widgets/galaxy_background.dart';
 
 class MyProfileScreen extends StatelessWidget {
   const MyProfileScreen({super.key});
@@ -6,26 +7,14 @@ class MyProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFF1a002b),
-              Color(0xFF000000),
-              Color(0xFF001f2f),
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
+      body: GalaxyBackground(
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
             child: Column(
               children: [
 
-                // 🔥 APP TITLE + WALLET
+                // 🔥 HEADER
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -38,9 +27,9 @@ class MyProfileScreen extends StatelessWidget {
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 8),
+                          horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(25),
+                        borderRadius: BorderRadius.circular(30),
                         gradient: const LinearGradient(
                           colors: [
                             Color(0xFF00F5A0),
@@ -65,16 +54,16 @@ class MyProfileScreen extends StatelessWidget {
                   ],
                 ),
 
-                const SizedBox(height: 30),
+                const SizedBox(height: 40),
 
-                // 🧑 PROFILE IMAGE
+                // 🧑 PROFILE IMAGE WITH GLOW
                 Stack(
                   alignment: Alignment.center,
                   children: [
 
                     Container(
-                      width: 140,
-                      height: 140,
+                      width: 160,
+                      height: 160,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         gradient: const LinearGradient(
@@ -83,20 +72,32 @@ class MyProfileScreen extends StatelessWidget {
                             Color(0xFFFF00C8),
                           ],
                         ),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0xFF00F5A0),
+                            blurRadius: 30,
+                            spreadRadius: 2,
+                          ),
+                          BoxShadow(
+                            color: Color(0xFFFF00C8),
+                            blurRadius: 30,
+                            spreadRadius: 2,
+                          ),
+                        ],
                       ),
                     ),
 
                     const CircleAvatar(
-                      radius: 65,
+                      radius: 70,
                       backgroundImage:
                           AssetImage("assets/profile_placeholder.png"),
                     ),
 
                     Positioned(
-                      bottom: 5,
-                      right: 5,
+                      bottom: 10,
+                      right: 10,
                       child: Container(
-                        padding: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           gradient: const LinearGradient(
@@ -105,6 +106,12 @@ class MyProfileScreen extends StatelessWidget {
                               Color(0xFFFF00C8),
                             ],
                           ),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Colors.black,
+                              blurRadius: 10,
+                            )
+                          ],
                         ),
                         child: const Icon(
                           Icons.camera_alt,
@@ -116,13 +123,13 @@ class MyProfileScreen extends StatelessWidget {
                   ],
                 ),
 
-                const SizedBox(height: 15),
+                const SizedBox(height: 20),
 
                 // 🏷 NAME
                 const Text(
                   "Your Name",
                   style: TextStyle(
-                    fontSize: 22,
+                    fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -134,7 +141,7 @@ class MyProfileScreen extends StatelessWidget {
                   style: TextStyle(color: Colors.white70),
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 25),
 
                 // 👥 FOLLOW STATS
                 Row(
@@ -145,19 +152,25 @@ class MyProfileScreen extends StatelessWidget {
                   ],
                 ),
 
-                const SizedBox(height: 25),
+                const SizedBox(height: 30),
 
-                // ⭐ LEVEL BAR
+                // ⭐ LEVEL CARD (GLASS STYLE)
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(25),
                     gradient: const LinearGradient(
                       colors: [
                         Color(0xFF2a003f),
                         Color(0xFF001f2f),
                       ],
                     ),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Colors.black54,
+                        blurRadius: 20,
+                      )
+                    ],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -169,63 +182,78 @@ class MyProfileScreen extends StatelessWidget {
                           SizedBox(width: 8),
                           Text(
                             "Level 1",
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16),
                           ),
                         ],
                       ),
 
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 12),
 
                       ClipRRect(
                         borderRadius: BorderRadius.circular(20),
                         child: LinearProgressIndicator(
                           value: 0,
-                          minHeight: 8,
+                          minHeight: 10,
                           backgroundColor: Colors.white10,
-                          valueColor:
-                              const AlwaysStoppedAnimation(Colors.cyanAccent),
+                          valueColor: const AlwaysStoppedAnimation(
+                              Color(0xFF00F5A0)),
                         ),
                       ),
 
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 8),
 
                       const Text(
                         "0 / 100 XP",
-                        style: TextStyle(fontSize: 12, color: Colors.white70),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white70,
+                        ),
                       )
                     ],
                   ),
                 ),
 
-                const SizedBox(height: 30),
+                const SizedBox(height: 35),
 
-                // ✏ EDIT BUTTON
+                // ✏ EDIT BUTTON (NEON BORDER STYLE)
                 SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      backgroundColor: Colors.transparent,
-                      shadowColor: Colors.transparent,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25),
-                        side: const BorderSide(
-                          color: Colors.cyanAccent,
-                        ),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(30),
+                      gradient: const LinearGradient(
+                        colors: [
+                          Color(0xFF00F5A0),
+                          Color(0xFFFF00C8),
+                        ],
                       ),
                     ),
-                    onPressed: () {},
-                    icon: const Icon(Icons.edit, color: Colors.cyanAccent),
-                    label: const Text(
-                      "Edit Profile",
-                      style: TextStyle(color: Colors.cyanAccent),
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                      onPressed: () {},
+                      icon: const Icon(Icons.edit, color: Colors.black),
+                      label: const Text(
+                        "Edit Profile",
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
                 ),
 
-                const SizedBox(height: 40),
+                const SizedBox(height: 50),
 
-                // 📦 EMPTY SECTION PLACEHOLDER
                 const Text(
                   "Frames & Gifts will appear here",
                   style: TextStyle(color: Colors.white38),
@@ -241,7 +269,6 @@ class MyProfileScreen extends StatelessWidget {
   }
 }
 
-// 🔹 STAT BOX
 class _StatBox extends StatelessWidget {
   final String title;
   final String value;
@@ -258,7 +285,7 @@ class _StatBox extends StatelessWidget {
         Text(
           value,
           style: const TextStyle(
-            fontSize: 18,
+            fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
         ),
