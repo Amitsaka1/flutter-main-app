@@ -68,10 +68,11 @@ class _MyAppState extends State<MyApp> {
               final id = state.pathParameters["id"]!;
               return AppLayout(
                 child: ProfileDetailsScreen(userId: id),
-            },
-          ),
-        ],
-      ),
+                );
+              },
+            ),
+          ],
+        ),
 
       // ===== CHAT CONVERSATION (Full Screen, No Bottom Nav) =====
       GoRoute(
