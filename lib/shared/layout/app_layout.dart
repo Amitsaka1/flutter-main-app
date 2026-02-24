@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/network/socket_manager.dart';
 
 class AppLayout extends StatefulWidget {
   final Widget child;
@@ -17,18 +19,34 @@ class AppLayout extends StatefulWidget {
 
 class _AppLayoutState extends State<AppLayout> {
 
-  int _notificationCount = 0; // 🔥 follow notification badge
+  int _notificationCount = 0;
+  StreamSubscription? _notificationSub;
 
-  void incrementNotification() {
-    setState(() {
-      _notificationCount++;
-    });
+  @override
+  void initState() {
+    super.initState();
+
+    final socket = SocketManager.instance;
+
+    if (socket != null) {
+      _notificationSub = socket.notifications.listen((event) {
+        setState(() {
+          _notificationCount++;
+        });
+      });
+    }
   }
 
   void clearNotifications() {
     setState(() {
       _notificationCount = 0;
     });
+  }
+
+  @override
+  void dispose() {
+    _notificationSub?.cancel();
+    super.dispose();
   }
 
   @override
@@ -42,7 +60,7 @@ class _AppLayoutState extends State<AppLayout> {
       body: Column(
         children: [
 
-          // 🔥 TOP BAR WITH BELL
+          // 🔔 TOP BAR WITH BELL
           SafeArea(
             bottom: false,
             child: Container(
