@@ -30,28 +30,27 @@ class ConversationController {
   }
 
   Future<void> loadMessages(String userId) async {
-    if (_conversationCache.containsKey(userId)) {
-      _emit(userId);
-      return;
-    }
-
-    try {
-      final response =
-          await ApiClient.get("/chat/messages/$userId");
-
-      if (response["success"] == true) {
-        _conversationCache[userId] =
-            List.from(response["data"]);
-
-        await ApiClient.post("/chat/mark-read", {
-          "senderId": userId
-        });
-
-        _emit(userId);
-      }
-    } catch (_) {}
+  // 🔥 Always emit cached first (instant UI)
+  if (_conversationCache.containsKey(userId)) {
+    _emit(userId);
   }
 
+  try {
+    final response =
+        await ApiClient.get("/chat/messages/$userId");
+
+    if (response["success"] == true) {
+      _conversationCache[userId] =
+          List.from(response["data"]);
+
+      await ApiClient.post("/chat/mark-read", {
+        "senderId": userId
+      });
+
+      _emit(userId);
+    }
+  } catch (_) {}
+  }
   Future<void> sendMessage(
       String userId, String content) async {
     if (_myId == null) return;
