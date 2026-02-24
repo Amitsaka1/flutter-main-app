@@ -8,10 +8,8 @@ import 'package:app_project/features/chat/presentation/chat_list_screen.dart';
 import 'package:app_project/features/chat/presentation/chat_conversation_screen.dart';
 import 'package:app_project/features/profile/presentation/create_profile_screen.dart';
 import 'package:app_project/features/profile/presentation/profile_details_screen.dart';
+import 'package:app_project/features/profile/presentation/my_profile_screen.dart';
 import 'package:app_project/features/subscription/presentation/premium_screen.dart';
-
-// 👇 Next step me ye file banayenge
-// import 'package:app_project/features/profile/presentation/my_profile_screen.dart';
 
 class MyApp extends StatefulWidget {
   MyApp({super.key});
@@ -72,8 +70,7 @@ class _MyAppState extends State<MyApp> {
           GoRoute(
             path: "/profile",
             builder: (context, state) =>
-                const SizedBox(), // 🔴 Temporary placeholder
-                // Next step me MyProfileScreen yaha add hoga
+                const MyProfileScreen(),
           ),
 
           // ===== OTHER USER PROFILE =====
