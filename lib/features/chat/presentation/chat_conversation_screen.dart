@@ -32,7 +32,7 @@ class _ChatConversationScreenState
   StreamSubscription? _subscription;
 
   List<dynamic> messages = [];
-  bool loading = true;
+  bool loading = false;
   String? myId;
 
   @override
@@ -110,13 +110,6 @@ class _ChatConversationScreenState
 
   @override
   Widget build(BuildContext context) {
-
-    if (loading) {
-      return const Scaffold(
-        body:
-            Center(child: CircularProgressIndicator()),
-      );
-    }
 
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0A),
