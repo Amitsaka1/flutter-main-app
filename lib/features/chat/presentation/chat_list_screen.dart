@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/controllers/chat_controller.dart';
-import '../../../core/controllers/conversation_controller.dart'; // 🔥 ADDED
+import '../../../core/controllers/conversation_controller.dart';
 
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({super.key});
@@ -22,7 +22,6 @@ class _ChatListScreenState extends State<ChatListScreen>
 
   List<dynamic> chats = [];
   bool loading = true;
-  int totalUnread = 0;
 
   @override
   bool get wantKeepAlive => true;
@@ -42,16 +41,10 @@ class _ChatListScreenState extends State<ChatListScreen>
     }
 
     _subscription = _controller.chatStream.listen((data) {
-      int unread = 0;
-      for (var chat in data) {
-        unread += (chat["unreadCount"] ?? 0) as int;
-      }
-
       if (!mounted) return;
 
       setState(() {
         chats = data;
-        totalUnread = unread;
         loading = false;
       });
     });
@@ -73,108 +66,101 @@ class _ChatListScreenState extends State<ChatListScreen>
       return const Center(child: CircularProgressIndicator());
     }
 
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Color(0xFF0A0A0A),
-            Color(0xFF001F1F),
-          ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-      ),
-      child: Column(
-        children: [
+    return ListView.builder(
+      itemCount: chats.length,
+      itemBuilder: (context, index) {
+        final chat = chats[index];
 
-          // ================= HEADER =================
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(25),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 20, vertical: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(25),
-                    border: Border.all(
-                        color: Colors.white.withOpacity(0.1)),
-                  ),
-                  child: Row(
-                    mainAxisAlignment:
-                        MainAxisAlignment.spaceBetween,
-                    children: const [
-                      Row(
-                        children: [
-                          Icon(Icons.local_fire_department,
-                              color: Colors.pinkAccent),
-                          SizedBox(width: 8),
-                          Text(
-                            "Messages",
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          Icon(Icons.search,
-                              color: Colors.white70),
-                          SizedBox(width: 20),
-                          Icon(Icons.notifications_none,
-                              color: Colors.white70),
-                        ],
-                      )
-                    ],
-                  ),
-                ),
+        return ChatCard(
+          chat: chat,
+          onTap: () async {
+            final userId = chat["user"]["id"];
+
+            await ConversationController.instance
+                .loadMessages(userId);
+
+            if (mounted) {
+              context.go("/chat/$userId");
+            }
+          },
+        );
+      },
+    );
+  }
+}
+
+// 🔥 IMPORTANT: No underscore now (public class)
+
+class ChatCard extends StatelessWidget {
+  final dynamic chat;
+  final VoidCallback onTap;
+
+  const ChatCard({
+    super.key,
+    required this.chat,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+
+    final unread = chat["unreadCount"] ?? 0;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A1A1A),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          children: [
+
+            CircleAvatar(
+              child: Text(
+                chat["user"]["phone"]
+                    .toString()
+                    .substring(
+                      chat["user"]["phone"].length - 2),
               ),
             ),
-          ),
 
-          // ================= CHAT LIST =================
-          Expanded(
-            child: chats.isEmpty
-                ? const Center(
-                    child: Text(
-                      "No chats yet",
-                      style: TextStyle(
-                        color: Colors.white60,
-                        fontSize: 14,
-                      ),
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 10),
-                    itemCount: chats.length,
-                    itemBuilder: (context, index) {
-                      final chat = chats[index];
+            const SizedBox(width: 12),
 
-                      return _ChatCard(
-                        chat: chat,
-                        onTap: () async { // 🔥 UPDATED
-                          final userId = chat["user"]["id"];
-
-                          // 🔥 Preload conversation before navigation
-                          await ConversationController
-                              .instance
-                              .loadMessages(userId);
-
-                          if (mounted) {
-                            context.go("/chat/$userId");
-                          }
-                        },
-                      );
-                    },
+            Expanded(
+              child: Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    chat["user"]["phone"],
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold),
                   ),
-          ),
-        ],
+                  Text(
+                    chat["lastMessage"] ?? "",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+
+            if (unread > 0)
+              CircleAvatar(
+                radius: 12,
+                backgroundColor: Colors.green,
+                child: Text(
+                  "$unread",
+                  style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.white),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
