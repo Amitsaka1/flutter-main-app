@@ -10,6 +10,9 @@ import 'package:app_project/features/profile/presentation/create_profile_screen.
 import 'package:app_project/features/profile/presentation/profile_details_screen.dart';
 import 'package:app_project/features/subscription/presentation/premium_screen.dart';
 
+// 👇 Next step me ye file banayenge
+// import 'package:app_project/features/profile/presentation/my_profile_screen.dart';
+
 class MyApp extends StatefulWidget {
   MyApp({super.key});
 
@@ -44,24 +47,36 @@ class _MyAppState extends State<MyApp> {
         },
         routes: [
 
+          // ===== DASHBOARD =====
           GoRoute(
             path: "/dashboard",
             builder: (context, state) =>
                 const DashboardScreen(),
           ),
 
+          // ===== CHAT LIST =====
           GoRoute(
             path: "/chat",
             builder: (context, state) =>
                 const ChatListScreen(),
           ),
 
+          // ===== PREMIUM =====
           GoRoute(
             path: "/premium",
             builder: (context, state) =>
                 const PremiumScreen(),
           ),
 
+          // ===== MY PROFILE (SELF PROFILE) =====
+          GoRoute(
+            path: "/profile",
+            builder: (context, state) =>
+                const SizedBox(), // 🔴 Temporary placeholder
+                // Next step me MyProfileScreen yaha add hoga
+          ),
+
+          // ===== OTHER USER PROFILE =====
           GoRoute(
             path: "/profile/:id",
             builder: (context, state) {
