@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../shared/widgets/galaxy_background.dart';
 
 class MyProfileScreen extends StatelessWidget {
   const MyProfileScreen({super.key});
@@ -7,7 +6,17 @@ class MyProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: GalaxyBackground(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFF0F1115),
+              Color(0xFF0B0C10),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
@@ -22,29 +31,29 @@ class MyProfileScreen extends StatelessWidget {
                       "🔥 Naxorah",
                       style: TextStyle(
                         fontSize: 22,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
+                          horizontal: 18, vertical: 8),
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(30),
+                        borderRadius: BorderRadius.circular(25),
                         gradient: const LinearGradient(
                           colors: [
-                            Color(0xFF00F5A0),
-                            Color(0xFFFF00C8),
+                            Color(0xFF00C6FF),
+                            Color(0xFF7F00FF),
                           ],
                         ),
                       ),
                       child: const Row(
                         children: [
-                          Icon(Icons.add, size: 18, color: Colors.black),
+                          Icon(Icons.add, size: 18, color: Colors.white),
                           SizedBox(width: 6),
                           Text(
                             "0",
                             style: TextStyle(
-                              color: Colors.black,
+                              color: Colors.white,
                               fontWeight: FontWeight.bold,
                             ),
                           )
@@ -56,34 +65,20 @@ class MyProfileScreen extends StatelessWidget {
 
                 const SizedBox(height: 40),
 
-                // 🧑 PROFILE IMAGE WITH GLOW
+                // 🧑 PROFILE IMAGE
                 Stack(
                   alignment: Alignment.center,
                   children: [
 
                     Container(
-                      width: 160,
-                      height: 160,
+                      width: 150,
+                      height: 150,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        gradient: const LinearGradient(
-                          colors: [
-                            Color(0xFF00F5A0),
-                            Color(0xFFFF00C8),
-                          ],
+                        border: Border.all(
+                          width: 3,
+                          color: const Color(0xFF2E8BFF),
                         ),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0xFF00F5A0),
-                            blurRadius: 30,
-                            spreadRadius: 2,
-                          ),
-                          BoxShadow(
-                            color: Color(0xFFFF00C8),
-                            blurRadius: 30,
-                            spreadRadius: 2,
-                          ),
-                        ],
                       ),
                     ),
 
@@ -94,29 +89,21 @@ class MyProfileScreen extends StatelessWidget {
                     ),
 
                     Positioned(
-                      bottom: 10,
-                      right: 10,
+                      bottom: 8,
+                      right: 8,
                       child: Container(
-                        padding: const EdgeInsets.all(10),
+                        padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          gradient: const LinearGradient(
-                            colors: [
-                              Color(0xFF00F5A0),
-                              Color(0xFFFF00C8),
-                            ],
+                          color: const Color(0xFF1C1F26),
+                          border: Border.all(
+                            color: Colors.white24,
                           ),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Colors.black,
-                              blurRadius: 10,
-                            )
-                          ],
                         ),
                         child: const Icon(
                           Icons.camera_alt,
                           size: 18,
-                          color: Colors.black,
+                          color: Colors.white,
                         ),
                       ),
                     )
@@ -125,12 +112,11 @@ class MyProfileScreen extends StatelessWidget {
 
                 const SizedBox(height: 20),
 
-                // 🏷 NAME
                 const Text(
                   "Your Name",
                   style: TextStyle(
                     fontSize: 24,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
 
@@ -138,39 +124,28 @@ class MyProfileScreen extends StatelessWidget {
 
                 const Text(
                   "@username",
-                  style: TextStyle(color: Colors.white70),
+                  style: TextStyle(color: Colors.white54),
                 ),
 
-                const SizedBox(height: 25),
+                const SizedBox(height: 30),
 
                 // 👥 FOLLOW STATS
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: const [
-                    _StatBox(title: "Followed", value: "0"),
-                    _StatBox(title: "Followers", value: "0"),
+                    _PillStat(title: "Followed", value: "0"),
+                    _PillStat(title: "Followers", value: "0"),
                   ],
                 ),
 
                 const SizedBox(height: 30),
 
-                // ⭐ LEVEL CARD (GLASS STYLE)
+                // ⭐ LEVEL CARD
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(25),
-                    gradient: const LinearGradient(
-                      colors: [
-                        Color(0xFF2a003f),
-                        Color(0xFF001f2f),
-                      ],
-                    ),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Colors.black54,
-                        blurRadius: 20,
-                      )
-                    ],
+                    color: const Color(0xFF16181D),
+                    borderRadius: BorderRadius.circular(20),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -183,22 +158,22 @@ class MyProfileScreen extends StatelessWidget {
                           Text(
                             "Level 1",
                             style: TextStyle(
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w600,
                                 fontSize: 16),
                           ),
                         ],
                       ),
 
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 14),
 
                       ClipRRect(
                         borderRadius: BorderRadius.circular(20),
                         child: LinearProgressIndicator(
                           value: 0,
-                          minHeight: 10,
-                          backgroundColor: Colors.white10,
+                          minHeight: 8,
+                          backgroundColor: Colors.white12,
                           valueColor: const AlwaysStoppedAnimation(
-                              Color(0xFF00F5A0)),
+                              Color(0xFF2E8BFF)),
                         ),
                       ),
 
@@ -208,7 +183,7 @@ class MyProfileScreen extends StatelessWidget {
                         "0 / 100 XP",
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.white70,
+                          color: Colors.white54,
                         ),
                       )
                     ],
@@ -217,36 +192,23 @@ class MyProfileScreen extends StatelessWidget {
 
                 const SizedBox(height: 35),
 
-                // ✏ EDIT BUTTON (NEON BORDER STYLE)
+                // ✏ EDIT BUTTON
                 SizedBox(
                   width: double.infinity,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(30),
-                      gradient: const LinearGradient(
-                        colors: [
-                          Color(0xFF00F5A0),
-                          Color(0xFFFF00C8),
-                        ],
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1C1F26),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
                       ),
                     ),
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor: Colors.transparent,
-                        shadowColor: Colors.transparent,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                      ),
-                      onPressed: () {},
-                      icon: const Icon(Icons.edit, color: Colors.black),
-                      label: const Text(
-                        "Edit Profile",
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                        ),
+                    onPressed: () {},
+                    icon: const Icon(Icons.edit, color: Colors.white),
+                    label: const Text(
+                      "Edit Profile",
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
@@ -256,7 +218,7 @@ class MyProfileScreen extends StatelessWidget {
 
                 const Text(
                   "Frames & Gifts will appear here",
-                  style: TextStyle(color: Colors.white38),
+                  style: TextStyle(color: Colors.white30),
                 ),
 
                 const SizedBox(height: 80),
@@ -269,34 +231,42 @@ class MyProfileScreen extends StatelessWidget {
   }
 }
 
-class _StatBox extends StatelessWidget {
+class _PillStat extends StatelessWidget {
   final String title;
   final String value;
 
-  const _StatBox({
+  const _PillStat({
     required this.title,
     required this.value,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(30),
+        color: const Color(0xFF1C1F26),
+      ),
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          title,
-          style: const TextStyle(
-            color: Colors.white70,
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.white54,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
