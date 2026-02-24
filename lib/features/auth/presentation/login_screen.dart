@@ -1,6 +1,9 @@
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/socket/websocket_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -21,6 +24,8 @@ class _LoginScreenState extends State<LoginScreen> {
   bool loading = false;
   String message = "";
   String step = "phone";
+
+  WebSocketService? _socketService;
 
   @override
   void initState() {
@@ -97,31 +102,32 @@ class _LoginScreenState extends State<LoginScreen> {
       if (res["success"] == true) {
 
         final token = res["token"];
-
         await ApiClient.saveToken(token);
 
-        // 🔥 Extract userId from JWT
-        final payload = jsonDecode(
-          utf8.decode(
-            base64Url.decode(
-              base64Url.normalize(token.split(".")[1])
-            )
-          )
-        );
+        // 🔥 Decode JWT safely
+        final parts = token.split(".");
+        if (parts.length == 3) {
+          final payloadMap = jsonDecode(
+            utf8.decode(
+              base64Url.decode(
+                base64Url.normalize(parts[1]),
+              ),
+            ),
+          );
 
-        final userId = payload["id"];
+          final userId = payloadMap["id"];
 
-        // 🔥 Connect WebSocket
-        await SocketManager
-            .getInstance(userId)
-            .connect();
+          if (userId != null) {
+            _socketService =
+                WebSocketService(userId: userId.toString());
+            await _socketService!.connect();
+          }
+        }
 
         if (res["profileRequired"] == true) {
-          if (mounted)
-            context.go("/create-profile");
+          if (mounted) context.go("/create-profile");
         } else {
-          if (mounted)
-            context.go("/dashboard");
+          if (mounted) context.go("/dashboard");
         }
 
       } else {
@@ -129,14 +135,15 @@ class _LoginScreenState extends State<LoginScreen> {
             res["message"] ?? "Invalid OTP");
       }
 
-      } catch (_) {
-        setState(() =>
-            message = "Verification failed");
-      }
+    } catch (_) {
+      setState(() =>
+          message = "Verification failed");
+    }
 
-      if (mounted) {
-        setState(() => loading = false);
-      }
+    if (mounted) {
+      setState(() => loading = false);
+    }
+  }
 
   // ================= UI =================
 
@@ -207,8 +214,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ],
               ),
 
-              const Divider(
-                  color: Colors.white10),
+              const Divider(color: Colors.white10),
 
               Expanded(
                 child: Padding(
@@ -268,13 +274,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 20),
 
                         TextField(
-                          controller:
-                              _otpController,
-                          keyboardType:
-                              TextInputType.number,
+                          controller: _otpController,
+                          keyboardType: TextInputType.number,
                           decoration:
-                              _inputDecoration(
-                                  "Enter OTP"),
+                              _inputDecoration("Enter OTP"),
                         ),
 
                         const SizedBox(height: 16),
@@ -295,8 +298,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             message,
                             style:
                                 const TextStyle(
-                                    color:
-                                        Colors.red),
+                                    color: Colors.red),
                           ),
                         ),
                     ],
@@ -305,16 +307,13 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
 
               const Padding(
-                padding: EdgeInsets.only(
-                    bottom: 10),
+                padding: EdgeInsets.only(bottom: 10),
                 child: Text(
                   "By continuing, you agree to the Terms of Service & Privacy Policy.",
-                  textAlign:
-                      TextAlign.center,
+                  textAlign: TextAlign.center,
                   style: TextStyle(
                       fontSize: 11,
-                      color:
-                          Colors.white54),
+                      color: Colors.white54),
                 ),
               )
             ],
@@ -343,12 +342,9 @@ class _LoginScreenState extends State<LoginScreen> {
           const SizedBox(width: 10),
           Expanded(
             child: TextField(
-              controller:
-                  _phoneController,
-              keyboardType:
-                  TextInputType.phone,
-              decoration:
-                  const InputDecoration(
+              controller: _phoneController,
+              keyboardType: TextInputType.phone,
+              decoration: const InputDecoration(
                 border: InputBorder.none,
                 hintText:
                     "Enter mobile number",
@@ -367,10 +363,8 @@ class _LoginScreenState extends State<LoginScreen> {
       child: ElevatedButton(
         onPressed:
             loading ? null : onTap,
-        style: ElevatedButton
-            .styleFrom(
-          padding:
-              const EdgeInsets.all(14),
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.all(14),
           backgroundColor:
               const Color(0xFF2563EB),
         ),
