@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/cache/chat_cache.dart';
 
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({super.key});
@@ -30,7 +31,26 @@ class _ChatListScreenState extends State<ChatListScreen> {
       return;
     }
 
-    await _fetchChats();
+    // 🔥 Use cache instantly
+    if (ChatCache.hasCache && ChatCache.isFresh) {
+      final cached = ChatCache.chats!;
+
+      int unread = 0;
+      for (var chat in cached) {
+        unread += (chat["unreadCount"] ?? 0) as int;
+      }
+
+      setState(() {
+        chats = cached;
+        totalUnread = unread;
+        loading = false;
+      });
+
+      // background refresh
+      _fetchChats();
+    } else {
+      await _fetchChats();
+    }
   }
 
   Future<void> _fetchChats() async {
@@ -52,6 +72,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
           totalUnread = unread;
           loading = false;
         });
+
+        // 🔥 Save to memory cache
+        ChatCache.save(data);
       }
     } catch (e) {
       debugPrint("Chat fetch error: $e");
@@ -61,10 +84,6 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (loading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -131,20 +150,34 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
           // ================= CHAT LIST =================
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 20, vertical: 10),
-              itemCount: chats.length,
-              itemBuilder: (context, index) {
-                final chat = chats[index];
+            child: loading
+                ? const Center(
+                    child: CircularProgressIndicator(),
+                  )
+                : chats.isEmpty
+                    ? const Center(
+                        child: Text(
+                          "No chats yet",
+                          style: TextStyle(
+                            color: Colors.white60,
+                            fontSize: 14,
+                          ),
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 10),
+                        itemCount: chats.length,
+                        itemBuilder: (context, index) {
+                          final chat = chats[index];
 
-                return _ChatCard(
-                  chat: chat,
-                  onTap: () =>
-                      context.go("/chat/${chat["user"]["id"]}"),
-                );
-              },
-            ),
+                          return _ChatCard(
+                            chat: chat,
+                            onTap: () =>
+                                context.go("/chat/${chat["user"]["id"]}"),
+                          );
+                        },
+                      ),
           ),
         ],
       ),
@@ -194,41 +227,35 @@ class _ChatCard extends StatelessWidget {
         child: Row(
           children: [
 
-            // Avatar
-            Stack(
-              children: [
-                Container(
-                  width: 55,
-                  height: 55,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [
-                        Color(0xFF00F5A0),
-                        Color(0xFFFF00C8),
-                      ],
-                    ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      chat["user"]["phone"]
-                          .toString()
-                          .substring(
-                            chat["user"]["phone"].length - 2),
-                      style: const TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
+            Container(
+              width: 55,
+              height: 55,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFF00F5A0),
+                    Color(0xFFFF00C8),
+                  ],
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  chat["user"]["phone"]
+                      .toString()
+                      .substring(
+                        chat["user"]["phone"].length - 2),
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
                   ),
                 ),
-              ],
+              ),
             ),
 
             const SizedBox(width: 15),
 
-            // Text Section
             Expanded(
               child: Column(
                 crossAxisAlignment:
@@ -255,7 +282,6 @@ class _ChatCard extends StatelessWidget {
               ),
             ),
 
-            // Unread badge
             if (unread > 0)
               Container(
                 padding: const EdgeInsets.symmetric(
