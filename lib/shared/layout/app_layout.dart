@@ -140,7 +140,7 @@ class _AppLayoutState extends State<AppLayout> {
   ) {
     void safeGo(String path) {
       if (route != path) {
-        context.go(path);
+        context.pushReplacement(path); // 🔥 FIXED
       }
     }
 
@@ -155,8 +155,6 @@ class _AppLayoutState extends State<AppLayout> {
       child: Row(
         mainAxisAlignment:
             MainAxisAlignment.spaceAround,
-        crossAxisAlignment:
-            CrossAxisAlignment.center,
         children: [
           _NavItem(
             label: "Home",
@@ -195,7 +193,7 @@ class _AppLayoutState extends State<AppLayout> {
   }
 }
 
-/// ---------------- OUTSIDE STATE CLASS ----------------
+/// ---------------- NAV ITEMS ----------------
 
 class _NavItem extends StatelessWidget {
   final String label;
