@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/controllers/chat_controller.dart';
-import '../../../core/controllers/conversation_controller.dart';
 
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({super.key});
@@ -35,11 +34,10 @@ class _ChatListScreenState extends State<ChatListScreen>
     final token = await ApiClient.getToken();
 
     if (token == null) {
-      if (mounted) context.pushReplacement("/login");
+      if (mounted) context.go("/login");
       return;
     }
 
-    // 🔥 1. INSTANT SHOW CACHED DATA (safe UI update)
     if (_controller.hasData) {
       setState(() {
         chats = _controller.chats;
@@ -47,7 +45,6 @@ class _ChatListScreenState extends State<ChatListScreen>
       });
     }
 
-    // 🔥 2. Listen to stream updates
     _subscription = _controller.chatStream.listen((data) {
       if (!mounted) return;
 
@@ -57,7 +54,6 @@ class _ChatListScreenState extends State<ChatListScreen>
       });
     });
 
-    // 🔥 3. Background load (no await = non blocking)
     _controller.loadChats();
   }
 
@@ -82,15 +78,11 @@ class _ChatListScreenState extends State<ChatListScreen>
 
         return ChatCard(
           chat: chat,
-          onTap: () async {
+          onTap: () {
             final userId = chat["user"]["id"];
 
-            await ConversationController.instance
-                .loadMessages(userId);
-
-            if (mounted) {
-              context.push("/chat/$userId");
-            }
+            // 🔥 NO await loadMessages here
+            context.push("/chat/$userId");
           },
         );
       },
