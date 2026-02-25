@@ -7,7 +7,6 @@ class SocketManager {
   // ================= GET INSTANCE =================
 
   static WebSocketService getInstance(String userId) {
-    // 🔥 If user changed → recreate socket
     if (_instance == null || _currentUserId != userId) {
       _instance?.dispose();
 
@@ -20,12 +19,14 @@ class SocketManager {
 
   // ================= CONNECT =================
 
-  static Future<void> connect(String userId) async {
+  static Future<WebSocketService> connect(String userId) async {
     final socket = getInstance(userId);
 
     if (!socket.isConnected) {
       await socket.connect();
     }
+
+    return socket;
   }
 
   // ================= DISCONNECT =================
@@ -35,6 +36,8 @@ class SocketManager {
     _instance = null;
     _currentUserId = null;
   }
+
+  // ================= INSTANCE GETTER =================
 
   static WebSocketService? get instance => _instance;
 }
