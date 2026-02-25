@@ -5,7 +5,7 @@ import '../../core/network/socket_manager.dart';
 
 class AppLayout extends StatefulWidget {
   final Widget child;
-  final int unreadCount; // chat unread
+  final int unreadCount;
 
   const AppLayout({
     super.key,
@@ -18,7 +18,6 @@ class AppLayout extends StatefulWidget {
 }
 
 class _AppLayoutState extends State<AppLayout> {
-
   int _notificationCount = 0;
   StreamSubscription? _notificationSub;
 
@@ -51,7 +50,6 @@ class _AppLayoutState extends State<AppLayout> {
 
   @override
   Widget build(BuildContext context) {
-
     final currentRoute =
         GoRouterState.of(context).uri.toString();
 
@@ -59,8 +57,6 @@ class _AppLayoutState extends State<AppLayout> {
       backgroundColor: const Color(0xFF0a0a0a),
       body: Column(
         children: [
-
-          // 🔔 TOP BAR WITH BELL
           SafeArea(
             bottom: false,
             child: Container(
@@ -71,7 +67,6 @@ class _AppLayoutState extends State<AppLayout> {
                 mainAxisAlignment:
                     MainAxisAlignment.spaceBetween,
                 children: [
-
                   const Text(
                     "Naxorah",
                     style: TextStyle(
@@ -79,18 +74,15 @@ class _AppLayoutState extends State<AppLayout> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-
                   GestureDetector(
                     onTap: clearNotifications,
                     child: Stack(
                       clipBehavior: Clip.none,
                       children: [
-
                         const Icon(
                           Icons.notifications_none,
                           size: 26,
                         ),
-
                         if (_notificationCount > 0)
                           Positioned(
                             right: -6,
@@ -131,12 +123,8 @@ class _AppLayoutState extends State<AppLayout> {
             ),
           ),
 
-          // ===== CONTENT =====
-          Expanded(
-            child: widget.child,
-          ),
+          Expanded(child: widget.child),
 
-          // ===== BOTTOM NAV =====
           SafeArea(
             top: false,
             child: _buildBottomNav(context, currentRoute),
@@ -147,69 +135,67 @@ class _AppLayoutState extends State<AppLayout> {
   }
 
   Widget _buildBottomNav(
-  BuildContext context,
-  String route,
-) {
-  void safeGo(String path) {
-    if (route != path) {
-      context.go(path);
+    BuildContext context,
+    String route,
+  ) {
+    void safeGo(String path) {
+      if (route != path) {
+        context.go(path);
+      }
     }
+
+    return Container(
+      padding: const EdgeInsets.only(
+        top: 6,
+        bottom: 6,
+      ),
+      decoration: const BoxDecoration(
+        color: Color(0xFF111111),
+      ),
+      child: Row(
+        mainAxisAlignment:
+            MainAxisAlignment.spaceAround,
+        crossAxisAlignment:
+            CrossAxisAlignment.center,
+        children: [
+          _NavItem(
+            label: "Home",
+            icon: Icons.home_rounded,
+            active: route.startsWith("/dashboard"),
+            onTap: () => safeGo("/dashboard"),
+          ),
+          _ChatNavItem(
+            unreadCount: widget.unreadCount,
+            active: route.startsWith("/chat"),
+            onTap: () => safeGo("/chat"),
+          ),
+          _NavItem(
+            label: "Rooms",
+            icon: Icons.meeting_room_rounded,
+            active: false,
+            onTap: () {},
+          ),
+          _NavItem(
+            label: "Premium",
+            icon: Icons.workspace_premium_rounded,
+            active: route.startsWith("/premium"),
+            highlightColor:
+                const Color(0xFFFFD700),
+            onTap: () => safeGo("/premium"),
+          ),
+          _NavItem(
+            label: "Profile",
+            icon: Icons.person_rounded,
+            active: route == "/profile",
+            onTap: () => safeGo("/profile"),
+          ),
+        ],
+      ),
+    );
   }
+}
 
-  return Container(
-    padding: const EdgeInsets.only(
-      top: 6,
-      bottom: 6,
-    ),
-    decoration: const BoxDecoration(
-      color: Color(0xFF111111),
-    ),
-    child: Row(
-      mainAxisAlignment:
-          MainAxisAlignment.spaceAround,
-      crossAxisAlignment:
-          CrossAxisAlignment.center,
-      children: [
-
-        _NavItem(
-          label: "Home",
-          icon: Icons.home_rounded,
-          active: route.startsWith("/dashboard"),
-          onTap: () => safeGo("/dashboard"),
-        ),
-
-        _ChatNavItem(
-          unreadCount: widget.unreadCount,
-          active: route.startsWith("/chat"),
-          onTap: () => safeGo("/chat"),
-        ),
-
-        _NavItem(
-          label: "Rooms",
-          icon: Icons.meeting_room_rounded,
-          active: false,
-          onTap: () {},
-        ),
-
-        _NavItem(
-          label: "Premium",
-          icon: Icons.workspace_premium_rounded,
-          active: route.startsWith("/premium"),
-          highlightColor:
-              const Color(0xFFFFD700),
-          onTap: () => safeGo("/premium"),
-        ),
-
-        _NavItem(
-          label: "Profile",
-          icon: Icons.person_rounded,
-          active: route == "/profile",
-          onTap: () => safeGo("/profile"),
-        ),
-      ],
-    ),
-  );
-  }
+/// ---------------- OUTSIDE STATE CLASS ----------------
 
 class _NavItem extends StatelessWidget {
   final String label;
@@ -228,10 +214,8 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     final Color color = active
-        ? highlightColor ??
-            const Color(0xFF00F5A0)
+        ? highlightColor ?? const Color(0xFF00F5A0)
         : Colors.white60;
 
     return GestureDetector(
@@ -239,10 +223,7 @@ class _NavItem extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment:
-            MainAxisAlignment.center,
         children: [
-
           AnimatedContainer(
             duration:
                 const Duration(milliseconds: 250),
@@ -266,9 +247,7 @@ class _NavItem extends StatelessWidget {
               size: 24,
             ),
           ),
-
           const SizedBox(height: 2),
-
           Text(
             label,
             style: TextStyle(
@@ -295,7 +274,6 @@ class _ChatNavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     final Color color = active
         ? const Color(0xFF00F5A0)
         : Colors.white60;
@@ -306,12 +284,9 @@ class _ChatNavItem extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-
           Column(
             mainAxisSize:
                 MainAxisSize.min,
-            mainAxisAlignment:
-                MainAxisAlignment.center,
             children: [
               Icon(
                 Icons.chat_bubble,
@@ -328,7 +303,6 @@ class _ChatNavItem extends StatelessWidget {
               ),
             ],
           ),
-
           if (unreadCount > 0)
             Positioned(
               top: -4,
@@ -342,8 +316,7 @@ class _ChatNavItem extends StatelessWidget {
                   color:
                       const Color(0xFF00F5A0),
                   borderRadius:
-                      BorderRadius.circular(
-                          20),
+                      BorderRadius.circular(20),
                 ),
                 child: Center(
                   child: Text(
