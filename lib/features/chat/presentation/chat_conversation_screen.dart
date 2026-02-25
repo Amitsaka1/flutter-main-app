@@ -23,16 +23,16 @@ class _ChatConversationScreenState
 
   final ScrollController _scrollController =
       ScrollController();
-  final TextEditingController _controller =
+  final TextEditingController _textController =
       TextEditingController();
 
-  final ConversationController _controllerLogic =
+  final ConversationController _logic =
       ConversationController.instance;
 
   StreamSubscription? _subscription;
 
   List<dynamic> messages = [];
-  bool loading = true; // 🔥 start true
+  bool loading = true;
   String? myId;
 
   @override
@@ -45,7 +45,7 @@ class _ChatConversationScreenState
     final token = await ApiClient.getToken();
 
     if (token == null) {
-      if (mounted) context.pushReplacement("/login"); // 🔥 fixed
+      if (mounted) context.go("/login"); // 🔥 use go not pushReplacement
       return;
     }
 
@@ -56,9 +56,9 @@ class _ChatConversationScreenState
 
     myId = payload["id"];
 
-    _controllerLogic.init(myId!);
+    _logic.init(myId!);
 
-    _subscription = _controllerLogic
+    _subscription = _logic
         .stream(widget.chatUserId)
         .listen((data) {
       if (!mounted) return;
@@ -71,27 +71,27 @@ class _ChatConversationScreenState
       _scrollBottom();
     });
 
-    await _controllerLogic
-        .loadMessages(widget.chatUserId);
+    await _logic.loadMessages(widget.chatUserId);
   }
 
   Future<void> sendMessage() async {
-    if (_controller.text.trim().isEmpty) return;
+    if (_textController.text.trim().isEmpty) return;
 
-    final text = _controller.text.trim();
+    final text = _textController.text.trim();
 
-    _controller.clear();
+    _textController.clear();
 
-    await _controllerLogic
-        .sendMessage(widget.chatUserId, text);
+    await _logic.sendMessage(widget.chatUserId, text);
   }
 
   void _scrollBottom() {
     WidgetsBinding.instance
         .addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
-        _scrollController.jumpTo(
+        _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
         );
       }
     });
@@ -101,7 +101,7 @@ class _ChatConversationScreenState
   void dispose() {
     _subscription?.cancel();
     _scrollController.dispose();
-    _controller.dispose();
+    _textController.dispose();
     super.dispose();
   }
 
@@ -122,6 +122,12 @@ class _ChatConversationScreenState
       appBar: AppBar(
         backgroundColor: const Color(0xFF111111),
         title: const Text("Chat"),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            context.pop(); // 🔥 clean back
+          },
+        ),
       ),
       body: Column(
         children: [
@@ -178,14 +184,13 @@ class _ChatConversationScreenState
           ),
 
           Container(
-            padding:
-                const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(12),
             color: const Color(0xFF111111),
             child: Row(
               children: [
                 Expanded(
                   child: TextField(
-                    controller: _controller,
+                    controller: _textController,
                     style: const TextStyle(
                         color: Colors.white),
                     decoration:
