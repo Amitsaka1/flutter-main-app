@@ -6,6 +6,7 @@ class WebSocketService {
   final String userId;
 
   WebSocket? _socket;
+
   bool _connected = false;
   bool _connecting = false;
   bool _manualDisconnect = false;
@@ -30,7 +31,8 @@ class WebSocketService {
 
     try {
       _socket = await WebSocket.connect(
-          "wss://momo-1etm.onrender.com/ws?userId=$userId");
+        "wss://momo-1etm.onrender.com/ws?userId=$userId",
+      );
 
       _connected = true;
       _connecting = false;
@@ -81,7 +83,7 @@ class WebSocketService {
 
     _reconnectAttempt++;
 
-    // Exponential backoff (max 30 seconds)
+    // Exponential backoff (2s → 4s → 6s → ... max 30s)
     int delaySeconds =
         (_reconnectAttempt * 2).clamp(2, 30);
 
@@ -113,6 +115,8 @@ class WebSocketService {
     _manualDisconnect = true;
     _reconnectTimer?.cancel();
     _socket?.close();
+    _socket = null;
+    _connected = false;
     _controller.close();
   }
 }
