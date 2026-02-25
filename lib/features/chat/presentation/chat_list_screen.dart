@@ -87,7 +87,7 @@ class _ChatListScreenState extends State<ChatListScreen>
                 .loadMessages(userId);
 
             if (mounted) {
-              context.go("/chat/$userId");
+              context.push("/chat/$userId");
             }
           },
         );
