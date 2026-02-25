@@ -33,61 +33,62 @@ class _ProfileDetailsScreenState
       final response =
           await ApiClient.get("/profile/user/${widget.userId}");
 
+      if (!mounted) return;
+
       if (response["success"] == true &&
           response["data"] != null) {
         setState(() {
           profile = response["data"];
+          loading = false;
         });
+      } else {
+        setState(() => loading = false);
       }
-    } catch (_) {}
 
-    if (mounted) {
-      setState(() => loading = false);
+    } catch (_) {
+      if (mounted) {
+        setState(() => loading = false);
+      }
     }
   }
 
   Future<void> _toggleFollow() async {
-  if (profile == null || actionLoading) return;
+    if (profile == null || actionLoading) return;
 
-  final bool isFollowing = profile!["isFollowing"] ?? false;
+    final bool isFollowing = profile!["isFollowing"] ?? false;
 
-  setState(() => actionLoading = true);
+    setState(() => actionLoading = true);
 
-  try {
-    if (isFollowing) {
-      await ApiClient.post(
-          "/profile/unfollow/${widget.userId}", {});
-    } else {
-      await ApiClient.post(
-          "/profile/follow/${widget.userId}", {});
-    }
+    try {
+      if (isFollowing) {
+        await ApiClient.post(
+            "/profile/unfollow/${widget.userId}", {});
+      } else {
+        await ApiClient.post(
+            "/profile/follow/${widget.userId}", {});
+      }
 
-    if (!mounted) return;
-
-    setState(() {
-      profile!["isFollowing"] = !isFollowing;
+      if (!mounted) return;
 
       final currentFollowers =
           profile!["followers"] ?? 0;
 
-      if (isFollowing) {
+      setState(() {
+        profile!["isFollowing"] = !isFollowing;
         profile!["followers"] =
-            currentFollowers > 0
-                ? currentFollowers - 1
-                : 0;
-      } else {
-        profile!["followers"] =
-            currentFollowers + 1;
+            isFollowing
+                ? (currentFollowers > 0
+                    ? currentFollowers - 1
+                    : 0)
+                : currentFollowers + 1;
+        actionLoading = false;
+      });
+
+    } catch (e) {
+      if (mounted) {
+        setState(() => actionLoading = false);
       }
-    });
-
-  } catch (e) {
-    debugPrint("Follow error: $e");
-  }
-
-  if (mounted) {
-    setState(() => actionLoading = false);
-  }
+    }
   }
 
   @override
@@ -346,48 +347,6 @@ class _ProfileDetailsScreenState
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _PillStat extends StatelessWidget {
-  final String title;
-  final String value;
-
-  const _PillStat({
-    required this.title,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding:
-          const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
-      decoration: BoxDecoration(
-        borderRadius:
-            BorderRadius.circular(30),
-        color: const Color(0xFF1C1F26),
-      ),
-      child: Column(
-        children: [
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Colors.white54,
-            ),
-          ),
-        ],
       ),
     );
   }
