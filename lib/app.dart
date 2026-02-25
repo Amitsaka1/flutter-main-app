@@ -95,6 +95,14 @@ class _MyAppState extends State<MyApp> {
           return ChatConversationScreen(chatUserId: id);
         },
       ),
+      GoRoute(
+        path: "/edit-profile",
+        builder: (context, state) {
+          final profile =
+              state.extra as Map<String, dynamic>;
+          return EditProfileScreen(profile: profile);
+        },
+      ),
     ],
   );
 
