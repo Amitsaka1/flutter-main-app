@@ -12,7 +12,7 @@ class MyProfileScreen extends StatefulWidget {
 class _MyProfileScreenState extends State<MyProfileScreen> {
 
   Map<String, dynamic>? profile;
-  bool loading = true;
+  bool loading = false;
 
   @override
   void initState() {
