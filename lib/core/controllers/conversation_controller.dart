@@ -1,6 +1,5 @@
 import 'dart:async';
 import '../network/api_client.dart';
-import '../socket/socket_service.dart';
 import '../socket/global_socket_manager.dart';
 
 class ConversationController {
@@ -13,47 +12,62 @@ class ConversationController {
   final Map<String, StreamController<List<dynamic>>> _streams = {};
 
   String? _myId;
+  bool _socketInitialized = false;
+  StreamSubscription? _socketSub;
+
+  // ================= INIT =================
 
   void init(String myId) {
-  _myId = myId;
+    if (_socketInitialized && _myId == myId) return;
 
-  GlobalSocketManager.instance.init(myId);
+    _myId = myId;
 
-  GlobalSocketManager.instance.messages
-      .listen(_handleSocket);
+    GlobalSocketManager.instance.init(myId);
+
+    _socketSub?.cancel();
+    _socketSub = GlobalSocketManager.instance.messages
+        .listen(_handleSocket);
+
+    _socketInitialized = true;
   }
-  
+
+  // ================= STREAM =================
+
   Stream<List<dynamic>> stream(String userId) {
     _streams[userId] ??= StreamController.broadcast();
     return _streams[userId]!.stream;
   }
 
   List<dynamic> getMessages(String userId) {
-    return _conversationCache[userId] ?? [];
+    return List.from(_conversationCache[userId] ?? []);
   }
+
+  // ================= LOAD =================
 
   Future<void> loadMessages(String userId) async {
-  // 🔥 Always emit cached first (instant UI)
-  if (_conversationCache.containsKey(userId)) {
-    _emit(userId);
-  }
-
-  try {
-    final response =
-        await ApiClient.get("/chat/messages/$userId");
-
-    if (response["success"] == true) {
-      _conversationCache[userId] =
-          List.from(response["data"]);
-
-      await ApiClient.post("/chat/mark-read", {
-        "senderId": userId
-      });
-
+    if (_conversationCache.containsKey(userId)) {
       _emit(userId);
     }
-  } catch (_) {}
+
+    try {
+      final response =
+          await ApiClient.get("/chat/messages/$userId");
+
+      if (response["success"] == true) {
+        _conversationCache[userId] =
+            List.from(response["data"]);
+
+        await ApiClient.post("/chat/mark-read", {
+          "senderId": userId
+        });
+
+        _emit(userId);
+      }
+    } catch (_) {}
   }
+
+  // ================= SEND =================
+
   Future<void> sendMessage(
       String userId, String content) async {
     if (_myId == null) return;
@@ -67,7 +81,13 @@ class ConversationController {
     };
 
     _conversationCache[userId] ??= [];
-    _conversationCache[userId]!.add(tempMessage);
+
+    final updated =
+        List<dynamic>.from(_conversationCache[userId]!);
+    updated.add(tempMessage);
+
+    _conversationCache[userId] = updated;
+
     _emit(userId);
 
     try {
@@ -78,7 +98,11 @@ class ConversationController {
     } catch (_) {}
   }
 
+  // ================= SOCKET =================
+
   void _handleSocket(dynamic data) {
+    if (_myId == null) return;
+
     if (data["type"] == "NEW_MESSAGE") {
       final msg = data["data"];
       final sender = msg["senderId"];
@@ -89,25 +113,40 @@ class ConversationController {
 
       _conversationCache[chatUser] ??= [];
 
-      if (!_conversationCache[chatUser]!
-          .any((m) => m["id"] == msg["id"])) {
-        _conversationCache[chatUser]!.add(msg);
+      final updated =
+          List<dynamic>.from(_conversationCache[chatUser]!);
+
+      if (!updated.any((m) => m["id"] == msg["id"])) {
+        updated.add(msg);
+        _conversationCache[chatUser] = updated;
         _emit(chatUser);
       }
     }
 
     if (data["type"] == "MESSAGES_READ") {
-      final by = data["by"];
+      final userId = data["userId"];
 
-      for (var entry in _conversationCache.entries) {
-        entry.value
-            .where((m) => m["senderId"] == _myId)
-            .forEach((m) => m["isRead"] = true);
+      if (userId != null &&
+          _conversationCache.containsKey(userId)) {
+        final updated =
+            List<dynamic>.from(_conversationCache[userId]!);
 
-        _emit(entry.key);
+        for (int i = 0; i < updated.length; i++) {
+          if (updated[i]["senderId"] == _myId) {
+            updated[i] = {
+              ...updated[i],
+              "isRead": true,
+            };
+          }
+        }
+
+        _conversationCache[userId] = updated;
+        _emit(userId);
       }
     }
   }
+
+  // ================= EMIT =================
 
   void _emit(String userId) {
     _streams[userId] ??=
@@ -117,10 +156,15 @@ class ConversationController {
         .add(List.from(_conversationCache[userId]!));
   }
 
+  // ================= DISPOSE =================
+
   void dispose() {
+    _socketSub?.cancel();
+
     for (var s in _streams.values) {
       s.close();
     }
+
     _streams.clear();
   }
 }
