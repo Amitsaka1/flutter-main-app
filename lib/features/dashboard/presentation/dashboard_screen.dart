@@ -1,9 +1,8 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/network/api_client.dart';
-import '../../../core/network/websocket_service.dart';
+import '../../../core/socket/global_socket_manager.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -29,7 +28,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     "maxAge": "",
   };
 
-  WebSocketService? _socket;
   StreamSubscription? _socketSub;
 
   @override
@@ -42,20 +40,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final token = await ApiClient.getToken();
 
     if (token == null) {
-      if (mounted) context.go("/login");
+      if (mounted) context.pushReplacement("/login");
       return;
     }
 
     final profileRes = await ApiClient.get("/profile/me");
 
     if (profileRes["success"] != true) {
-      if (mounted) context.go("/create-profile");
+      if (mounted) context.pushReplacement("/create-profile");
       return;
     }
 
     await _fetchProfiles();
     await _fetchUnread();
-    _initSocket(token);
+    _listenSocket(); // 🔥 use global
   }
 
   Future<void> _fetchProfiles() async {
@@ -94,29 +92,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  void _initSocket(String token) {
-    final payload = jsonDecode(
-      utf8.decode(base64Url.decode(
-          base64Url.normalize(token.split(".")[1]))),
-    );
+  void _listenSocket() {
+    final socket = GlobalSocketManager.instance;
 
-    final myId = payload["id"];
+    _socketSub = socket.messages.listen((message) {
 
-    _socket = WebSocketService(userId: myId);
-    _socket!.connect();
+      if (!mounted) return;
 
-    _socketSub = _socket!.messages.listen((message) {
       if (message["type"] == "NEW_PROFILE") {
+        final newProfile = message["data"];
+
+        if (!profiles.any((p) => p["id"] == newProfile["id"])) {
+          setState(() {
+            profiles.insert(0, newProfile);
+          });
+        }
+      }
+
+      if (message["type"] == "NEW_MESSAGE") {
         setState(() {
-          if (!profiles.any(
-              (p) => p["id"] == message["data"]["id"])) {
-            profiles.insert(0, message["data"]);
-          }
+          unreadCount++;
         });
       }
 
-      if (message["type"] == "NEW_MESSAGE" ||
-          message["type"] == "MESSAGES_READ") {
+      if (message["type"] == "MESSAGES_READ") {
         _fetchUnread();
       }
     });
@@ -125,9 +124,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void dispose() {
     _socketSub?.cancel();
-    _socket?.dispose();
     super.dispose();
   }
+  
 
   @override
   Widget build(BuildContext context) {
