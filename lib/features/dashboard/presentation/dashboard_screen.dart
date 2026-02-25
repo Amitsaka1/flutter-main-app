@@ -64,25 +64,29 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   Future<void> _fetchProfiles() async {
-    try {
-      final response =
-          await ApiClient.get("/profile/all", queryParams: filters);
+  try {
+    final response =
+        await ApiClient.get("/profile/all", queryParams: filters);
 
-      if (!mounted) return;
+    if (!mounted) return;
 
-      if (response["success"] == true) {
-        setState(() {
-          profiles = response["data"];
-          loading = false;
-        });
-      } else {
-        setState(() => loading = false);
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() => loading = false);
-      }
+    if (response["success"] == true) {
+      setState(() {
+        profiles = response["data"];
+        loading = false;
+      });
+    } else {
+      setState(() {
+        loading = false;
+      });
     }
+  } catch (_) {
+    if (mounted) {
+      setState(() {
+        loading = false;
+      });
+    }
+  }
   }
 
   Future<void> _fetchUnread() async {
