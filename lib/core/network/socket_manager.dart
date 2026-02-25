@@ -1,4 +1,4 @@
-import 'websocket_service.dart';
+import '../socket/websocket_service.dart';
 
 class SocketManager {
   static WebSocketService? _instance;
