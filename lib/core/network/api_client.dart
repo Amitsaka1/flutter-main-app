@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:async';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 
 class ApiClient {
@@ -6,6 +8,9 @@ class ApiClient {
       "https://momo-1etm.onrender.com";
 
   static String? _token;
+
+  static const Duration _timeout =
+      Duration(seconds: 15);
 
   // ================= TOKEN =================
 
@@ -30,12 +35,18 @@ class ApiClient {
     final uri = Uri.parse("$baseUrl$endpoint")
         .replace(queryParameters: queryParams);
 
-    final response = await http.get(
-      uri,
-      headers: _headers(),
-    );
+    try {
+      final response = await http
+          .get(uri, headers: _headers())
+          .timeout(_timeout);
 
-    return _handleResponse(response);
+      return _handleResponse(response);
+
+    } on TimeoutException {
+      throw Exception("Request timeout");
+    } on SocketException {
+      throw Exception("No internet connection");
+    }
   }
 
   // ================= POST =================
@@ -46,16 +57,25 @@ class ApiClient {
   ) async {
     final uri = Uri.parse("$baseUrl$endpoint");
 
-    final response = await http.post(
-      uri,
-      headers: _headers(),
-      body: jsonEncode(body),
-    );
+    try {
+      final response = await http
+          .post(
+            uri,
+            headers: _headers(),
+            body: jsonEncode(body),
+          )
+          .timeout(_timeout);
 
-    return _handleResponse(response);
+      return _handleResponse(response);
+
+    } on TimeoutException {
+      throw Exception("Request timeout");
+    } on SocketException {
+      throw Exception("No internet connection");
+    }
   }
 
-  // ================= PUT (🔥 ADDED) =================
+  // ================= PUT =================
 
   static Future<Map<String, dynamic>> put(
     String endpoint,
@@ -63,28 +83,47 @@ class ApiClient {
   ) async {
     final uri = Uri.parse("$baseUrl$endpoint");
 
-    final response = await http.put(
-      uri,
-      headers: _headers(),
-      body: jsonEncode(body),
-    );
+    try {
+      final response = await http
+          .put(
+            uri,
+            headers: _headers(),
+            body: jsonEncode(body),
+          )
+          .timeout(_timeout);
 
-    return _handleResponse(response);
+      return _handleResponse(response);
+
+    } on TimeoutException {
+      throw Exception("Request timeout");
+    } on SocketException {
+      throw Exception("No internet connection");
+    }
   }
 
-  // ================= COMMON RESPONSE HANDLER =================
+  // ================= RESPONSE HANDLER =================
 
   static Map<String, dynamic> _handleResponse(
       http.Response response) {
+
+    if (response.body.isEmpty) {
+      return {"success": false};
+    }
+
     final decoded = jsonDecode(response.body);
 
     if (response.statusCode >= 200 &&
         response.statusCode < 300) {
       return decoded;
-    } else {
-      throw Exception(
-          decoded["message"] ?? "Server error");
     }
+
+    if (response.statusCode == 401) {
+      clearToken();
+      throw Exception("Session expired");
+    }
+
+    throw Exception(
+        decoded["message"] ?? "Server error");
   }
 
   // ================= HEADERS =================
