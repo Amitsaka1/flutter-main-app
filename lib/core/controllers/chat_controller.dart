@@ -17,7 +17,8 @@ class ChatController {
 
   Stream<List<dynamic>> get chatStream => _chatStreamController.stream;
 
-  List<dynamic> get chats => _chats;
+  // 🔥 Return copy (mutation safe)
+  List<dynamic> get chats => List.from(_chats);
 
   bool get isLoading => _loading;
 
@@ -28,12 +29,12 @@ class ChatController {
     return DateTime.now().difference(_lastFetch!).inSeconds < 20;
   }
 
-  // 🔥 Initial Load (with cache logic)
+  // 🔥 Initial Load
   Future<void> loadChats({bool forceRefresh = false}) async {
     if (_loading) return;
 
     if (!forceRefresh && hasData && isFresh) {
-      _chatStreamController.add(_chats);
+      _chatStreamController.add(List.from(_chats));
       return;
     }
 
@@ -45,10 +46,10 @@ class ChatController {
       if (response["success"] == true) {
         final data = response["data"] as List;
 
-        _chats = data;
+        _chats = List.from(data); // 🔥 safe copy
         _lastFetch = DateTime.now();
 
-        _chatStreamController.add(_chats);
+        _chatStreamController.add(List.from(_chats));
       }
     } catch (_) {}
 
@@ -60,34 +61,55 @@ class ChatController {
     await loadChats(forceRefresh: true);
   }
 
-  // 🔥 Update from Socket (NEW_MESSAGE)
+  // 🔥 Update from Socket
   void handleNewMessage(dynamic message) {
     final senderId = message["senderId"];
 
-    for (var chat in _chats) {
+    final updatedChats = List<dynamic>.from(_chats);
+
+    for (int i = 0; i < updatedChats.length; i++) {
+      final chat = updatedChats[i];
+
       if (chat["user"]["id"] == senderId) {
-        chat["lastMessage"] =
-            message["type"] == "image" ? "📷 Image" : message["content"];
-        chat["unreadCount"] =
-            (chat["unreadCount"] ?? 0) + 1;
+        updatedChats[i] = {
+          ...chat,
+          "lastMessage":
+              message["type"] == "image"
+                  ? "📷 Image"
+                  : message["content"],
+          "unreadCount":
+              (chat["unreadCount"] ?? 0) + 1,
+        };
+        break;
       }
     }
 
-    _chatStreamController.add(_chats);
+    _chats = updatedChats;
+
+    _chatStreamController.add(List.from(_chats));
   }
 
   // 🔥 Mark as Read
   void markAsRead(String userId) {
-    for (var chat in _chats) {
+    final updatedChats = List<dynamic>.from(_chats);
+
+    for (int i = 0; i < updatedChats.length; i++) {
+      final chat = updatedChats[i];
+
       if (chat["user"]["id"] == userId) {
-        chat["unreadCount"] = 0;
+        updatedChats[i] = {
+          ...chat,
+          "unreadCount": 0,
+        };
+        break;
       }
     }
 
-    _chatStreamController.add(_chats);
+    _chats = updatedChats;
+
+    _chatStreamController.add(List.from(_chats));
   }
 
-  // 🔥 Dispose (future safe)
   void dispose() {
     _chatStreamController.close();
   }
