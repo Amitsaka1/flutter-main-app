@@ -12,7 +12,8 @@ class DashboardScreen extends StatefulWidget {
       _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
+class _DashboardScreenState extends State<DashboardScreen>
+    with AutomaticKeepAliveClientMixin {
 
   List<dynamic> profiles = [];
   bool loading = true;
@@ -29,6 +30,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   };
 
   StreamSubscription? _socketSub;
+
+  @override
+  bool get wantKeepAlive => true; // 🔥 important
 
   @override
   void initState() {
@@ -53,7 +57,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     await _fetchProfiles();
     await _fetchUnread();
-    _listenSocket(); // 🔥 use global
+    _listenSocket();
   }
 
   Future<void> _fetchProfiles() async {
@@ -61,12 +65,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final response =
           await ApiClient.get("/profile/all", queryParams: filters);
 
+      if (!mounted) return;
+
       if (response["success"] == true) {
-        if (!mounted) return;
         setState(() {
           profiles = response["data"];
           loading = false;
         });
+      } else {
+        setState(() => loading = false);
       }
     } catch (_) {
       if (mounted) {
@@ -76,27 +83,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _fetchUnread() async {
-    final res = await ApiClient.get("/chat/recent");
+    try {
+      final res = await ApiClient.get("/chat/recent");
 
-    if (res["success"] == true) {
-      final data = res["data"] as List;
-      int total = 0;
+      if (!mounted) return;
 
-      for (var c in data) {
-        total += (c["unreadCount"] ?? 0) as int;
-      }
+      if (res["success"] == true) {
+        final data = res["data"] as List;
+        int total = 0;
 
-      if (mounted) {
+        for (var c in data) {
+          total += (c["unreadCount"] ?? 0) as int;
+        }
+
         setState(() => unreadCount = total);
       }
-    }
+    } catch (_) {}
   }
 
   void _listenSocket() {
     final socket = GlobalSocketManager.instance;
 
-    _socketSub = socket.messages.listen((message) {
+    _socketSub?.cancel(); // 🔥 prevent duplicate listen
 
+    _socketSub = socket.messages.listen((message) {
       if (!mounted) return;
 
       if (message["type"] == "NEW_PROFILE") {
@@ -115,7 +125,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         });
       }
 
-      if (message["type"] == "MESSAGES_READ") {
+      if (message["type"] == "MESSAGES_READ"]) {
         _fetchUnread();
       }
     });
@@ -126,12 +136,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _socketSub?.cancel();
     super.dispose();
   }
-  
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
 
-    if (loading) {
+    if (loading && profiles.isEmpty) {
       return const Center(
         child: CircularProgressIndicator(),
       );
@@ -139,68 +149,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
         child: Column(
           children: [
 
-            // ================= SEARCH + FILTER =================
+            // SEARCH + FILTER
 
             Row(
               children: [
-
                 Expanded(
                   child: Container(
                     height: 48,
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 14),
                     decoration: BoxDecoration(
                       color: const Color(0xFF1a1a1a),
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: Row(
+                    child: const Row(
                       children: [
-
-                        const Icon(Icons.search,
+                        Icon(Icons.search,
                             color: Colors.white54, size: 20),
-
-                        const SizedBox(width: 8),
-
-                        const Expanded(
+                        SizedBox(width: 8),
+                        Expanded(
                           child: TextField(
-                            style: TextStyle(color: Colors.white),
+                            style:
+                                TextStyle(color: Colors.white),
                             decoration: InputDecoration(
                               hintText: "Search...",
-                              hintStyle:
-                                  TextStyle(color: Colors.white54),
+                              hintStyle: TextStyle(
+                                  color: Colors.white54),
                               border: InputBorder.none,
                             ),
                           ),
-                        ),
-
-                        Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            const Icon(Icons.card_giftcard,
-                                color: Colors.white70, size: 22),
-
-                            Positioned(
-                              right: -6,
-                              top: -6,
-                              child: Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: const BoxDecoration(
-                                  color: Colors.orange,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Text(
-                                  "2",
-                                  style: TextStyle(
-                                    fontSize: 9,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
                         ),
                       ],
                     ),
@@ -228,68 +210,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
             if (filterOpen) _buildFilterPanel(),
 
-            const SizedBox(height: 12),
-
-            // ================= ACTIVE / GIFTS =================
-
-            Row(
-              children: [
-
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () =>
-                        setState(() => showActive = true),
-                    child: Container(
-                      height: 42,
-                      decoration: BoxDecoration(
-                        color: showActive
-                            ? const Color(0xFF2a2a2a)
-                            : const Color(0xFF1a1a1a),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: const Center(
-                        child: Text(
-                          "🔥 Active",
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(width: 12),
-
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () =>
-                        setState(() => showActive = false),
-                    child: Container(
-                      height: 42,
-                      decoration: BoxDecoration(
-                        color: !showActive
-                            ? const Color(0xFF2a2a2a)
-                            : const Color(0xFF1a1a1a),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: const Center(
-                        child: Text(
-                          "🌟 Gifts",
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
             const SizedBox(height: 14),
-
-            // ================= PROFILE GRID =================
 
             Expanded(
               child: GridView.builder(
@@ -325,27 +246,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Column(
         children: [
           DropdownButtonFormField<String>(
-            decoration: const InputDecoration(labelText: "Gender"),
+            decoration:
+                const InputDecoration(labelText: "Gender"),
             items: const [
-              DropdownMenuItem(value: "Male", child: Text("Male")),
-              DropdownMenuItem(value: "Female", child: Text("Female")),
+              DropdownMenuItem(
+                  value: "Male", child: Text("Male")),
+              DropdownMenuItem(
+                  value: "Female", child: Text("Female")),
             ],
-            onChanged: (val) => filters["gender"] = val ?? "",
-          ),
-          DropdownButtonFormField<String>(
-            decoration: const InputDecoration(labelText: "Role"),
-            items: const [
-              DropdownMenuItem(value: "Top", child: Text("Top")),
-              DropdownMenuItem(value: "Bottom", child: Text("Bottom")),
-              DropdownMenuItem(value: "Lesbian", child: Text("Lesbian")),
-            ],
-            onChanged: (val) => filters["roleType"] = val ?? "",
+            onChanged: (val) =>
+                filters["gender"] = val ?? "",
           ),
           const SizedBox(height: 10),
           ElevatedButton(
             onPressed: () {
+              setState(() {
+                loading = true;
+              });
               _fetchProfiles();
-              setState(() => filterOpen = false);
+              filterOpen = false;
             },
             child: const Text("Apply"),
           )
@@ -362,10 +281,11 @@ class _ProfileCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
-    final online = profile["user"]?["isOnline"] == true;
+    final online =
+        profile["user"]?["isOnline"] == true;
 
     final String? userId =
-        profile["userId"]?.toString();   // ✅ CORRECT FIELD
+        profile["userId"]?.toString();
 
     return GestureDetector(
       onTap: () {
@@ -391,7 +311,8 @@ class _ProfileCard extends StatelessWidget {
                 ),
               ),
             Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment:
+                  MainAxisAlignment.center,
               children: [
                 Text(profile["name"] ?? "",
                     style: const TextStyle(
