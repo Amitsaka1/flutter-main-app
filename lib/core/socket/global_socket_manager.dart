@@ -30,6 +30,8 @@ class GlobalSocketManager with WidgetsBindingObserver {
     _userId = userId;
 
     await _socketSubscription?.cancel();
+    _socketSubscription = null;
+
     _socketService?.dispose();
 
     _socketService = WebSocketService(userId: userId);
@@ -94,11 +96,20 @@ class GlobalSocketManager with WidgetsBindingObserver {
   // ================= DISPOSE =================
 
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    _observerAdded = false;
+    if (_observerAdded) {
+      WidgetsBinding.instance.removeObserver(this);
+      _observerAdded = false;
+    }
 
     _socketSubscription?.cancel();
+    _socketSubscription = null;
+
     _socketService?.dispose();
+    _socketService = null;
+
     _messageController.close();
+
+    _initialized = false;
+    _userId = null;
   }
 }
