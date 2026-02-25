@@ -12,7 +12,7 @@ import 'package:app_project/features/profile/presentation/my_profile_screen.dart
 import 'package:app_project/features/subscription/presentation/premium_screen.dart';
 
 class MyApp extends StatefulWidget {
-  MyApp({super.key});
+  const MyApp({super.key});
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -20,7 +20,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
 
-  final GoRouter _router = GoRouter(
+  late final GoRouter _router = GoRouter(
     initialLocation: "/login",
     routes: [
 
@@ -38,42 +38,45 @@ class _MyAppState extends State<MyApp> {
             const CreateProfileScreen(),
       ),
 
-      // ===== SHELL ROUTE (Bottom Nav Wrapper) =====
+      // ===== SHELL ROUTE (BOTTOM NAV WRAPPER) =====
       ShellRoute(
         builder: (context, state, child) {
           return AppLayout(child: child);
         },
         routes: [
 
-          // ===== DASHBOARD =====
           GoRoute(
             path: "/dashboard",
-            builder: (context, state) =>
-                const DashboardScreen(),
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(
+              child: DashboardScreen(),
+            ),
           ),
 
-          // ===== CHAT LIST =====
           GoRoute(
             path: "/chat",
-            builder: (context, state) =>
-                const ChatListScreen(),
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(
+              child: ChatListScreen(),
+            ),
           ),
 
-          // ===== PREMIUM =====
           GoRoute(
             path: "/premium",
-            builder: (context, state) =>
-                const PremiumScreen(),
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(
+              child: PremiumScreen(),
+            ),
           ),
 
-          // ===== MY PROFILE (SELF PROFILE) =====
           GoRoute(
             path: "/profile",
-            builder: (context, state) =>
-                const MyProfileScreen(),
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(
+              child: MyProfileScreen(),
+            ),
           ),
 
-          // ===== OTHER USER PROFILE =====
           GoRoute(
             path: "/profile/:id",
             builder: (context, state) {
@@ -84,7 +87,7 @@ class _MyAppState extends State<MyApp> {
         ],
       ),
 
-      // ===== CHAT CONVERSATION (No Bottom Nav) =====
+      // ===== CHAT CONVERSATION (OUTSIDE SHELL) =====
       GoRoute(
         path: "/chat/:id",
         builder: (context, state) {
