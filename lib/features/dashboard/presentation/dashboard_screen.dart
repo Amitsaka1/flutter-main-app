@@ -371,7 +371,7 @@ class _ProfileCard extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         if (userId != null && userId.isNotEmpty) {
-          context.go("/profile/$userId");
+          context.push("/profile/$userId");
         }
       },
       child: Container(
