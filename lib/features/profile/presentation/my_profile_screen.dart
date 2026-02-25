@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import '../../../core/network/api_client.dart';
 import 'edit_profile_screen.dart';
 
@@ -89,7 +88,6 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
             child: Column(
               children: [
 
-                // 🔥 HEADER
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -132,7 +130,22 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
 
                 const SizedBox(height: 40),
 
-                // (UI unchanged...)
+                Text(
+                  name,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+
+                const SizedBox(height: 6),
+
+                Text(
+                  "@$username",
+                  style: const TextStyle(color: Colors.white54),
+                ),
+
+                const SizedBox(height: 35),
 
                 SizedBox(
                   width: double.infinity,
@@ -145,9 +158,11 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                       ),
                     ),
                     onPressed: () async {
-                      final result = await context.push<bool>(
-                        "/edit-profile",
-                        extra: profile,
+                      final result = await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => EditProfileScreen(profile: profile!),
+                        ),
                       );
 
                       if (result == true) {
