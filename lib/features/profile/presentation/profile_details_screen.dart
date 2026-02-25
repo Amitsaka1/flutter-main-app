@@ -328,7 +328,7 @@ class _ProfileDetailsScreenState
 
                       if (chatUserId != null &&
                           chatUserId.isNotEmpty) {
-                        context.go("/chat/$chatUserId");
+                        context.push("/chat/$chatUserId");
                       }
                     },
                     child: const Text(
