@@ -84,7 +84,7 @@ class _ProfileDetailsScreenState
         actionLoading = false;
       });
 
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
         setState(() => actionLoading = false);
       }
@@ -347,6 +347,50 @@ class _ProfileDetailsScreenState
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ================= PILL STAT (MISSING CLASS FIX) =================
+
+class _PillStat extends StatelessWidget {
+  final String title;
+  final String value;
+
+  const _PillStat({
+    required this.title,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding:
+          const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+      decoration: BoxDecoration(
+        borderRadius:
+            BorderRadius.circular(30),
+        color: const Color(0xFF1C1F26),
+      ),
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.white54,
+            ),
+          ),
+        ],
       ),
     );
   }
