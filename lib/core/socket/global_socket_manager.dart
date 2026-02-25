@@ -9,10 +9,12 @@ class GlobalSocketManager with WidgetsBindingObserver {
   static GlobalSocketManager get instance => _instance;
 
   WebSocketService? _socketService;
+  StreamSubscription? _socketSubscription;
 
   String? _userId;
   bool _initialized = false;
   bool _foreground = true;
+  bool _observerAdded = false;
 
   final StreamController<Map<String, dynamic>>
       _messageController = StreamController.broadcast();
@@ -27,15 +29,20 @@ class GlobalSocketManager with WidgetsBindingObserver {
 
     _userId = userId;
 
+    await _socketSubscription?.cancel();
     _socketService?.dispose();
 
     _socketService = WebSocketService(userId: userId);
 
-    _socketService!.messages.listen((event) {
+    _socketSubscription =
+        _socketService!.messages.listen((event) {
       _messageController.add(event);
     });
 
-    WidgetsBinding.instance.addObserver(this);
+    if (!_observerAdded) {
+      WidgetsBinding.instance.addObserver(this);
+      _observerAdded = true;
+    }
 
     await _socketService!.connect();
 
@@ -70,8 +77,13 @@ class GlobalSocketManager with WidgetsBindingObserver {
 
   // ================= DISCONNECT =================
 
-  void disconnect() {
+  Future<void> disconnect() async {
+    await _socketSubscription?.cancel();
+    _socketSubscription = null;
+
     _socketService?.disconnect();
+    _socketService = null;
+
     _initialized = false;
     _userId = null;
   }
@@ -83,6 +95,9 @@ class GlobalSocketManager with WidgetsBindingObserver {
 
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _observerAdded = false;
+
+    _socketSubscription?.cancel();
     _socketService?.dispose();
     _messageController.close();
   }
