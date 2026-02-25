@@ -41,23 +41,26 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   Future<void> _init() async {
-    final token = await ApiClient.getToken();
+  final token = await ApiClient.getToken();
 
-    if (token == null) {
-      if (mounted) context.pushReplacement("/login");
-      return;
-    }
+  if (token == null) {
+    if (mounted) context.pushReplacement("/login");
+    return;
+  }
 
-    final profileRes = await ApiClient.get("/profile/me");
+  // 🔥 Don't block UI
+  _fetchProfiles();
+  _fetchUnread();
+  _listenSocket();
+
+  // 🔥 Only check profile existence separately
+  ApiClient.get("/profile/me").then((profileRes) {
+    if (!mounted) return;
 
     if (profileRes["success"] != true) {
-      if (mounted) context.pushReplacement("/create-profile");
-      return;
+      context.pushReplacement("/create-profile");
     }
-
-    await _fetchProfiles();
-    await _fetchUnread();
-    _listenSocket();
+  });
   }
 
   Future<void> _fetchProfiles() async {
