@@ -32,7 +32,7 @@ class _ChatConversationScreenState
   StreamSubscription? _subscription;
 
   List<dynamic> messages = [];
-  bool loading = false;
+  bool loading = true; // 🔥 start true
   String? myId;
 
   @override
@@ -45,7 +45,7 @@ class _ChatConversationScreenState
     final token = await ApiClient.getToken();
 
     if (token == null) {
-      if (mounted) context.go("/login");
+      if (mounted) context.pushReplacement("/login"); // 🔥 fixed
       return;
     }
 
@@ -87,14 +87,11 @@ class _ChatConversationScreenState
   }
 
   void _scrollBottom() {
-    Future.delayed(const Duration(milliseconds: 100),
-        () {
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
-        _scrollController.animateTo(
+        _scrollController.jumpTo(
           _scrollController.position.maxScrollExtent,
-          duration:
-              const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
         );
       }
     });
@@ -110,6 +107,15 @@ class _ChatConversationScreenState
 
   @override
   Widget build(BuildContext context) {
+
+    if (loading && messages.isEmpty) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF0A0A0A),
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0A),
