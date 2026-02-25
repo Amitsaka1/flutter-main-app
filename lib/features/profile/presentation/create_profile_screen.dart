@@ -31,7 +31,7 @@ class _CreateProfileScreenState
 
     final token = await ApiClient.getToken();
     if (token == null) {
-      if (mounted) context.go("/login");
+      if (mounted) context.pushReplacement("/login");
       return;
     }
 
@@ -54,7 +54,9 @@ class _CreateProfileScreenState
       });
 
       if (response["success"] == true) {
-        if (mounted) context.go("/dashboard");
+        if (mounted) {
+          context.pushReplacement("/dashboard");
+        }
       } else {
         setState(() {
           message =
@@ -63,7 +65,7 @@ class _CreateProfileScreenState
         });
       }
 
-    } catch (e) {
+    } catch (_) {
       setState(() {
         message = "Server error";
       });
@@ -72,6 +74,13 @@ class _CreateProfileScreenState
     if (mounted) {
       setState(() => loading = false);
     }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _ageController.dispose();
+    super.dispose();
   }
 
   @override
@@ -116,7 +125,6 @@ class _CreateProfileScreenState
 
                     const SizedBox(height: 20),
 
-                    // NAME
                     TextFormField(
                       controller: _nameController,
                       style: const TextStyle(
@@ -132,7 +140,6 @@ class _CreateProfileScreenState
 
                     const SizedBox(height: 12),
 
-                    // GENDER
                     DropdownButtonFormField<String>(
                       value: gender,
                       decoration:
@@ -157,7 +164,6 @@ class _CreateProfileScreenState
 
                     const SizedBox(height: 12),
 
-                    // ROLE TYPE
                     DropdownButtonFormField<String>(
                       value: roleType,
                       decoration:
@@ -188,7 +194,6 @@ class _CreateProfileScreenState
 
                     const SizedBox(height: 12),
 
-                    // AGE
                     TextFormField(
                       controller: _ageController,
                       keyboardType:
@@ -214,7 +219,6 @@ class _CreateProfileScreenState
 
                     const SizedBox(height: 12),
 
-                    // HAVE PLACE
                     Row(
                       children: [
                         Checkbox(
