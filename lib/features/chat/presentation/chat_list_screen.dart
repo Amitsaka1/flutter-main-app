@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/network/api_client.dart';
@@ -40,6 +39,13 @@ class _ChatListScreenState extends State<ChatListScreen>
       return;
     }
 
+    // 🔥 1. INSTANT SHOW CACHED DATA
+    if (_controller.hasData) {
+      chats = _controller.chats;
+      loading = false;
+    }
+
+    // 🔥 2. Listen to stream updates
     _subscription = _controller.chatStream.listen((data) {
       if (!mounted) return;
 
@@ -49,7 +55,8 @@ class _ChatListScreenState extends State<ChatListScreen>
       });
     });
 
-    await _controller.loadChats();
+    // 🔥 3. Load in background (NO await)
+    _controller.loadChats();
   }
 
   @override
@@ -62,7 +69,7 @@ class _ChatListScreenState extends State<ChatListScreen>
   Widget build(BuildContext context) {
     super.build(context);
 
-    if (loading) {
+    if (loading && chats.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
 
@@ -88,8 +95,6 @@ class _ChatListScreenState extends State<ChatListScreen>
     );
   }
 }
-
-// 🔥 IMPORTANT: No underscore now (public class)
 
 class ChatCard extends StatelessWidget {
   final dynamic chat;
