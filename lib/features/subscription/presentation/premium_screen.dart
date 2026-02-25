@@ -19,6 +19,8 @@ class _PremiumScreenState
   String message = "";
   String phone = "";
 
+  Timer? _redirectTimer;
+
   @override
   void initState() {
     super.initState();
@@ -53,7 +55,7 @@ class _PremiumScreenState
 
   Future<void> _subscribe() async {
 
-    if (phone.isEmpty) return;
+    if (phone.isEmpty || loading) return;
 
     setState(() {
       loading = true;
@@ -67,32 +69,43 @@ class _PremiumScreenState
         "phone": phone,
       });
 
+      if (!mounted) return;
+
       if (response["success"] == true) {
 
         setState(() {
           message = "Payment successful ✅";
+          loading = false;
         });
 
-        // Delay redirect same as your code
-        Timer(const Duration(milliseconds: 1500), () {
-          if (mounted) context.go("/dashboard");
-        });
+        _redirectTimer = Timer(
+          const Duration(milliseconds: 1500),
+          () {
+            if (mounted) context.go("/dashboard");
+          },
+        );
 
       } else {
         setState(() {
           message = "Payment failed";
+          loading = false;
         });
       }
 
     } catch (_) {
-      setState(() {
-        message = "Server error";
-      });
+      if (mounted) {
+        setState(() {
+          message = "Server error";
+          loading = false;
+        });
+      }
     }
+  }
 
-    if (mounted) {
-      setState(() => loading = false);
-    }
+  @override
+  void dispose() {
+    _redirectTimer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -156,11 +169,17 @@ class _PremiumScreenState
                         const EdgeInsets
                             .all(12),
                   ),
-                  child: Text(
-                    loading
-                        ? "Processing..."
-                        : "Subscribe Now",
-                  ),
+                  child: loading
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child:
+                              CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text("Subscribe Now"),
                 ),
               ),
 
