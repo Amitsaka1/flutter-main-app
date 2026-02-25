@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import '../../../core/network/api_client.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -61,7 +60,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       );
 
       if (response["success"] == true) {
-        if (mounted) context.pop(true);
+        if (mounted) Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {
@@ -139,7 +138,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     DropdownMenuItem(value: "Male", child: Text("Male")),
                     DropdownMenuItem(value: "Female", child: Text("Female")),
                   ],
-                  onChanged: (v) => gender = v ?? "",
+                  onChanged: (v) => setState(() => gender = v ?? ""),
                 ),
 
                 const SizedBox(height: 15),
@@ -152,7 +151,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     DropdownMenuItem(value: "Bottom", child: Text("Bottom")),
                     DropdownMenuItem(value: "Versatile", child: Text("Versatile")),
                   ],
-                  onChanged: (v) => roleType = v ?? "",
+                  onChanged: (v) => setState(() => roleType = v ?? ""),
                 ),
 
                 const SizedBox(height: 15),
