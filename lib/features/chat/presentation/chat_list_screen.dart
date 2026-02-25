@@ -35,14 +35,16 @@ class _ChatListScreenState extends State<ChatListScreen>
     final token = await ApiClient.getToken();
 
     if (token == null) {
-      if (mounted) context.go("/login");
+      if (mounted) context.pushReplacement("/login");
       return;
     }
 
-    // 🔥 1. INSTANT SHOW CACHED DATA
+    // 🔥 1. INSTANT SHOW CACHED DATA (safe UI update)
     if (_controller.hasData) {
-      chats = _controller.chats;
-      loading = false;
+      setState(() {
+        chats = _controller.chats;
+        loading = false;
+      });
     }
 
     // 🔥 2. Listen to stream updates
@@ -55,7 +57,7 @@ class _ChatListScreenState extends State<ChatListScreen>
       });
     });
 
-    // 🔥 3. Load in background (NO await)
+    // 🔥 3. Background load (no await = non blocking)
     _controller.loadChats();
   }
 
