@@ -147,64 +147,69 @@ class _AppLayoutState extends State<AppLayout> {
   }
 
   Widget _buildBottomNav(
-    BuildContext context,
-    String route,
-  ) {
-    return Container(
-      padding: const EdgeInsets.only(
-        top: 6,
-        bottom: 6,
-      ),
-      decoration: const BoxDecoration(
-        color: Color(0xFF111111),
-      ),
-      child: Row(
-        mainAxisAlignment:
-            MainAxisAlignment.spaceAround,
-        crossAxisAlignment:
-            CrossAxisAlignment.center,
-        children: [
-
-          _NavItem(
-            label: "Home",
-            icon: Icons.home_rounded,
-            active: route.startsWith("/dashboard"),
-            onTap: () => context.go("/dashboard"),
-          ),
-
-          _ChatNavItem(
-            unreadCount: widget.unreadCount,
-            active: route.startsWith("/chat"),
-            onTap: () => context.go("/chat"),
-          ),
-
-          _NavItem(
-            label: "Rooms",
-            icon: Icons.meeting_room_rounded,
-            active: false,
-            onTap: () {},
-          ),
-
-          _NavItem(
-            label: "Premium",
-            icon: Icons.workspace_premium_rounded,
-            active: route.startsWith("/premium"),
-            highlightColor:
-                const Color(0xFFFFD700),
-            onTap: () => context.go("/premium"),
-          ),
-
-          _NavItem(
-            label: "Profile",
-            icon: Icons.person_rounded,
-            active: route == "/profile",
-            onTap: () => context.go("/profile"),
-          ),
-        ],
-      ),
-    );
+  BuildContext context,
+  String route,
+) {
+  void safeGo(String path) {
+    if (route != path) {
+      context.go(path);
+    }
   }
-}
+
+  return Container(
+    padding: const EdgeInsets.only(
+      top: 6,
+      bottom: 6,
+    ),
+    decoration: const BoxDecoration(
+      color: Color(0xFF111111),
+    ),
+    child: Row(
+      mainAxisAlignment:
+          MainAxisAlignment.spaceAround,
+      crossAxisAlignment:
+          CrossAxisAlignment.center,
+      children: [
+
+        _NavItem(
+          label: "Home",
+          icon: Icons.home_rounded,
+          active: route.startsWith("/dashboard"),
+          onTap: () => safeGo("/dashboard"),
+        ),
+
+        _ChatNavItem(
+          unreadCount: widget.unreadCount,
+          active: route.startsWith("/chat"),
+          onTap: () => safeGo("/chat"),
+        ),
+
+        _NavItem(
+          label: "Rooms",
+          icon: Icons.meeting_room_rounded,
+          active: false,
+          onTap: () {},
+        ),
+
+        _NavItem(
+          label: "Premium",
+          icon: Icons.workspace_premium_rounded,
+          active: route.startsWith("/premium"),
+          highlightColor:
+              const Color(0xFFFFD700),
+          onTap: () => safeGo("/premium"),
+        ),
+
+        _NavItem(
+          label: "Profile",
+          icon: Icons.person_rounded,
+          active: route == "/profile",
+          onTap: () => safeGo("/profile"),
+        ),
+      ],
+    ),
+  );
+  }
 
 class _NavItem extends StatelessWidget {
   final String label;
