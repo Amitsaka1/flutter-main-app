@@ -14,10 +14,17 @@ class WebSocketService {
   int _reconnectAttempt = 0;
   Timer? _reconnectTimer;
 
-  final StreamController<Map<String, dynamic>> _controller =
+  final StreamController<Map<String, dynamic>> _messageController =
       StreamController.broadcast();
 
-  Stream<Map<String, dynamic>> get messages => _controller.stream;
+  final StreamController<Map<String, dynamic>> _notificationController =
+      StreamController.broadcast();
+
+  Stream<Map<String, dynamic>> get messages =>
+      _messageController.stream;
+
+  Stream<Map<String, dynamic>> get notifications =>
+      _notificationController.stream;
 
   WebSocketService({required this.userId});
 
@@ -42,7 +49,13 @@ class WebSocketService {
         (data) {
           try {
             final decoded = jsonDecode(data);
-            _controller.add(decoded);
+
+            if (decoded["type"] == "NEW_NOTIFICATION") {
+              _notificationController.add(decoded);
+              return;
+            }
+
+            _messageController.add(decoded);
           } catch (_) {}
         },
         onDone: _handleDisconnect,
@@ -83,7 +96,6 @@ class WebSocketService {
 
     _reconnectAttempt++;
 
-    // Exponential backoff (2s → 4s → 6s → ... max 30s)
     int delaySeconds =
         (_reconnectAttempt * 2).clamp(2, 30);
 
@@ -117,6 +129,7 @@ class WebSocketService {
     _socket?.close();
     _socket = null;
     _connected = false;
-    _controller.close();
+    _messageController.close();
+    _notificationController.close();
   }
 }
