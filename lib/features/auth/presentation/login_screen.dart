@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/network/api_client.dart';
-import '../../../core/socket/websocket_service.dart';
+import '../../../core/socket/global_socket_manager.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -25,15 +25,11 @@ class _LoginScreenState extends State<LoginScreen> {
   String message = "";
   String step = "phone";
 
-  WebSocketService? _socketService;
-
   @override
   void initState() {
     super.initState();
     ApiClient.clearToken();
   }
-
-  // ================= OTP SYSTEM =================
 
   Future<void> _sendOtp() async {
 
@@ -118,16 +114,18 @@ class _LoginScreenState extends State<LoginScreen> {
           final userId = payloadMap["id"];
 
           if (userId != null) {
-            _socketService =
-                WebSocketService(userId: userId.toString());
-            await _socketService!.connect();
+            // 🔥 Use Global Socket (no local instance)
+            await GlobalSocketManager.instance
+                .init(userId.toString());
           }
         }
 
+        if (!mounted) return;
+
         if (res["profileRequired"] == true) {
-          if (mounted) context.go("/create-profile");
+          context.pushReplacement("/create-profile");
         } else {
-          if (mounted) context.go("/dashboard");
+          context.pushReplacement("/dashboard");
         }
 
       } else {
@@ -143,6 +141,13 @@ class _LoginScreenState extends State<LoginScreen> {
     if (mounted) {
       setState(() => loading = false);
     }
+  }
+
+  @override
+  void dispose() {
+    _phoneController.dispose();
+    _otpController.dispose();
+    super.dispose();
   }
 
   // ================= UI =================
