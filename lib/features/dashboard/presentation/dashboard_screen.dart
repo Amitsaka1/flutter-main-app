@@ -125,7 +125,7 @@ class _DashboardScreenState extends State<DashboardScreen>
         });
       }
 
-      if (message["type"] == "MESSAGES_READ"]) {
+      if (message["type"] == "MESSAGES_READ") {
         _fetchUnread();
       }
     });
