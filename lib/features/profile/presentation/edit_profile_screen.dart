@@ -64,14 +64,24 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         if (mounted) context.pop(true);
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
+      }
     }
 
     if (mounted) {
       setState(() => loading = false);
     }
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    usernameController.dispose();
+    ageController.dispose();
+    super.dispose();
   }
 
   @override
@@ -157,10 +167,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                 SizedBox(
                   width: double.infinity,
+                  height: 48,
                   child: ElevatedButton(
                     onPressed: loading ? null : _updateProfile,
                     child: loading
-                        ? const CircularProgressIndicator()
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
                         : const Text("Save Changes"),
                   ),
                 )
