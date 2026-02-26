@@ -7,7 +7,7 @@ import 'package:app_project/core/socket/global_socket_manager.dart';
 
 class CallScreen extends StatefulWidget {
   final String channelName;
-  final String callType; // 🔥 NEW
+  final String callType;
 
   const CallScreen({
     super.key,
@@ -24,6 +24,10 @@ class _CallScreenState extends State<CallScreen> {
   RtcEngine? _engine;
   int? _remoteUid;
   StreamSubscription? _socketSub;
+
+  // 🔥 TIMER VARIABLES
+  Timer? _timer;
+  int _seconds = 0;
 
   @override
   void initState() {
@@ -62,6 +66,9 @@ class _CallScreenState extends State<CallScreen> {
 
     _engine!.registerEventHandler(
       RtcEngineEventHandler(
+        onJoinChannelSuccess: (connection, elapsed) {
+          _startTimer(); // 🔥 START TIMER WHEN JOINED
+        },
         onUserJoined: (connection, remoteUid, elapsed) {
           setState(() => _remoteUid = remoteUid);
         },
@@ -71,10 +78,7 @@ class _CallScreenState extends State<CallScreen> {
       ),
     );
 
-    // ===============================
-    // 🔥 SEPARATE VOICE / VIDEO LOGIC
-    // ===============================
-
+    // 🔥 Separate Voice / Video
     if (widget.callType == "VOICE_CALL") {
       await _engine!.enableAudio();
       await _engine!.disableVideo();
@@ -90,7 +94,29 @@ class _CallScreenState extends State<CallScreen> {
     );
   }
 
+  // 🔥 TIMER START
+  void _startTimer() {
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) return;
+      setState(() {
+        _seconds++;
+      });
+    });
+  }
+
+  // 🔥 FORMAT TIME
+  String _formatTime(int totalSeconds) {
+    final minutes = totalSeconds ~/ 60;
+    final seconds = totalSeconds % 60;
+    final minStr = minutes.toString().padLeft(2, '0');
+    final secStr = seconds.toString().padLeft(2, '0');
+    return "$minStr:$secStr";
+  }
+
   Future<void> _leaveCall() async {
+
+    _timer?.cancel(); // 🔥 STOP TIMER
 
     try {
       await ApiClient.post("/call/end", {
@@ -106,6 +132,7 @@ class _CallScreenState extends State<CallScreen> {
 
   @override
   void dispose() {
+    _timer?.cancel();
     _socketSub?.cancel();
     _engine?.release();
     super.dispose();
@@ -118,7 +145,7 @@ class _CallScreenState extends State<CallScreen> {
       body: Stack(
         children: [
 
-          // 🔥 Only show video view if VIDEO_CALL
+          // 🔥 VIDEO VIEW
           if (widget.callType == "VIDEO_CALL" &&
               _remoteUid != null &&
               _engine != null)
@@ -132,7 +159,7 @@ class _CallScreenState extends State<CallScreen> {
               ),
             ),
 
-          // 🔥 Voice Call UI
+          // 🔥 VOICE UI
           if (widget.callType == "VOICE_CALL")
             const Center(
               child: Icon(
@@ -142,6 +169,24 @@ class _CallScreenState extends State<CallScreen> {
               ),
             ),
 
+          // 🔥 TIMER UI
+          Positioned(
+            top: 80,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Text(
+                _formatTime(_seconds),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+
+          // 🔥 END BUTTON
           Align(
             alignment: Alignment.bottomCenter,
             child: Padding(
