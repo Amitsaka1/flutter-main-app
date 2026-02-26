@@ -65,16 +65,25 @@ class _CallScreenState extends State<CallScreen> {
   }
 
   Future<void> _leaveCall() async {
-    await _engine?.leaveChannel();
-    await _engine?.release();
-    if (mounted) Navigator.pop(context);
+
+  try {
+    // 🔥 Notify backend to end session
+    await ApiClient.post("/call/end", {
+      "sessionId": widget.channelName
+    });
+  } catch (_) {}
+
+  await _engine?.leaveChannel();
+  await _engine?.release();
+
+  if (mounted) Navigator.pop(context);
   }
 
   @override
-  void dispose() {
-    _leaveCall();
-    super.dispose();
-  }
+void dispose() {
+  _engine?.release();
+  super.dispose();
+}
 
   @override
   Widget build(BuildContext context) {
