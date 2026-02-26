@@ -125,10 +125,12 @@ class _ChatConversationScreenState
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => CallScreen(channelName: sessionId),
+         builder: (_) => CallScreen(
+          channelName: sessionId,
+          callType: type,
+         ),
       ),
     );
-  }
 
   @override
   void dispose() {
