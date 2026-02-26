@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'websocket_service.dart';
+import 'package:app_project/features/call/presentation/incoming_call_screen.dart';
+import 'package:app_project/main.dart'; // jaha appNavigatorKey defined hai
 
 class GlobalSocketManager with WidgetsBindingObserver {
   GlobalSocketManager._internal();
@@ -15,6 +18,8 @@ class GlobalSocketManager with WidgetsBindingObserver {
   bool _initialized = false;
   bool _foreground = true;
   bool _observerAdded = false;
+
+  bool _incomingScreenOpen = false; // 🔥 prevent duplicate popup
 
   final StreamController<Map<String, dynamic>>
       _messageController = StreamController.broadcast();
@@ -38,6 +43,12 @@ class GlobalSocketManager with WidgetsBindingObserver {
 
     _socketSubscription =
         _socketService!.messages.listen((event) {
+
+      // 🔥 Handle incoming call globally
+      if (event["type"] == "INCOMING_CALL") {
+        _handleIncomingCall(event);
+      }
+
       _messageController.add(event);
     });
 
@@ -49,6 +60,27 @@ class GlobalSocketManager with WidgetsBindingObserver {
     await _socketService!.connect();
 
     _initialized = true;
+  }
+
+  void _handleIncomingCall(Map<String, dynamic> data) {
+    if (_incomingScreenOpen) return;
+
+    final context = appNavigatorKey.currentContext;
+    if (context == null) return;
+
+    _incomingScreenOpen = true;
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => IncomingCallScreen(
+          sessionId: data["sessionId"],
+          callerId: data["callerId"],
+          callType: data["callType"],
+        ),
+      ),
+    ).then((_) {
+      _incomingScreenOpen = false;
+    });
   }
 
   // ================= SEND =================
