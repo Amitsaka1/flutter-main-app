@@ -3,6 +3,7 @@ import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/material.dart';
 import 'package:app_project/core/utils/permission_helper.dart';
 import 'package:app_project/core/network/api_client.dart';
+import 'package:app_project/core/socket/global_socket_manager.dart';
 
 class CallScreen extends StatefulWidget {
   final String channelName;
@@ -19,10 +20,28 @@ class _CallScreenState extends State<CallScreen> {
   bool _joined = false;
   int? _remoteUid;
 
+  StreamSubscription? _socketSub;
+
   @override
   void initState() {
     super.initState();
     _initCall();
+
+    // 🔥 Listen for backend events (Low balance auto end)
+    _socketSub =
+        GlobalSocketManager.instance.messages.listen((data) {
+
+      if (data["type"] == "CALL_ENDED_LOW_BALANCE") {
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Call ended: Low balance")),
+          );
+
+          _leaveCall();
+        }
+      }
+    });
   }
 
   Future<void> _initCall() async {
@@ -66,24 +85,25 @@ class _CallScreenState extends State<CallScreen> {
 
   Future<void> _leaveCall() async {
 
-  try {
-    // 🔥 Notify backend to end session
-    await ApiClient.post("/call/end", {
-      "sessionId": widget.channelName
-    });
-  } catch (_) {}
+    try {
+      // 🔥 Notify backend to end session
+      await ApiClient.post("/call/end", {
+        "sessionId": widget.channelName
+      });
+    } catch (_) {}
 
-  await _engine?.leaveChannel();
-  await _engine?.release();
+    await _engine?.leaveChannel();
+    await _engine?.release();
 
-  if (mounted) Navigator.pop(context);
+    if (mounted) Navigator.pop(context);
   }
 
   @override
-void dispose() {
-  _engine?.release();
-  super.dispose();
-}
+  void dispose() {
+    _socketSub?.cancel(); // 🔥 important
+    _engine?.release();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -92,12 +112,14 @@ void dispose() {
       body: Stack(
         children: [
 
-          if (_remoteUid != null)
+          if (_remoteUid != null && _engine != null)
             AgoraVideoView(
               controller: VideoViewController.remote(
                 rtcEngine: _engine!,
                 canvas: VideoCanvas(uid: _remoteUid),
-                connection: RtcConnection(channelId: widget.channelName),
+                connection: RtcConnection(
+                  channelId: widget.channelName,
+                ),
               ),
             ),
 
