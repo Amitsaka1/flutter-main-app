@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/socket/global_socket_manager.dart';
+import 'dart:async';
 
 class MyProfileScreen extends StatefulWidget {
   const MyProfileScreen({super.key});
@@ -14,14 +16,36 @@ class _MyProfileScreenState extends State<MyProfileScreen>
 
   Map<String, dynamic>? profile;
   bool loading = true;
-
+  StreamSubscription? _socketSub;
   @override
   bool get wantKeepAlive => true;
 
   @override
-  void initState() {
-    super.initState();
-    _fetchProfile();
+void initState() {
+  super.initState();
+  _fetchProfile();
+
+  _socketSub =
+      GlobalSocketManager.instance.messages.listen((data) {
+
+    if (data["type"] == "WALLET_UPDATED") {
+
+      final newBalance = data["balance"];
+
+      if (!mounted) return;
+      if (profile == null) return;
+
+      setState(() {
+        profile!["user"]["wallet"] = newBalance;
+      });
+    }
+  });
+}
+
+  @override
+  void dispose() {
+    _socketSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _fetchProfile() async {
