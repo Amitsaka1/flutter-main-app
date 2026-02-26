@@ -11,6 +11,7 @@ import 'package:app_project/features/profile/presentation/profile_details_screen
 import 'package:app_project/features/profile/presentation/my_profile_screen.dart';
 import 'package:app_project/features/profile/presentation/edit_profile_screen.dart';
 import 'package:app_project/features/subscription/presentation/premium_screen.dart';
+import 'main.dart';
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
@@ -110,9 +111,10 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
+      navigatorKey: appNavigatorKey,
       debugShowCheckedModeBanner: false,
       routerConfig: _router,
       theme: ThemeData.dark(),
-    );
-  }
+     );
+   }
 }
