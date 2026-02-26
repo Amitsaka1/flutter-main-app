@@ -7,8 +7,13 @@ import 'package:app_project/core/socket/global_socket_manager.dart';
 
 class CallScreen extends StatefulWidget {
   final String channelName;
+  final String callType; // 🔥 NEW
 
-  const CallScreen({super.key, required this.channelName});
+  const CallScreen({
+    super.key,
+    required this.channelName,
+    required this.callType,
+  });
 
   @override
   State<CallScreen> createState() => _CallScreenState();
@@ -17,9 +22,7 @@ class CallScreen extends StatefulWidget {
 class _CallScreenState extends State<CallScreen> {
 
   RtcEngine? _engine;
-  bool _joined = false;
   int? _remoteUid;
-
   StreamSubscription? _socketSub;
 
   @override
@@ -27,17 +30,15 @@ class _CallScreenState extends State<CallScreen> {
     super.initState();
     _initCall();
 
-    // 🔥 Listen for backend events (Low balance auto end)
+    // 🔥 Listen for low balance auto end
     _socketSub =
         GlobalSocketManager.instance.messages.listen((data) {
 
       if (data["type"] == "CALL_ENDED_LOW_BALANCE") {
-
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("Call ended: Low balance")),
           );
-
           _leaveCall();
         }
       }
@@ -61,9 +62,6 @@ class _CallScreenState extends State<CallScreen> {
 
     _engine!.registerEventHandler(
       RtcEngineEventHandler(
-        onJoinChannelSuccess: (connection, elapsed) {
-          setState(() => _joined = true);
-        },
         onUserJoined: (connection, remoteUid, elapsed) {
           setState(() => _remoteUid = remoteUid);
         },
@@ -73,7 +71,16 @@ class _CallScreenState extends State<CallScreen> {
       ),
     );
 
-    await _engine!.enableVideo();
+    // ===============================
+    // 🔥 SEPARATE VOICE / VIDEO LOGIC
+    // ===============================
+
+    if (widget.callType == "VOICE_CALL") {
+      await _engine!.enableAudio();
+      await _engine!.disableVideo();
+    } else {
+      await _engine!.enableVideo();
+    }
 
     await _engine!.joinChannel(
       token: token,
@@ -86,7 +93,6 @@ class _CallScreenState extends State<CallScreen> {
   Future<void> _leaveCall() async {
 
     try {
-      // 🔥 Notify backend to end session
       await ApiClient.post("/call/end", {
         "sessionId": widget.channelName
       });
@@ -100,7 +106,7 @@ class _CallScreenState extends State<CallScreen> {
 
   @override
   void dispose() {
-    _socketSub?.cancel(); // 🔥 important
+    _socketSub?.cancel();
     _engine?.release();
     super.dispose();
   }
@@ -112,7 +118,10 @@ class _CallScreenState extends State<CallScreen> {
       body: Stack(
         children: [
 
-          if (_remoteUid != null && _engine != null)
+          // 🔥 Only show video view if VIDEO_CALL
+          if (widget.callType == "VIDEO_CALL" &&
+              _remoteUid != null &&
+              _engine != null)
             AgoraVideoView(
               controller: VideoViewController.remote(
                 rtcEngine: _engine!,
@@ -120,6 +129,16 @@ class _CallScreenState extends State<CallScreen> {
                 connection: RtcConnection(
                   channelId: widget.channelName,
                 ),
+              ),
+            ),
+
+          // 🔥 Voice Call UI
+          if (widget.callType == "VOICE_CALL")
+            const Center(
+              child: Icon(
+                Icons.call,
+                color: Colors.white,
+                size: 100,
               ),
             ),
 
