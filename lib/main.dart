@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
-import 'app.dart';   // <-- यही सही है
+import 'app.dart';
+
+/// 🔥 Global Navigator Key
+final GlobalKey<NavigatorState> appNavigatorKey =
+    GlobalKey<NavigatorState>();
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
