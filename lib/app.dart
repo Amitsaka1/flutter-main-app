@@ -9,6 +9,7 @@ import 'package:app_project/features/chat/presentation/chat_conversation_screen.
 import 'package:app_project/features/profile/presentation/create_profile_screen.dart';
 import 'package:app_project/features/profile/presentation/profile_details_screen.dart';
 import 'package:app_project/features/profile/presentation/my_profile_screen.dart';
+import 'package:app_project/features/profile/presentation/edit_profile_screen.dart';
 import 'package:app_project/features/subscription/presentation/premium_screen.dart';
 
 class MyApp extends StatefulWidget {
