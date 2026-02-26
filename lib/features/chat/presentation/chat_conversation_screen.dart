@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/controllers/conversation_controller.dart';
+import 'package:app_project/features/call/presentation/call_screen.dart';
 
 class ChatConversationScreen extends StatefulWidget {
   final String chatUserId;
@@ -45,7 +46,7 @@ class _ChatConversationScreenState
     final token = await ApiClient.getToken();
 
     if (token == null) {
-      if (mounted) context.go("/login"); // 🔥 use go not pushReplacement
+      if (mounted) context.go("/login");
       return;
     }
 
@@ -97,6 +98,38 @@ class _ChatConversationScreenState
     });
   }
 
+  // ===========================
+  // 🔥 START CALL FUNCTION
+  // ===========================
+  Future<void> _startCall(String type) async {
+
+    if (myId == null) return;
+
+    final response = await ApiClient.post("/call/start", {
+      "callerId": myId,
+      "receiverId": widget.chatUserId,
+      "type": type
+    });
+
+    if (response["success"] != true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Insufficient balance")),
+      );
+      return;
+    }
+
+    final sessionId = response["sessionId"];
+
+    if (!mounted) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CallScreen(channelName: sessionId),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _subscription?.cancel();
@@ -125,9 +158,19 @@ class _ChatConversationScreenState
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
-            context.pop(); // 🔥 clean back
+            context.pop();
           },
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.call),
+            onPressed: () => _startCall("VOICE_CALL"),
+          ),
+          IconButton(
+            icon: const Icon(Icons.videocam),
+            onPressed: () => _startCall("VIDEO_CALL"),
+          ),
+        ],
       ),
       body: Column(
         children: [
