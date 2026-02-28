@@ -61,6 +61,44 @@ class _RoomScreenState
     });
   }
 
+  // ================= SEAT TAP =================
+
+  void _onSeatTap(Map<String, dynamic> seat) {
+
+    final userId =
+        UserSession.getUserId();
+
+    if (userId == null) return;
+
+    // Seat empty
+    if (seat["userId"] == null) {
+
+      print(
+          "Request speaker for seat ${seat["seatIndex"]}");
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+        SnackBar(
+          content: Text(
+            "Requesting seat ${seat["seatIndex"]}",
+          ),
+        ),
+      );
+
+    } else {
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+        const SnackBar(
+          content:
+              Text("Seat already occupied"),
+        ),
+      );
+    }
+  }
+
+  // ================= LEAVE ROOM =================
+
   Future<void> _leaveRoom() async {
 
     final userId =
@@ -95,7 +133,8 @@ class _RoomScreenState
         title: const Text("Room"),
         actions: [
           IconButton(
-            icon: const Icon(Icons.exit_to_app),
+            icon:
+                const Icon(Icons.exit_to_app),
             onPressed: _leaveRoom,
           ),
         ],
@@ -115,25 +154,41 @@ class _RoomScreenState
                 crossAxisSpacing: 12,
               ),
               itemCount: seats.length,
-              itemBuilder: (context, index) {
+              itemBuilder:
+                  (context, index) {
 
-                final seat = seats[index];
+                final seat =
+                    seats[index];
 
-                return Container(
-                  decoration: BoxDecoration(
-                    color: seat["userId"] == null
-                        ? Colors.grey[800]
-                        : const Color(0xFF00F5A0),
-                    borderRadius:
-                        BorderRadius.circular(12),
-                  ),
-                  child: Center(
-                    child: Text(
-                      seat["userId"] ?? "Empty",
-                      style: const TextStyle(
-                          fontSize: 12),
-                      textAlign:
-                          TextAlign.center,
+                return GestureDetector(
+                  onTap: () =>
+                      _onSeatTap(seat),
+                  child: Container(
+                    decoration:
+                        BoxDecoration(
+                      color:
+                          seat["userId"] ==
+                                  null
+                              ? Colors
+                                  .grey[800]
+                              : const Color(
+                                  0xFF00F5A0),
+                      borderRadius:
+                          BorderRadius
+                              .circular(12),
+                    ),
+                    child: Center(
+                      child: Text(
+                        seat["userId"] ??
+                            "Empty",
+                        style:
+                            const TextStyle(
+                                fontSize:
+                                    12),
+                        textAlign:
+                            TextAlign
+                                .center,
+                      ),
                     ),
                   ),
                 );
