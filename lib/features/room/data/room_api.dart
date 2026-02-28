@@ -58,6 +58,26 @@ class RoomApi {
     }
   }
 
+  /// 🔹 Request Speaker Seat
+  static Future<void> requestSpeaker({
+    required String userId,
+    required String roomId,
+  }) async {
+
+    final response = await ApiClient.post(
+      "/room/request-speaker",
+      {
+        "userId": userId,
+        "roomId": roomId,
+      },
+    );
+
+    if (response["success"] != true) {
+      throw Exception(
+          response["message"] ?? "Seat request failed");
+    }
+  }
+
   /// 🔹 Leave Room
   static Future<void> leaveRoom({
     required String userId,
