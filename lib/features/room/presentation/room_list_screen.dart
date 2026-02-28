@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/network/api_client.dart';
 import '../data/room_api.dart';
 
 class RoomListScreen extends StatefulWidget {
@@ -35,6 +36,44 @@ class _RoomListScreenState
     }
   }
 
+  Future<void> _joinRoom(String roomId) async {
+    try {
+      final token = await ApiClient.getToken();
+
+      if (token == null) {
+        throw Exception("User not logged in");
+      }
+
+      // ⚠ IMPORTANT
+      // Backend join API में userId चाहिए
+      // अगर backend JWT से निकालता है तो यहाँ userId मत भेजो
+      // अभी assume कर रहे हैं कि userId token से decode नहीं हो रहा
+
+      final userId = ""; // 🔥 NEXT STEP में real userId डालेंगे
+
+      await RoomApi.joinRoom(userId, roomId);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Joined room"),
+        ),
+      );
+
+      // 🔥 NEXT STEP में RoomScreen navigate करेंगे
+
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -59,9 +98,8 @@ class _RoomListScreenState
                       subtitle: Text(
                         "Members: ${room["currentMembers"] ?? 0}",
                       ),
-                      onTap: () {
-                        // Next step में join करेंगे
-                      },
+                      onTap: () =>
+                          _joinRoom(room["id"]),
                     );
                   },
                 ),
