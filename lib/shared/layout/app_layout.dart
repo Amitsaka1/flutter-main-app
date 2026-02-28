@@ -170,8 +170,8 @@ class _AppLayoutState extends State<AppLayout> {
           _NavItem(
             label: "Rooms",
             icon: Icons.meeting_room_rounded,
-            active: false,
-            onTap: () {},
+            active: route.startsWith("/rooms"),
+            onTap: () => safeGo("/rooms"),
           ),
           _NavItem(
             label: "Premium",
