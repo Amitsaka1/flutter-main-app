@@ -72,6 +72,14 @@ class _MyAppState extends State<MyApp> {
           ),
 
           GoRoute(
+            path: "/rooms",
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(
+               child: RoomListScreen(),
+             ),
+          ),
+
+          GoRoute(
             path: "/profile",
             pageBuilder: (context, state) =>
                 const NoTransitionPage(
