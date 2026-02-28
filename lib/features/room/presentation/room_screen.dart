@@ -22,6 +22,9 @@ class _RoomScreenState
   List<dynamic> seats = [];
   bool loading = true;
 
+  // 🔥 NEW: Host flag
+  bool isHost = false;
+
   @override
   void initState() {
     super.initState();
@@ -45,8 +48,23 @@ class _RoomScreenState
 
       if (!mounted) return;
 
+      final updatedSeats = data["seats"];
+      final currentUserId =
+          UserSession.getUserId();
+
+      bool hostFlag = false;
+
+      for (final seat in updatedSeats) {
+        if (seat["userId"] == currentUserId &&
+            seat["role"] == "HOST") {
+          hostFlag = true;
+          break;
+        }
+      }
+
       setState(() {
-        seats = data["seats"];
+        seats = updatedSeats;
+        isHost = hostFlag; // 🔥 now auto detect host
         loading = false;
       });
     });
