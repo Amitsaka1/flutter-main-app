@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/socket/global_socket_manager.dart';
+import '../../../core/session/user_session.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -114,6 +115,8 @@ class _LoginScreenState extends State<LoginScreen> {
           final userId = payloadMap["id"];
 
           if (userId != null) {
+
+          UserSession.setUserId(userId.toString());
             // 🔥 Use Global Socket (no local instance)
             await GlobalSocketManager.instance
                 .init(userId.toString());
