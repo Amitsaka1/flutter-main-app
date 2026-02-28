@@ -78,6 +78,29 @@ class RoomApi {
     }
   }
 
+  /// 🔹 Demote Speaker (Host only)
+  static Future<void> demoteSpeaker({
+    required String hostId,
+    required String roomId,
+    required String targetUserId,
+  }) async {
+
+    final response = await ApiClient.post(
+      "/room/demote-speaker",
+      {
+        "hostId": hostId,
+        "roomId": roomId,
+        "targetUserId": targetUserId,
+      },
+    );
+  
+    if (response["success"] != true) {
+      throw Exception(
+        response["message"] ?? "Demote failed",
+      );
+    }
+  }
+
   /// 🔹 Leave Room
   static Future<void> leaveRoom({
     required String userId,
