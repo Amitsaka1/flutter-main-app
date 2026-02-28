@@ -16,13 +16,10 @@ class RoomScreen extends StatefulWidget {
       _RoomScreenState();
 }
 
-class _RoomScreenState
-    extends State<RoomScreen> {
+class _RoomScreenState extends State<RoomScreen> {
 
   List<dynamic> seats = [];
   bool loading = true;
-
-  // 🔥 NEW: Host flag
   bool isHost = false;
 
   @override
@@ -33,16 +30,13 @@ class _RoomScreenState
 
   Future<void> _initRoom() async {
 
-    final userId =
-        UserSession.getUserId();
-
+    final userId = UserSession.getUserId();
     if (userId == null) return;
 
-    // 🔥 Join socket room
     GlobalSocketManager.instance
         .joinRoom(widget.roomId);
 
-    // 🔥 Listen seat updates
+    // 🔥 Seat map listener
     GlobalSocketManager.instance
         .onSeatMapUpdate((data) {
 
@@ -64,17 +58,15 @@ class _RoomScreenState
 
       setState(() {
         seats = updatedSeats;
-        isHost = hostFlag; // 🔥 now auto detect host
+        isHost = hostFlag;
         loading = false;
       });
     });
 
-    // 🔥 Listen room closed
+    // 🔥 Room closed listener
     GlobalSocketManager.instance
         .onRoomClosed(() {
-
       if (!mounted) return;
-
       Navigator.pop(context);
     });
   }
@@ -83,52 +75,134 @@ class _RoomScreenState
 
   void _onSeatTap(Map<String, dynamic> seat) async {
 
-  final userId = UserSession.getUserId();
-  if (userId == null) return;
+    final userId = UserSession.getUserId();
+    if (userId == null) return;
 
-  // Seat empty hai
-  if (seat["userId"] == null) {
+    // 🔹 EMPTY SEAT → Request speaker
+    if (seat["userId"] == null) {
 
-    try {
+      try {
+        await RoomApi.requestSpeaker(
+          userId: userId,
+          roomId: widget.roomId,
+        );
 
-      await RoomApi.requestSpeaker(
-        userId: userId,
-        roomId: widget.roomId,
-      );
+        if (!mounted) return;
 
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-        const SnackBar(
-          content: Text("Seat request sent"),
-        ),
-      );
-
-    } catch (e) {
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-        SnackBar(
-          content: Text(
-            e.toString().replaceAll(
-                "Exception: ", ""),
+        ScaffoldMessenger.of(context)
+            .showSnackBar(
+          const SnackBar(
+            content: Text("Seat request sent"),
           ),
-        ),
-      );
+        );
+
+      } catch (e) {
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context)
+            .showSnackBar(
+          SnackBar(
+            content: Text(
+              e.toString()
+                  .replaceAll("Exception: ", ""),
+            ),
+          ),
+        );
+      }
+
+      return;
     }
 
-  } else {
+    // 🔹 HOST → Demote speaker
+    if (isHost &&
+        seat["role"] == "SPEAKER" &&
+        seat["userId"] != userId) {
 
+      showModalBottomSheet(
+        context: context,
+        backgroundColor:
+            const Color(0xFF111111),
+        builder: (_) {
+          return SafeArea(
+            child: Padding(
+              padding:
+                  const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize:
+                    MainAxisSize.min,
+                children: [
+
+                  const Text(
+                    "Speaker Controls",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight:
+                          FontWeight.bold,
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  ListTile(
+                    leading:
+                        const Icon(
+                      Icons.remove_circle,
+                      color: Colors.red,
+                    ),
+                    title: const Text(
+                      "Remove from Speaker",
+                      style: TextStyle(
+                          color: Colors.red),
+                    ),
+                    onTap: () async {
+
+                      Navigator.pop(context);
+
+                      try {
+                        await RoomApi
+                            .demoteSpeaker(
+                          hostId: userId,
+                          roomId:
+                              widget.roomId,
+                          targetUserId:
+                              seat["userId"],
+                        );
+                      } catch (e) {
+                        if (!mounted) return;
+
+                        ScaffoldMessenger
+                                .of(context)
+                            .showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              e.toString()
+                                  .replaceAll(
+                                      "Exception: ",
+                                      ""),
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+
+      return;
+    }
+
+    // 🔹 Otherwise
     ScaffoldMessenger.of(context)
         .showSnackBar(
       const SnackBar(
-        content: Text("Seat already occupied"),
+        content:
+            Text("Seat already occupied"),
       ),
     );
-  }
   }
 
   // ================= LEAVE ROOM =================
@@ -137,7 +211,6 @@ class _RoomScreenState
 
     final userId =
         UserSession.getUserId();
-
     if (userId == null) return;
 
     await RoomApi.leaveRoom(
@@ -167,8 +240,8 @@ class _RoomScreenState
         title: const Text("Room"),
         actions: [
           IconButton(
-            icon:
-                const Icon(Icons.exit_to_app),
+            icon: const Icon(
+                Icons.exit_to_app),
             onPressed: _leaveRoom,
           ),
         ],
@@ -194,27 +267,29 @@ class _RoomScreenState
                 final seat =
                     seats[index];
 
+                final occupied =
+                    seat["userId"] != null;
+
                 return GestureDetector(
                   onTap: () =>
                       _onSeatTap(seat),
                   child: Container(
                     decoration:
                         BoxDecoration(
-                      color:
-                          seat["userId"] ==
-                                  null
-                              ? Colors
-                                  .grey[800]
-                              : const Color(
-                                  0xFF00F5A0),
+                      color: occupied
+                          ? const Color(
+                              0xFF00F5A0)
+                          : Colors
+                              .grey[800],
                       borderRadius:
                           BorderRadius
                               .circular(12),
                     ),
                     child: Center(
                       child: Text(
-                        seat["userId"] ??
-                            "Empty",
+                        occupied
+                            ? seat["userId"]
+                            : "Empty",
                         style:
                             const TextStyle(
                                 fontSize:
