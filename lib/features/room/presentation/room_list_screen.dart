@@ -68,7 +68,12 @@ class _RoomListScreenState
       );
 
       // 🔥 Next step: navigate to RoomScreen
-      // context.push("/room/$roomId");
+      context.push(
+        "/room",
+        extra: {
+          "roomId": roomId,
+        },
+      );
 
     } catch (e) {
 
