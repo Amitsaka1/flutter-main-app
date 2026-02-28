@@ -63,38 +63,54 @@ class _RoomScreenState
 
   // ================= SEAT TAP =================
 
-  void _onSeatTap(Map<String, dynamic> seat) {
+  void _onSeatTap(Map<String, dynamic> seat) async {
 
-    final userId =
-        UserSession.getUserId();
+  final userId = UserSession.getUserId();
+  if (userId == null) return;
 
-    if (userId == null) return;
+  // Seat empty hai
+  if (seat["userId"] == null) {
 
-    // Seat empty
-    if (seat["userId"] == null) {
+    try {
 
-      print(
-          "Request speaker for seat ${seat["seatIndex"]}");
+      await RoomApi.requestSpeaker(
+        userId: userId,
+        roomId: widget.roomId,
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+        const SnackBar(
+          content: Text("Seat request sent"),
+        ),
+      );
+
+    } catch (e) {
+
+      if (!mounted) return;
 
       ScaffoldMessenger.of(context)
           .showSnackBar(
         SnackBar(
           content: Text(
-            "Requesting seat ${seat["seatIndex"]}",
+            e.toString().replaceAll(
+                "Exception: ", ""),
           ),
         ),
       );
-
-    } else {
-
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-        const SnackBar(
-          content:
-              Text("Seat already occupied"),
-        ),
-      );
     }
+
+  } else {
+
+    ScaffoldMessenger.of(context)
+        .showSnackBar(
+      const SnackBar(
+        content: Text("Seat already occupied"),
+      ),
+    );
+  }
   }
 
   // ================= LEAVE ROOM =================
