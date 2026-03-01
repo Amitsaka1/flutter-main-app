@@ -135,7 +135,6 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      navigatorKey: appNavigatorKey,
       debugShowCheckedModeBanner: false,
       routerConfig: _router,
       theme: ThemeData.dark(),
