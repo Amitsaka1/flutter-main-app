@@ -131,6 +131,7 @@ class _ChatConversationScreenState
          ),
       ),
     );
+  }
 
   @override
   void dispose() {
