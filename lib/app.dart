@@ -12,6 +12,7 @@ import 'package:app_project/features/profile/presentation/my_profile_screen.dart
 import 'package:app_project/features/profile/presentation/edit_profile_screen.dart';
 import 'package:app_project/features/subscription/presentation/premium_screen.dart';
 import 'main.dart';
+import 'package:app_project/features/room/presentation/room_list_screen.dart';
 import 'package:app_project/features/room/presentation/room_screen.dart';
 
 class MyApp extends StatefulWidget {
