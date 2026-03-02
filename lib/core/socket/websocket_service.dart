@@ -39,8 +39,10 @@ class WebSocketService {
     try {
       print("⚡ Connecting WebSocket for user: $userId");
 
+      final token = await ApiClient.getToken();
+
       _socket = await WebSocket.connect(
-        "wss://momo-1etm.onrender.com/ws?userId=$userId",
+        "wss://momo-1etm.onrender.com/ws?token=$token",
       );
 
       _connected = true;
