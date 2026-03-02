@@ -167,13 +167,14 @@ void initState() {
       await _engine!.enableVideo();
     }
 
+    final uid = response["uid"];
+
     await _engine!.joinChannel(
-      token: token,
+       token: token,
       channelId: widget.channelName,
-      uid: 0,
+      u.id: uid,
       options: const ChannelMediaOptions(),
     );
-  }
 
   // ===============================
   // 🔥 TIMER START (ONLY AFTER ACCEPT)
