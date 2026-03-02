@@ -37,6 +37,8 @@ class WebSocketService {
     _manualDisconnect = false;
 
     try {
+      print("⚡ Connecting WebSocket for user: $userId");
+
       _socket = await WebSocket.connect(
         "wss://momo-1etm.onrender.com/ws?userId=$userId",
       );
@@ -44,6 +46,8 @@ class WebSocketService {
       _connected = true;
       _connecting = false;
       _reconnectAttempt = 0;
+
+      print("🔥 SOCKET CONNECTED for user: $userId");
 
       _socket!.listen(
         (data) {
@@ -56,13 +60,19 @@ class WebSocketService {
             }
 
             _messageController.add(decoded);
-          } catch (_) {}
+          } catch (e) {
+            print("Socket decode error: $e");
+          }
         },
         onDone: _handleDisconnect,
-        onError: (_) => _handleDisconnect(),
+        onError: (error) {
+          print("Socket error: $error");
+          _handleDisconnect();
+        },
         cancelOnError: true,
       );
-    } catch (_) {
+    } catch (e) {
+      print("❌ WebSocket connection failed: $e");
       _connecting = false;
       _scheduleReconnect();
     }
@@ -71,6 +81,8 @@ class WebSocketService {
   // ================= DISCONNECT =================
 
   void disconnect() {
+    print("🔴 Manual disconnect for user: $userId");
+
     _manualDisconnect = true;
     _reconnectTimer?.cancel();
     _socket?.close();
@@ -81,6 +93,8 @@ class WebSocketService {
   // ================= HANDLE DISCONNECT =================
 
   void _handleDisconnect() {
+    print("❌ SOCKET DISCONNECTED for user: $userId");
+
     _socket = null;
     _connected = false;
 
@@ -99,6 +113,9 @@ class WebSocketService {
     int delaySeconds =
         (_reconnectAttempt * 2).clamp(2, 30);
 
+    print(
+        "⏳ Reconnecting in $delaySeconds sec (Attempt $_reconnectAttempt)");
+
     _reconnectTimer?.cancel();
 
     _reconnectTimer = Timer(
@@ -114,6 +131,8 @@ class WebSocketService {
   void send(Map<String, dynamic> data) {
     if (_connected && _socket != null) {
       _socket!.add(jsonEncode(data));
+    } else {
+      print("⚠ Cannot send. Socket not connected.");
     }
   }
 
@@ -124,11 +143,14 @@ class WebSocketService {
   // ================= DISPOSE =================
 
   void dispose() {
+    print("🧹 Disposing WebSocket for user: $userId");
+
     _manualDisconnect = true;
     _reconnectTimer?.cancel();
     _socket?.close();
     _socket = null;
     _connected = false;
+
     _messageController.close();
     _notificationController.close();
   }
