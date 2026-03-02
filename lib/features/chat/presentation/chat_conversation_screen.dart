@@ -103,34 +103,63 @@ class _ChatConversationScreenState
   // ===========================
   Future<void> _startCall(String type) async {
 
-    if (myId == null) return;
+  if (myId == null) return;
 
-    final response = await ApiClient.post("/call/start", {
-      "callerId": myId,
-      "receiverId": widget.chatUserId,
-      "type": type
-    });
+  final response = await ApiClient.post("/call/start", {
+    "callerId": myId,
+    "receiverId": widget.chatUserId,
+    "type": type
+  });
 
-    if (response["success"] != true) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Insufficient balance")),
+  // 🔥 OFFLINE OR ERROR HANDLING
+  if (response["success"] != true) {
+
+    // 🔥 User Offline Case
+    if (response["status"] == "OFFLINE") {
+
+      if (!mounted) return;
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => CallScreen(
+            channelName: "",
+            callType: type,
+            initialStatus: "OFFLINE", // 🔥 new param
+          ),
+        ),
       );
+
       return;
     }
 
-    final sessionId = response["sessionId"];
-
-    if (!mounted) return;
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-         builder: (_) => CallScreen(
-          channelName: sessionId,
-          callType: type,
-         ),
+    // 🔥 Other errors (balance etc.)
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          response["message"] ?? "Call failed",
+        ),
       ),
     );
+
+    return;
+  }
+
+  final sessionId = response["sessionId"];
+
+  if (!mounted) return;
+
+  // 🔥 RINGING STATE
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+       builder: (_) => CallScreen(
+        channelName: sessionId,
+        callType: type,
+        initialStatus: "RINGING", // 🔥 new param
+       ),
+    ),
+  );
   }
 
   @override
