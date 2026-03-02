@@ -25,6 +25,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
 
   late final GoRouter _router = GoRouter(
+    navigatorKey: appNavigatorKey,
     initialLocation: "/login",
     routes: [
 
