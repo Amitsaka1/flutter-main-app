@@ -143,6 +143,7 @@ void initState() {
 
     final token = response["token"];
     final appId = response["appId"];
+    final uid = response["uid"];
 
     _engine = createAgoraRtcEngine();
     await _engine!.initialize(
