@@ -70,6 +70,10 @@ void initState() {
       _onCallCancelled();
     }
 
+    if (data["type"] == "CALL_MISSED") {
+      _onCallCancelled();
+    }
+
     if (data["type"] == "CALL_ENDED_LOW_BALANCE") {
       _leaveCall();
     }
