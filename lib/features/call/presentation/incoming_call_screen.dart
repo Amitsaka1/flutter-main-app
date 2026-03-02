@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:app_project/core/network/api_client.dart';
 import 'call_screen.dart';
 
@@ -17,46 +16,77 @@ class IncomingCallScreen extends StatefulWidget {
   });
 
   @override
-  State<IncomingCallScreen> createState() => _IncomingCallScreenState();
+  State<IncomingCallScreen> createState() =>
+      _IncomingCallScreenState();
 }
 
-class _IncomingCallScreenState extends State<IncomingCallScreen> {
+class _IncomingCallScreenState
+    extends State<IncomingCallScreen> {
 
   Timer? _timeoutTimer;
+  bool _loading = false;
 
   @override
   void initState() {
     super.initState();
 
-    // 🔥 Auto cancel after 30 seconds
-    _timeoutTimer = Timer(const Duration(seconds: 30), () {
+    // 🔥 Auto reject after 30 sec
+    _timeoutTimer =
+        Timer(const Duration(seconds: 30), () {
       _rejectCall();
     });
   }
 
+  // ===============================
+  // 🔥 ACCEPT CALL
+  // ===============================
   Future<void> _acceptCall() async {
-    _timeoutTimer?.cancel();
 
-    if (!mounted) return;
+    if (_loading) return;
+    setState(() => _loading = true);
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) => CallScreen(
-          channelName: widget.sessionId,
-          callType: widget.callType,
-        ),
-      ),
-    );
-  }
-
-  Future<void> _rejectCall() async {
     _timeoutTimer?.cancel();
 
     try {
-      await ApiClient.post("/call/end", {
+
+      await ApiClient.post("/call/accept", {
         "sessionId": widget.sessionId
       });
+
+      if (!mounted) return;
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => CallScreen(
+            channelName: widget.sessionId,
+            callType: widget.callType,
+            initialStatus: "CONNECTED", // 🔥 Important
+          ),
+        ),
+      );
+
+    } catch (_) {
+      if (mounted) Navigator.pop(context);
+    }
+  }
+
+  // ===============================
+  // 🔥 REJECT CALL
+  // ===============================
+  Future<void> _rejectCall() async {
+
+    if (_loading) return;
+    setState(() => _loading = true);
+
+    _timeoutTimer?.cancel();
+
+    try {
+
+      await ApiClient.post("/call/reject", {
+        "sessionId": widget.sessionId
+      });
+
     } catch (_) {}
 
     if (mounted) Navigator.pop(context);
@@ -70,14 +100,14 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0A),
       body: SafeArea(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment:
+              MainAxisAlignment.center,
           children: [
-
-            const SizedBox(height: 40),
 
             const Icon(
               Icons.account_circle,
@@ -97,23 +127,28 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
 
             const SizedBox(height: 80),
 
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
+            if (_loading)
+              const CircularProgressIndicator(),
 
-                FloatingActionButton(
-                  backgroundColor: Colors.red,
-                  onPressed: _rejectCall,
-                  child: const Icon(Icons.call_end),
-                ),
+            if (!_loading)
+              Row(
+                mainAxisAlignment:
+                    MainAxisAlignment.spaceEvenly,
+                children: [
 
-                FloatingActionButton(
-                  backgroundColor: Colors.green,
-                  onPressed: _acceptCall,
-                  child: const Icon(Icons.call),
-                ),
-              ],
-            )
+                  FloatingActionButton(
+                    backgroundColor: Colors.red,
+                    onPressed: _rejectCall,
+                    child: const Icon(Icons.call_end),
+                  ),
+
+                  FloatingActionButton(
+                    backgroundColor: Colors.green,
+                    onPressed: _acceptCall,
+                    child: const Icon(Icons.call),
+                  ),
+                ],
+              )
           ],
         ),
       ),
