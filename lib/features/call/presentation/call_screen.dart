@@ -194,26 +194,28 @@ class _CallScreenState extends State<CallScreen> {
 
   Future<void> _leaveCall() async {
 
-    _timer?.cancel();
+  _timer?.cancel();
 
-    try {
+  try {
+
+    if (!_callConnected) {
+      // 🔥 Ringing state → cancel call
+      await ApiClient.post("/call/cancel", {
+        "sessionId": widget.channelName
+      });
+    } else {
+      // 🔥 Active call → end call
       await ApiClient.post("/call/end", {
         "sessionId": widget.channelName
       });
-    } catch (_) {}
+    }
 
-    await _engine?.leaveChannel();
-    await _engine?.release();
+  } catch (_) {}
 
-    if (mounted) Navigator.pop(context);
-  }
+  await _engine?.leaveChannel();
+  await _engine?.release();
 
-  @override
-  void dispose() {
-    _timer?.cancel();
-    _socketSub?.cancel();
-    _engine?.release();
-    super.dispose();
+  if (mounted) Navigator.pop(context);
   }
 
   // ===============================
