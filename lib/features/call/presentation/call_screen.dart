@@ -8,11 +8,13 @@ import 'package:app_project/core/socket/global_socket_manager.dart';
 class CallScreen extends StatefulWidget {
   final String channelName;
   final String callType;
+  final String initialStatus; // 🔥 NEW
 
   const CallScreen({
     super.key,
     required this.channelName,
     required this.callType,
+    required this.initialStatus,
   });
 
   @override
@@ -25,33 +27,106 @@ class _CallScreenState extends State<CallScreen> {
   int? _remoteUid;
   StreamSubscription? _socketSub;
 
-  // 🔥 TIMER VARIABLES
   Timer? _timer;
   int _seconds = 0;
+
+  String callStatus = "RINGING";
+  bool _callConnected = false;
 
   @override
   void initState() {
     super.initState();
-    _initCall();
 
-    // 🔥 Listen for low balance auto end
+    callStatus = widget.initialStatus;
+
+    // 🔥 OFFLINE AUTO CLOSE
+    if (callStatus == "OFFLINE") {
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) Navigator.pop(context);
+      });
+      return;
+    }
+
+    // 🔥 Listen socket events
     _socketSub =
         GlobalSocketManager.instance.messages.listen((data) {
 
-      if (data["type"] == "CALL_ENDED_LOW_BALANCE") {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Call ended: Low balance")),
-          );
-          _leaveCall();
-        }
+      if (data["type"] == "CALL_ACCEPTED") {
+        _onCallAccepted();
       }
+
+      if (data["type"] == "CALL_REJECTED") {
+        _onCallRejected();
+      }
+
+      if (data["type"] == "CALL_CANCELLED") {
+        _onCallCancelled();
+      }
+
+      if (data["type"] == "CALL_ENDED_LOW_BALANCE") {
+        _leaveCall();
+      }
+    });
+
+    // 🔥 Start ringing state only
+    if (callStatus == "RINGING") {
+      // wait for accept
+    }
+  }
+
+  // ===============================
+  // 🔥 CALL ACCEPTED
+  // ===============================
+
+  Future<void> _onCallAccepted() async {
+
+    if (_callConnected) return;
+
+    setState(() {
+      callStatus = "Connected";
+      _callConnected = true;
+    });
+
+    await _initAgora();
+    _startTimer();
+  }
+
+  // ===============================
+  // 🔥 CALL REJECTED
+  // ===============================
+
+  void _onCallRejected() {
+    setState(() {
+      callStatus = "Rejected";
+    });
+
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) Navigator.pop(context);
     });
   }
 
-  Future<void> _initCall() async {
+  // ===============================
+  // 🔥 CALL CANCELLED
+  // ===============================
 
-    final granted = await PermissionHelper.requestCallPermissions();
+  void _onCallCancelled() {
+    setState(() {
+      callStatus = "Cancelled";
+    });
+
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) Navigator.pop(context);
+    });
+  }
+
+  // ===============================
+  // 🔥 INIT AGORA ONLY AFTER ACCEPT
+  // ===============================
+
+  Future<void> _initAgora() async {
+
+    final granted =
+        await PermissionHelper.requestCallPermissions();
     if (!granted) return;
 
     final response = await ApiClient.post("/call/token", {
@@ -62,23 +137,21 @@ class _CallScreenState extends State<CallScreen> {
     final appId = response["appId"];
 
     _engine = createAgoraRtcEngine();
-    await _engine!.initialize(RtcEngineContext(appId: appId));
+    await _engine!.initialize(
+      RtcEngineContext(appId: appId),
+    );
 
     _engine!.registerEventHandler(
       RtcEngineEventHandler(
-        onJoinChannelSuccess: (connection, elapsed) {
-          _startTimer(); // 🔥 START TIMER WHEN JOINED
-        },
         onUserJoined: (connection, remoteUid, elapsed) {
           setState(() => _remoteUid = remoteUid);
         },
         onUserOffline: (connection, remoteUid, reason) {
-          setState(() => _remoteUid = null);
+          _leaveCall();
         },
       ),
     );
 
-    // 🔥 Separate Voice / Video
     if (widget.callType == "VOICE_CALL") {
       await _engine!.enableAudio();
       await _engine!.disableVideo();
@@ -94,29 +167,34 @@ class _CallScreenState extends State<CallScreen> {
     );
   }
 
-  // 🔥 TIMER START
+  // ===============================
+  // 🔥 TIMER START (ONLY AFTER ACCEPT)
+  // ===============================
+
   void _startTimer() {
     _timer?.cancel();
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!mounted) return;
-      setState(() {
-        _seconds++;
-      });
-    });
+    _timer = Timer.periodic(
+      const Duration(seconds: 1),
+      (timer) {
+        if (!mounted) return;
+        setState(() => _seconds++);
+      },
+    );
   }
 
-  // 🔥 FORMAT TIME
   String _formatTime(int totalSeconds) {
     final minutes = totalSeconds ~/ 60;
     final seconds = totalSeconds % 60;
-    final minStr = minutes.toString().padLeft(2, '0');
-    final secStr = seconds.toString().padLeft(2, '0');
-    return "$minStr:$secStr";
+    return "${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}";
   }
+
+  // ===============================
+  // 🔥 LEAVE CALL
+  // ===============================
 
   Future<void> _leaveCall() async {
 
-    _timer?.cancel(); // 🔥 STOP TIMER
+    _timer?.cancel();
 
     try {
       await ApiClient.post("/call/end", {
@@ -138,6 +216,10 @@ class _CallScreenState extends State<CallScreen> {
     super.dispose();
   }
 
+  // ===============================
+  // 🔥 UI
+  // ===============================
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -145,8 +227,8 @@ class _CallScreenState extends State<CallScreen> {
       body: Stack(
         children: [
 
-          // 🔥 VIDEO VIEW
-          if (widget.callType == "VIDEO_CALL" &&
+          if (_callConnected &&
+              widget.callType == "VIDEO_CALL" &&
               _remoteUid != null &&
               _engine != null)
             AgoraVideoView(
@@ -159,45 +241,45 @@ class _CallScreenState extends State<CallScreen> {
               ),
             ),
 
-          // 🔥 VOICE UI
-          if (widget.callType == "VOICE_CALL")
-            const Center(
-              child: Icon(
-                Icons.call,
-                color: Colors.white,
-                size: 100,
-              ),
-            ),
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
 
-          // 🔥 TIMER UI
-          Positioned(
-            top: 80,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: Text(
-                _formatTime(_seconds),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
+                Text(
+                  callStatus == "OFFLINE"
+                      ? "User Offline"
+                      : callStatus == "RINGING"
+                          ? "Ringing..."
+                          : callStatus,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 20,
+                  ),
                 ),
-              ),
+
+                const SizedBox(height: 20),
+
+                if (_callConnected)
+                  Text(
+                    _formatTime(_seconds),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                const SizedBox(height: 40),
+
+                FloatingActionButton(
+                  backgroundColor: Colors.red,
+                  onPressed: _leaveCall,
+                  child: const Icon(Icons.call_end),
+                ),
+              ],
             ),
           ),
-
-          // 🔥 END BUTTON
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: const EdgeInsets.all(30),
-              child: FloatingActionButton(
-                backgroundColor: Colors.red,
-                onPressed: _leaveCall,
-                child: const Icon(Icons.call_end),
-              ),
-            ),
-          )
         ],
       ),
     );
