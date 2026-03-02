@@ -34,45 +34,53 @@ class _CallScreenState extends State<CallScreen> {
   bool _callConnected = false;
 
   @override
-  void initState() {
-    super.initState();
+void initState() {
+  super.initState();
 
-    callStatus = widget.initialStatus;
+  callStatus = widget.initialStatus;
 
-    // 🔥 OFFLINE AUTO CLOSE
-    if (callStatus == "OFFLINE") {
-      Future.delayed(const Duration(seconds: 2), () {
-        if (mounted) Navigator.pop(context);
-      });
-      return;
-    }
-
-    // 🔥 Listen socket events
-    _socketSub =
-        GlobalSocketManager.instance.messages.listen((data) {
-
-      if (data["type"] == "CALL_ACCEPTED") {
-        _onCallAccepted();
-      }
-
-      if (data["type"] == "CALL_REJECTED") {
-        _onCallRejected();
-      }
-
-      if (data["type"] == "CALL_CANCELLED") {
-        _onCallCancelled();
-      }
-
-      if (data["type"] == "CALL_ENDED_LOW_BALANCE") {
-        _leaveCall();
-      }
+  // 🔥 If receiver directly connected
+  if (callStatus == "CONNECTED") {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _onCallAccepted();
     });
-
-    // 🔥 Start ringing state only
-    if (callStatus == "RINGING") {
-      // wait for accept
-    }
   }
+
+  // 🔥 OFFLINE AUTO CLOSE
+  if (callStatus == "OFFLINE") {
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) Navigator.pop(context);
+    });
+    return;
+  }
+
+  // 🔥 Listen socket events
+  _socketSub =
+      GlobalSocketManager.instance.messages.listen((data) {
+
+    if (data["type"] == "CALL_ACCEPTED") {
+      _onCallAccepted();
+    }
+
+    if (data["type"] == "CALL_REJECTED") {
+      _onCallRejected();
+    }
+
+    if (data["type"] == "CALL_CANCELLED") {
+      _onCallCancelled();
+    }
+
+    if (data["type"] == "CALL_ENDED_LOW_BALANCE") {
+      _leaveCall();
+    }
+  });
+
+  // 🔥 Caller side ringing stays exactly same
+  if (callStatus == "RINGING") {
+    // wait for accept
+  }
+}
+
 
   // ===============================
   // 🔥 CALL ACCEPTED
