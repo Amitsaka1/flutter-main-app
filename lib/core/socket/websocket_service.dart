@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:app_project/core/network/api_client.dart';
 
 class WebSocketService {
   final String userId;
