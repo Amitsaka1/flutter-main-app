@@ -145,18 +145,12 @@ class GlobalSocketManager with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (_userId == null) return;
-
-    if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.inactive) {
-      _foreground = false;
-      _socketService?.disconnect();
-    }
+    // 🔥 Do NOT disconnect socket on background
+    // Keep persistent connection for real-time features
 
     if (state == AppLifecycleState.resumed) {
-      if (!_foreground) {
-        _foreground = true;
-        _socketService?.connect();
+      if (!_socketService!.isConnected) {
+        _socketService!.connect();
       }
     }
   }
