@@ -8,7 +8,7 @@ import 'package:app_project/core/socket/global_socket_manager.dart';
 class CallScreen extends StatefulWidget {
   final String channelName;
   final String callType;
-  final String initialStatus; // 🔥 NEW
+  final String initialStatus;
 
   const CallScreen({
     super.key,
@@ -22,7 +22,6 @@ class CallScreen extends StatefulWidget {
 }
 
 class _CallScreenState extends State<CallScreen> {
-
   RtcEngine? _engine;
   int? _remoteUid;
   StreamSubscription? _socketSub;
@@ -34,64 +33,51 @@ class _CallScreenState extends State<CallScreen> {
   bool _callConnected = false;
 
   @override
-void initState() {
-  super.initState();
+  void initState() {
+    super.initState();
 
-  callStatus = widget.initialStatus;
+    callStatus = widget.initialStatus;
 
-  // 🔥 If receiver directly connected
-  if (callStatus == "CONNECTED") {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _onCallAccepted();
+    if (callStatus == "CONNECTED") {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _onCallAccepted();
+      });
+    }
+
+    if (callStatus == "OFFLINE") {
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) Navigator.pop(context);
+      });
+      return;
+    }
+
+    _socketSub =
+        GlobalSocketManager.instance.messages.listen((data) {
+
+      if (data["type"] == "CALL_ACCEPTED") {
+        _onCallAccepted();
+      }
+
+      if (data["type"] == "CALL_REJECTED") {
+        _onCallRejected();
+      }
+
+      if (data["type"] == "CALL_CANCELLED" ||
+          data["type"] == "CALL_MISSED") {
+        _onCallCancelled();
+      }
+
+      if (data["type"] == "CALL_ENDED_LOW_BALANCE") {
+        _leaveCall();
+      }
     });
   }
-
-  // 🔥 OFFLINE AUTO CLOSE
-  if (callStatus == "OFFLINE") {
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) Navigator.pop(context);
-    });
-    return;
-  }
-
-  // 🔥 Listen socket events
-  _socketSub =
-      GlobalSocketManager.instance.messages.listen((data) {
-
-    if (data["type"] == "CALL_ACCEPTED") {
-      _onCallAccepted();
-    }
-
-    if (data["type"] == "CALL_REJECTED") {
-      _onCallRejected();
-    }
-
-    if (data["type"] == "CALL_CANCELLED") {
-      _onCallCancelled();
-    }
-
-    if (data["type"] == "CALL_MISSED") {
-      _onCallCancelled();
-    }
-
-    if (data["type"] == "CALL_ENDED_LOW_BALANCE") {
-      _leaveCall();
-    }
-  });
-
-  // 🔥 Caller side ringing stays exactly same
-  if (callStatus == "RINGING") {
-    // wait for accept
-  }
-}
-
 
   // ===============================
   // 🔥 CALL ACCEPTED
   // ===============================
 
   Future<void> _onCallAccepted() async {
-
     if (_callConnected) return;
 
     setState(() {
@@ -118,7 +104,7 @@ void initState() {
   }
 
   // ===============================
-  // 🔥 CALL CANCELLED
+  // 🔥 CALL CANCELLED / MISSED
   // ===============================
 
   void _onCallCancelled() {
@@ -136,7 +122,6 @@ void initState() {
   // ===============================
 
   Future<void> _initAgora() async {
-
     final granted =
         await PermissionHelper.requestCallPermissions();
     if (!granted) return;
@@ -147,9 +132,9 @@ void initState() {
 
     final token = response["token"];
     final appId = response["appId"];
-    final uid = response["uid"];
 
     _engine = createAgoraRtcEngine();
+
     await _engine!.initialize(
       RtcEngineContext(appId: appId),
     );
@@ -172,17 +157,16 @@ void initState() {
       await _engine!.enableVideo();
     }
 
-    final uid = response["uid"];
-
     await _engine!.joinChannel(
-       token: token,
+      token: token,
       channelId: widget.channelName,
-      u.id: uid,
+      uid: 0,
       options: const ChannelMediaOptions(),
     );
+  }
 
   // ===============================
-  // 🔥 TIMER START (ONLY AFTER ACCEPT)
+  // 🔥 TIMER START
   // ===============================
 
   void _startTimer() {
@@ -207,29 +191,32 @@ void initState() {
   // ===============================
 
   Future<void> _leaveCall() async {
+    _timer?.cancel();
 
-  _timer?.cancel();
+    try {
+      if (!_callConnected) {
+        await ApiClient.post("/call/cancel", {
+          "sessionId": widget.channelName
+        });
+      } else {
+        await ApiClient.post("/call/end", {
+          "sessionId": widget.channelName
+        });
+      }
+    } catch (_) {}
 
-  try {
+    await _engine?.leaveChannel();
+    await _engine?.release();
 
-    if (!_callConnected) {
-      // 🔥 Ringing state → cancel call
-      await ApiClient.post("/call/cancel", {
-        "sessionId": widget.channelName
-      });
-    } else {
-      // 🔥 Active call → end call
-      await ApiClient.post("/call/end", {
-        "sessionId": widget.channelName
-      });
-    }
+    if (mounted) Navigator.pop(context);
+  }
 
-  } catch (_) {}
-
-  await _engine?.leaveChannel();
-  await _engine?.release();
-
-  if (mounted) Navigator.pop(context);
+  @override
+  void dispose() {
+    _socketSub?.cancel();
+    _timer?.cancel();
+    _engine?.release();
+    super.dispose();
   }
 
   // ===============================
