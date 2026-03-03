@@ -70,6 +70,9 @@ class _CallScreenState extends State<CallScreen> {
       if (data["type"] == "CALL_ENDED_LOW_BALANCE") {
         _leaveCall();
       }
+      if (data["type"] == "CALL_ENDED") {
+        _leaveCall();
+      }
     });
   }
 
