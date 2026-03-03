@@ -135,6 +135,7 @@ class _CallScreenState extends State<CallScreen> {
 
     final token = response["token"];
     final appId = response["appId"];
+    final uid = response["uid"];
 
     _engine = createAgoraRtcEngine();
 
@@ -160,10 +161,12 @@ class _CallScreenState extends State<CallScreen> {
       await _engine!.enableVideo();
     }
 
+    final uid = response["uid"];
+
     await _engine!.joinChannel(
       token: token,
       channelId: widget.channelName,
-      uid: 0,
+      uid: uid,
       options: const ChannelMediaOptions(),
     );
   }
