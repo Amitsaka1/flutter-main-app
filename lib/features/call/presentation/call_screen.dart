@@ -39,6 +39,8 @@ class _CallScreenState extends State<CallScreen> {
 
     callStatus = widget.initialStatus;
 
+    _prepareAgora();
+
     if (callStatus == "CONNECTED") {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _onCallAccepted();
@@ -122,6 +124,17 @@ class _CallScreenState extends State<CallScreen> {
     });
   }
 
+  Future<void> _prepareAgora() async {
+
+  _engine = createAgoraRtcEngine();
+
+  await _engine!.initialize(
+    const RtcEngineContext(
+      appId: "TEMP",
+    ),
+  );
+  }
+
   // ===============================
   // 🔥 INIT AGORA ONLY AFTER ACCEPT
   // ===============================
@@ -138,12 +151,6 @@ class _CallScreenState extends State<CallScreen> {
     final token = response["token"];
     final appId = response["appId"];
     final uid = response["uid"];
-
-    _engine = createAgoraRtcEngine();
-
-    await _engine!.initialize(
-      RtcEngineContext(appId: appId),
-    );
 
     await _engine!.setChannelProfile(
       ChannelProfileType.channelProfileCommunication,
