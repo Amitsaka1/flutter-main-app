@@ -150,7 +150,7 @@ class _CallScreenState extends State<CallScreen> {
           setState(() => _remoteUid = remoteUid);
         },
         onUserOffline: (connection, remoteUid, reason) {
-          _leaveCall();
+          _leaveCall(remote: true);
         },
       ),
     );
@@ -162,14 +162,13 @@ class _CallScreenState extends State<CallScreen> {
       await _engine!.enableVideo();
     }
 
-    final uid = response["uid"];
-
     await _engine!.joinChannel(
       token: token,
       channelId: widget.channelName,
       uid: uid,
       options: const ChannelMediaOptions(),
     );
+    await _engine!.setEnableSpeakerphone(true);
   }
 
   // ===============================
