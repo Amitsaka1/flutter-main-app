@@ -187,13 +187,19 @@ class _CallScreenState extends State<CallScreen> {
       await _engine!.disableVideo();
     } else {
       await _engine!.enableVideo();
+      await _engine!.startPreview();
     }
 
     await _engine!.joinChannel(
       token: token,
       channelId: widget.channelName,
       uid: uid,
-      options: const ChannelMediaOptions(),
+      options: ChannelMediaOptions(
+        publishCameraTrack: widget.callType == "VIDEO_CALL",
+        publishMicrophoneTrack: true,
+        autoSubscribeVideo: true,
+        autoSubscribeAudio: true,
+      ),
     );
     await _engine!.setEnableSpeakerphone(true);
     await _engine!.setDefaultAudioRouteToSpeakerphone(true);
