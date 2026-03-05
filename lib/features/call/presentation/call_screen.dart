@@ -31,6 +31,7 @@ class _CallScreenState extends State<CallScreen> {
 
   String callStatus = "RINGING";
   bool _callConnected = false;
+  bool _callEnded = false;
 
   @override
   void initState() {
@@ -237,6 +238,7 @@ class _CallScreenState extends State<CallScreen> {
   if (_engine != null) {
     await _engine!.leaveChannel();
     await _engine!.release();
+    _engine = null;
   }
     
   if (mounted) Navigator.pop(context);
