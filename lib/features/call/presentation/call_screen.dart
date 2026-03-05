@@ -229,9 +229,11 @@ class _CallScreenState extends State<CallScreen> {
 
   } catch (_) {}
 
-  await _engine?.leaveChannel();
-  await _engine?.release();
-
+  if (_engine != null) {
+    await _engine!.leaveChannel();
+    await _engine!.release();
+  }
+    
   if (mounted) Navigator.pop(context);
   }
   
