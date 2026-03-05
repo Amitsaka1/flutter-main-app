@@ -144,6 +144,17 @@ class _CallScreenState extends State<CallScreen> {
       RtcEngineContext(appId: appId),
     );
 
+    await _engine!.setChannelProfile(ChannelProfileType.channelProfileCommunication);
+
+    await _engine!.setClientRole(role: ClientRoleType.clientRoleBroadcaster);
+
+    await _engine!.enableAudio();
+
+    await _engine!.setAudioProfile(
+      profile: AudioProfileType.audioProfileSpeechStandard,
+      scenario: AudioScenarioType.audioScenarioChatroom,
+    );
+
     _engine!.registerEventHandler(
       RtcEngineEventHandler(
         onUserJoined: (connection, remoteUid, elapsed) {
