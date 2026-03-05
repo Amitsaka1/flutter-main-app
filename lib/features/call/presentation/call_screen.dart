@@ -165,6 +165,11 @@ class _CallScreenState extends State<CallScreen> {
         onUserOffline: (connection, remoteUid, reason) {
           _leaveCall(remote: true);
         },
+        onConnectionStateChanged: (connection, state, reason) {
+          if (state == ConnectionStateType.connectionStateDisconnected) {
+            _leaveCall(remote: true);
+          }
+        },
       ),
     );
 
