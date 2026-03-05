@@ -188,6 +188,7 @@ class _CallScreenState extends State<CallScreen> {
       options: const ChannelMediaOptions(),
     );
     await _engine!.setEnableSpeakerphone(true);
+    await _engine!.setDefaultAudioRouteToSpeakerphone(true);
   }
 
   // ===============================
