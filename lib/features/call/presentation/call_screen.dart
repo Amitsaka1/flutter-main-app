@@ -145,6 +145,10 @@ class _CallScreenState extends State<CallScreen> {
     final appId = response["appId"];
     final uid = response["uid"];
 
+    if (_engine == null) {
+      _engine = createAgoraRtcEngine();
+    }
+
     await _engine!.initialize(
       RtcEngineContext(appId: appId),
     );
