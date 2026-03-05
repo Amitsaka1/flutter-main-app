@@ -114,35 +114,38 @@ class _ChatConversationScreenState
   // 🔥 OFFLINE OR ERROR HANDLING
   if (response["success"] != true) {
 
-    // 🔥 User Offline Case
-    if (response["status"] == "OFFLINE") {
+  if (response["status"] == "OFFLINE") {
 
-      if (!mounted) return;
+    if (!mounted) return;
 
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => CallScreen(
-            channelName: "",
-            callType: type,
-            initialStatus: "OFFLINE", // 🔥 new param
-          ),
-        ),
-      );
-
-      return;
-    }
-
-    // 🔥 Other errors (balance etc.)
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          response["message"] ?? "Call failed",
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CallScreen(
+          channelName: "",
+          callType: type,
+          initialStatus: "OFFLINE",
         ),
       ),
     );
 
     return;
+  }
+
+  String msg = response["message"] ?? "Call failed";
+
+  if (msg == "Insufficient balance") {
+    msg = "Low balance. Please recharge to make calls.";
+  }
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(msg),
+      backgroundColor: Colors.red,
+    ),
+  );
+
+  return;
   }
 
   final sessionId = response["sessionId"];
