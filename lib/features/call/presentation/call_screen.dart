@@ -67,11 +67,12 @@ class _CallScreenState extends State<CallScreen> {
         _onCallCancelled();
       }
 
-      if (data["type"] == "CALL_ENDED_LOW_BALANCE") {
-        _leaveCall();
-      }
       if (data["type"] == "CALL_ENDED") {
-        _leaveCall();
+        _leaveCall(remote: true);
+      }
+
+      if (data["type"] == "CALL_ENDED_LOW_BALANCE") {
+        _leaveCall(remote: true);
       }
     });
   }
@@ -196,10 +197,13 @@ class _CallScreenState extends State<CallScreen> {
   // 🔥 LEAVE CALL
   // ===============================
 
-  Future<void> _leaveCall() async {
-    _timer?.cancel();
+  Future<void> _leaveCall({bool remote = false}) async {
 
-    try {
+  _timer?.cancel();
+
+  try {
+
+    if (!remote) {
       if (!_callConnected) {
         await ApiClient.post("/call/cancel", {
           "sessionId": widget.channelName
@@ -209,14 +213,16 @@ class _CallScreenState extends State<CallScreen> {
           "sessionId": widget.channelName
         });
       }
-    } catch (_) {}
+    }
 
-    await _engine?.leaveChannel();
-    await _engine?.release();
+  } catch (_) {}
 
-    if (mounted) Navigator.pop(context);
+  await _engine?.leaveChannel();
+  await _engine?.release();
+
+  if (mounted) Navigator.pop(context);
   }
-
+  
   @override
   void dispose() {
     _socketSub?.cancel();
