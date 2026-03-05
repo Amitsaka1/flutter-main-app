@@ -281,66 +281,86 @@ class _CallScreenState extends State<CallScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        children: [
+  return Scaffold(
+  backgroundColor: Colors.black,
+  body: Stack(
+  children: [
 
-          if (_callConnected &&
-              widget.callType == "VIDEO_CALL" &&
-              _remoteUid != null &&
-              _engine != null)
-            AgoraVideoView(
-              controller: VideoViewController.remote(
+       // 🔥 Remote video (full screen)
+      if (_callConnected &&
+          widget.callType == "VIDEO_CALL" &&
+          _remoteUid != null &&
+          _engine != null)
+        AgoraVideoView(
+          controller: VideoViewController.remote(
+            rtcEngine: _engine!,
+            canvas: VideoCanvas(uid: _remoteUid),
+            connection: RtcConnection(
+              channelId: widget.channelName,
+            ),
+          ),
+        ),
+
+      // 🔥 Local camera preview (small window)
+       if (_callConnected &&
+          widget.callType == "VIDEO_CALL" &&
+          _engine != null)
+        Positioned(
+          top: 60,
+           right: 20,
+          child: SizedBox(
+            width: 120,
+            height: 160,
+            child: AgoraVideoView(
+              controller: VideoViewController(
                 rtcEngine: _engine!,
-                canvas: VideoCanvas(uid: _remoteUid),
-                connection: RtcConnection(
-                  channelId: widget.channelName,
-                ),
+                canvas: const VideoCanvas(uid: 0),
+              ),
+            ),
+          ),
+        ),
+
+      Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+  
+            Text(
+              callStatus == "OFFLINE"
+                  ? "User Offline"
+                  : callStatus == "RINGING"
+                      ? "Ringing..."
+                      : callStatus,
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 20,
               ),
             ),
 
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
+            const SizedBox(height: 20),
 
-                Text(
-                  callStatus == "OFFLINE"
-                      ? "User Offline"
-                      : callStatus == "RINGING"
-                          ? "Ringing..."
-                          : callStatus,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 20,
-                  ),
+            if (_callConnected)
+              Text(
+                _formatTime(_seconds),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
                 ),
+              ),
 
-                const SizedBox(height: 20),
+            const SizedBox(height: 40),
 
-                if (_callConnected)
-                  Text(
-                    _formatTime(_seconds),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-
-                const SizedBox(height: 40),
-
-                FloatingActionButton(
-                  backgroundColor: Colors.red,
-                  onPressed: _leaveCall,
-                  child: const Icon(Icons.call_end),
-                ),
-              ],
+            FloatingActionButton(
+              backgroundColor: Colors.red,
+              onPressed: _leaveCall,
+              child: const Icon(Icons.call_end),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    );
+    ],
+  ),
+
+  );
   }
-}
