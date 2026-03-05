@@ -125,14 +125,7 @@ class _CallScreenState extends State<CallScreen> {
   }
 
   Future<void> _prepareAgora() async {
-
   _engine = createAgoraRtcEngine();
-
-  await _engine!.initialize(
-    const RtcEngineContext(
-      appId: "TEMP",
-    ),
-  );
   }
 
   // ===============================
@@ -151,6 +144,10 @@ class _CallScreenState extends State<CallScreen> {
     final token = response["token"];
     final appId = response["appId"];
     final uid = response["uid"];
+
+    await _engine!.initialize(
+      RtcEngineContext(appId: appId),
+    );
 
     await _engine!.setChannelProfile(
       ChannelProfileType.channelProfileCommunication,
