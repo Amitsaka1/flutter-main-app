@@ -239,6 +239,7 @@ class _CallScreenState extends State<CallScreen> {
   void dispose() {
     _socketSub?.cancel();
     _timer?.cancel();
+    _engine?.leaveChannel();
     _engine?.release();
     super.dispose();
   }
