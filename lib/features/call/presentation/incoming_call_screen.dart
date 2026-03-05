@@ -1,157 +1,190 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:app_project/core/network/api_client.dart';
+import 'package:app_project/core/socket/global_socket_manager.dart';
 import 'call_screen.dart';
 
 class IncomingCallScreen extends StatefulWidget {
-  final String sessionId;
-  final String callerId;
-  final String callType;
+final String sessionId;
+final String callerId;
+final String callType;
 
-  const IncomingCallScreen({
-    super.key,
-    required this.sessionId,
-    required this.callerId,
-    required this.callType,
-  });
+const IncomingCallScreen({
+super.key,
+required this.sessionId,
+required this.callerId,
+required this.callType,
+});
 
-  @override
-  State<IncomingCallScreen> createState() =>
-      _IncomingCallScreenState();
+@override
+State<IncomingCallScreen> createState() =>
+_IncomingCallScreenState();
 }
 
 class _IncomingCallScreenState
-    extends State<IncomingCallScreen> {
+extends State<IncomingCallScreen> {
 
-  Timer? _timeoutTimer;
-  bool _loading = false;
+Timer? _timeoutTimer;
+StreamSubscription? _socketSub;
 
-  @override
-  void initState() {
-    super.initState();
+bool _loading = false;
+bool _closed = false;
 
-    // 🔥 Auto reject after 30 sec
-    _timeoutTimer =
-        Timer(const Duration(seconds: 30), () {
-      _rejectCall();
-    });
-  }
+@override
+void initState() {
+super.initState();
 
-  // ===============================
-  // 🔥 ACCEPT CALL
-  // ===============================
-  Future<void> _acceptCall() async {
+// 🔥 Auto reject after 30 seconds
+_timeoutTimer =
+    Timer(const Duration(seconds: 30), () {
+  _rejectCall();
+});
 
-    if (_loading) return;
-    setState(() => _loading = true);
+// 🔥 Listen socket events
+_socketSub =
+    GlobalSocketManager.instance.messages.listen((data) {
 
-    _timeoutTimer?.cancel();
+  if (_closed) return;
 
-    try {
+  if (data["type"] == "CALL_CANCELLED" ||
+      data["type"] == "CALL_ENDED") {
 
-      await ApiClient.post("/call/accept", {
-        "sessionId": widget.sessionId
-      });
+    _closed = true;
 
-      if (!mounted) return;
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => CallScreen(
-            channelName: widget.sessionId,
-            callType: widget.callType,
-            initialStatus: "CONNECTED", // 🔥 Important
-          ),
-        ),
-      );
-
-    } catch (_) {
-      if (mounted) Navigator.pop(context);
+    if (mounted) {
+      Navigator.pop(context);
     }
   }
+});
 
-  // ===============================
-  // 🔥 REJECT CALL
-  // ===============================
-  Future<void> _rejectCall() async {
+}
 
-    if (_loading) return;
-    setState(() => _loading = true);
+// ===============================
+// 🔥 ACCEPT CALL
+// ===============================
+Future<void> _acceptCall() async {
 
-    _timeoutTimer?.cancel();
+if (_loading) return;
+setState(() => _loading = true);
 
-    try {
+_timeoutTimer?.cancel();
 
-      await ApiClient.post("/call/reject", {
-        "sessionId": widget.sessionId
-      });
+try {
 
-    } catch (_) {}
+  await ApiClient.post("/call/accept", {
+    "sessionId": widget.sessionId
+  });
 
-    if (mounted) Navigator.pop(context);
-  }
+  if (!mounted) return;
 
-  @override
-  void dispose() {
-    _timeoutTimer?.cancel();
-    super.dispose();
-  }
+  _closed = true;
 
-  @override
-  Widget build(BuildContext context) {
-
-    return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0A),
-      body: SafeArea(
-        child: Column(
-          mainAxisAlignment:
-              MainAxisAlignment.center,
-          children: [
-
-            const Icon(
-              Icons.account_circle,
-              size: 120,
-              color: Colors.white54,
-            ),
-
-            const SizedBox(height: 20),
-
-            Text(
-              "Incoming ${widget.callType == "VIDEO_CALL" ? "Video" : "Voice"} Call",
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 22,
-              ),
-            ),
-
-            const SizedBox(height: 80),
-
-            if (_loading)
-              const CircularProgressIndicator(),
-
-            if (!_loading)
-              Row(
-                mainAxisAlignment:
-                    MainAxisAlignment.spaceEvenly,
-                children: [
-
-                  FloatingActionButton(
-                    backgroundColor: Colors.red,
-                    onPressed: _rejectCall,
-                    child: const Icon(Icons.call_end),
-                  ),
-
-                  FloatingActionButton(
-                    backgroundColor: Colors.green,
-                    onPressed: _acceptCall,
-                    child: const Icon(Icons.call),
-                  ),
-                ],
-              )
-          ],
-        ),
+  Navigator.pushReplacement(
+    context,
+    MaterialPageRoute(
+      builder: (_) => CallScreen(
+        channelName: widget.sessionId,
+        callType: widget.callType,
+        initialStatus: "CONNECTED",
       ),
-    );
-  }
+    ),
+  );
+
+} catch (_) {
+
+  if (mounted) Navigator.pop(context);
+
+}
+
+}
+
+// ===============================
+// 🔥 REJECT CALL
+// ===============================
+Future<void> _rejectCall() async {
+
+if (_loading) return;
+
+setState(() => _loading = true);
+
+_timeoutTimer?.cancel();
+
+try {
+
+  await ApiClient.post("/call/reject", {
+    "sessionId": widget.sessionId
+  });
+
+} catch (_) {}
+
+_closed = true;
+
+if (mounted) Navigator.pop(context);
+
+}
+
+@override
+void dispose() {
+_timeoutTimer?.cancel();
+_socketSub?.cancel();
+super.dispose();
+}
+
+@override
+Widget build(BuildContext context) {
+
+return Scaffold(
+  backgroundColor: const Color(0xFF0A0A0A),
+  body: SafeArea(
+    child: Column(
+      mainAxisAlignment:
+          MainAxisAlignment.center,
+      children: [
+
+        const Icon(
+          Icons.account_circle,
+          size: 120,
+          color: Colors.white54,
+        ),
+
+        const SizedBox(height: 20),
+
+        Text(
+          "Incoming ${widget.callType == "VIDEO_CALL" ? "Video" : "Voice"} Call",
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 22,
+          ),
+        ),
+
+        const SizedBox(height: 80),
+
+        if (_loading)
+          const CircularProgressIndicator(),
+
+        if (!_loading)
+          Row(
+            mainAxisAlignment:
+                MainAxisAlignment.spaceEvenly,
+            children: [
+
+              FloatingActionButton(
+                backgroundColor: Colors.red,
+                onPressed: _rejectCall,
+                child: const Icon(Icons.call_end),
+              ),
+
+              FloatingActionButton(
+                backgroundColor: Colors.green,
+                onPressed: _acceptCall,
+                child: const Icon(Icons.call),
+              ),
+            ],
+          )
+      ],
+    ),
+  ),
+);
+
+}
 }
