@@ -222,6 +222,9 @@ class _CallScreenState extends State<CallScreen> {
 
   Future<void> _leaveCall({bool remote = false}) async {
 
+  if (_callEnded) return;
+  _callEnded = true;
+
   _timer?.cancel();
 
   try {
@@ -253,8 +256,12 @@ class _CallScreenState extends State<CallScreen> {
   void dispose() {
     _socketSub?.cancel();
     _timer?.cancel();
-    _engine?.leaveChannel();
-    _engine?.release();
+
+    if (_engine != null) {
+      _engine!.release();
+      _engine = null;
+    }
+
     super.dispose();
   }
 
