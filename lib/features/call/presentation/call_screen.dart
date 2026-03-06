@@ -124,7 +124,7 @@ class _CallScreenState extends State<CallScreen> {
     });
   }
 
-  Future<void> _prepareAgora() async {
+  void _prepareAgora() {
   _engine = createAgoraRtcEngine();
   }
 
@@ -360,7 +360,10 @@ class _CallScreenState extends State<CallScreen> {
             child: AgoraVideoView(
               controller: VideoViewController(
                 rtcEngine: _engine!,
-                canvas: const VideoCanvas(uid: 0),
+                canvas: VideoCanvas(
+                  uid: _remoteUid,
+                  renderMode: RenderModeType.renderModeHidden,
+                ),
               ),
             ),
           ),
