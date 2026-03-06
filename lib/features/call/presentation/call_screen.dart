@@ -230,6 +230,7 @@ class _CallScreenState extends State<CallScreen> {
       renderMode: RenderModeType.renderModeHidden,
     );
       await _engine!.setRemoteSubscribeFallbackOption(
+              fallbackOption:
       StreamFallbackOptions.streamFallbackOptionAudioOnly,
     );
       await _engine!.startPreview();
