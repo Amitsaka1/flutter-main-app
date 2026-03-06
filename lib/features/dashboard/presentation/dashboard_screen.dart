@@ -172,7 +172,7 @@ class _DashboardScreenState extends State<DashboardScreen>
         setState(() {
           unreadCount++;
           
-          _fetchUnread():
+          _fetchUnread();
         });
 
       }
