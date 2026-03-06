@@ -54,6 +54,12 @@ class _DashboardScreenState extends State<DashboardScreen>
   _fetchUnread();
   _listenSocket();
 
+  Future.delayed(const Duration(seconds: 1), () {
+    if (mounted) {
+      _fetchProfiles();
+    }
+  });
+
   // 🔥 Only check profile existence separately
   ApiClient.get("/profile/me").then((profileRes) {
     if (!mounted) return;
