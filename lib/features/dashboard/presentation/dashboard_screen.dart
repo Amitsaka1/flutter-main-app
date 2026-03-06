@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/socket/global_socket_manager.dart';
+import '../../../core/controllers/chat_controller.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -151,9 +152,16 @@ class _DashboardScreenState extends State<DashboardScreen>
       }
 
       if (message["type"] == "NEW_MESSAGE") {
+
+        final msg = message["data"];
+
+        // update chat list
+        ChatController.instance.handleNewMessage(msg);
+
         setState(() {
           unreadCount++;
         });
+
       }
 
       if (message["type"] == "MESSAGES_READ") {
