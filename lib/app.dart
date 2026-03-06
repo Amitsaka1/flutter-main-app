@@ -46,7 +46,10 @@ class _MyAppState extends State<MyApp> {
       // ===== SHELL ROUTE (BOTTOM NAV WRAPPER) =====
       ShellRoute(
         builder: (context, state, child) {
-          return AppLayout(child: child);
+          return AppLayout(
+            child: child,
+            unreadCount: 0,
+          );
         },
         routes: [
 
