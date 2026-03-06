@@ -228,9 +228,9 @@ class _CallScreenState extends State<CallScreen> {
       await _engine!.enableDualStreamMode(enabled: true);
       await _engine!.setLocalRenderMode(
       renderMode: RenderModeType.renderModeHidden,
+      mirrorMode: VideoMirrorModeType.videoMirrorModeAuto,
     );
       await _engine!.setRemoteSubscribeFallbackOption(
-              fallbackOption:
       StreamFallbackOptions.streamFallbackOptionAudioOnly,
     );
       await _engine!.startPreview();
@@ -361,7 +361,7 @@ class _CallScreenState extends State<CallScreen> {
               controller: VideoViewController(
                 rtcEngine: _engine!,
                 canvas: VideoCanvas(
-                  uid: _remoteUid,
+                  uid: 0,
                   renderMode: RenderModeType.renderModeHidden,
                 ),
               ),
