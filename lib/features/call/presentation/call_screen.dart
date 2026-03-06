@@ -124,10 +124,6 @@ class _CallScreenState extends State<CallScreen> {
     });
   }
 
-  void _prepareAgora() {
-  _engine = createAgoraRtcEngine();
-  }
-
   // ===============================
   // 🔥 INIT AGORA ONLY AFTER ACCEPT
   // ===============================
@@ -226,10 +222,6 @@ class _CallScreenState extends State<CallScreen> {
     } else {
       await _engine!.enableVideo();
       await _engine!.enableDualStreamMode(enabled: true);
-      await _engine!.setLocalRenderMode(
-      renderMode: RenderModeType.renderModeHidden,
-      mirrorMode: VideoMirrorModeType.videoMirrorModeAuto,
-    );
       await _engine!.setRemoteSubscribeFallbackOption(
       StreamFallbackOptions.streamFallbackOptionAudioOnly,
     );
