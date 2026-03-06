@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/controllers/conversation_controller.dart';
 import 'package:app_project/features/call/presentation/call_screen.dart';
+import '../../../core/controllers/chat_controller.dart';
 
 class ChatConversationScreen extends StatefulWidget {
   final String chatUserId;
@@ -73,6 +74,8 @@ class _ChatConversationScreenState
     });
 
     await _logic.loadMessages(widget.chatUserId);
+    
+    ChatController.instance.markAsRead(widget.chatUserId);
   }
 
   Future<void> sendMessage() async {
