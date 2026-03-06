@@ -196,6 +196,7 @@ class _CallScreenState extends State<CallScreen> {
       await _engine!.disableVideo();
     } else {
       await _engine!.enableVideo();
+      await _engine!.enableDualStreamMode(true);
       await _engine!.startPreview();
     }
 
