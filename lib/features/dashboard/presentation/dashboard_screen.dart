@@ -111,6 +111,11 @@ class _DashboardScreenState extends State<DashboardScreen>
         }
 
         setState(() => unreadCount = total);
+        if (mounted) {
+          setState(() {
+            unreadCount = total;
+          });
+        }
       }
     } catch (_) {}
   }
@@ -166,6 +171,8 @@ class _DashboardScreenState extends State<DashboardScreen>
 
         setState(() {
           unreadCount++;
+          
+          _fetchUnread():
         });
 
       }
