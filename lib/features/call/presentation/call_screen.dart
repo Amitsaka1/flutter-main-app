@@ -39,8 +39,6 @@ class _CallScreenState extends State<CallScreen> {
 
     callStatus = widget.initialStatus;
 
-    _prepareAgora();
-
     if (callStatus == "CONNECTED") {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _onCallAccepted();
@@ -394,7 +392,7 @@ class _CallScreenState extends State<CallScreen> {
 
             FloatingActionButton(
               backgroundColor: Colors.red,
-              onPressed: _leaveCall,
+              onPressed: () => _leaveCall(),
               child: const Icon(Icons.call_end),
             ),
           ],
