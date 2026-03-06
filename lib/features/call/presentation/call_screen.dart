@@ -197,6 +197,12 @@ class _CallScreenState extends State<CallScreen> {
     } else {
       await _engine!.enableVideo();
       await _engine!.enableDualStreamMode(true);
+      await _engine!.setLocalRenderMode(
+      renderMode: RenderModeType.renderModeHidden,
+    );
+      await _engine!.setRemoteSubscribeFallbackOption(
+      StreamFallbackOptions.streamFallbackOptionAudioOnly,
+    );
       await _engine!.startPreview();
     }
 
