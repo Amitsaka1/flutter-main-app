@@ -127,7 +127,7 @@ class _DashboardScreenState extends State<DashboardScreen>
       }
 
       if (message["type"] == "USER_ONLINE") {
-        final userId = message["userId"];
+        final userId = message["userId"] ?? message["data"]?["userId"];
 
         setState(() {
           for (var p in profiles) {
@@ -139,7 +139,7 @@ class _DashboardScreenState extends State<DashboardScreen>
       }
 
       if (message["type"] == "USER_OFFLINE") {
-        final userId = message["userId"];
+        final userId = message["userId"] ?? message["data"]?["userId"];
 
         setState(() {
           for (var p in profiles) {
