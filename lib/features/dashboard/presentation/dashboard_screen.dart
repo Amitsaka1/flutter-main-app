@@ -126,6 +126,30 @@ class _DashboardScreenState extends State<DashboardScreen>
         }
       }
 
+      if (message["type"] == "USER_ONLINE") {
+        final userId = message["userId"];
+
+        setState(() {
+          for (var p in profiles) {
+            if (p["userId"] == userId) {
+              p["user"]["isOnline"] = true;
+            }
+          }
+        });
+      }
+
+      if (message["type"] == "USER_OFFLINE") {
+        final userId = message["userId"];
+
+        setState(() {
+          for (var p in profiles) {
+            if (p["userId"] == userId) {
+              p["user"]["isOnline"] = false;
+            }
+          }
+        });
+      }
+
       if (message["type"] == "NEW_MESSAGE") {
         setState(() {
           unreadCount++;
