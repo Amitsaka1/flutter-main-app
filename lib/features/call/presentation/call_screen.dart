@@ -177,13 +177,42 @@ class _CallScreenState extends State<CallScreen> {
 
     _engine!.registerEventHandler(
       RtcEngineEventHandler(
+
+        // 🔥 Remote user joined
         onUserJoined: (connection, remoteUid, elapsed) {
-          setState(() => _remoteUid = remoteUid);
+           if (!mounted) return;
+
+          setState(() {
+            _remoteUid = remoteUid;
+          });
         },
+
+        // 🔥 Remote user left
         onUserOffline: (connection, remoteUid, reason) {
           _leaveCall(remote: true);
         },
+
+        // 🔥 Network lost
+        onConnectionLost: (connection) {
+          print("⚠ Agora connection lost");
+        },
+
+        // 🔥 Network unstable
+        onConnectionInterrupted: (connection) {
+          print("⚠ Network unstable");
+        },
+
+        // 🔥 Connection state changes
         onConnectionStateChanged: (connection, state, reason) {
+
+          if (state == ConnectionStateType.connectionStateReconnecting) {
+            print("🔄 Reconnecting to call...");
+          }
+
+          if (state == ConnectionStateType.connectionStateConnected) {
+            print("✅ Call connection restored");
+          }
+
           if (state == ConnectionStateType.connectionStateDisconnected) {
             _leaveCall(remote: true);
           }
