@@ -157,6 +157,15 @@ class _CallScreenState extends State<CallScreen> {
       ChannelProfileType.channelProfileCommunication,
     );
 
+    await _engine!.setVideoEncoderConfiguration(
+      const VideoEncoderConfiguration(
+      dimensions: VideoDimensions(width: 640, height: 360),
+      frameRate: 15,
+      bitrate: 800,
+      orientationMode: OrientationMode.orientationModeAdaptive,
+    ),
+   );
+
     await _engine!.setClientRole(
       role: ClientRoleType.clientRoleBroadcaster,
     );
