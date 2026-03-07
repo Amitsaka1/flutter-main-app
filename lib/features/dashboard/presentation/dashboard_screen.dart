@@ -135,66 +135,65 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   void _listenSocket() {
-    final socket = GlobalSocketManager.instance;
+  final socket = GlobalSocketManager.instance;
 
-    _socketSub?.cancel(); // 🔥 prevent duplicate listen
+  // 🔥 old listener remove
+  _socketSub?.cancel();
 
-    _socketSub = socket.messages.listen((message) {
-      if (!mounted) return;
+  _socketSub = socket.messages.listen((message) {
 
-      if (message["type"] == "NEW_PROFILE") {
-        final newProfile = message["data"];
+    if (!mounted) return;
 
-        if (!profiles.any((p) => p["id"] == newProfile["id"])) {
-          setState(() {
-            profiles.insert(0, newProfile);
-          });
+    final type = message["type"];
+
+    if (type == "NEW_PROFILE") {
+      final newProfile = message["data"];
+
+      if (!profiles.any((p) => p["id"] == newProfile["id"])) {
+        setState(() {
+          profiles.insert(0, newProfile);
+        });
+      }
+    }
+
+    if (type == "USER_ONLINE") {
+      final userId = message["userId"] ?? message["data"]?["userId"];
+
+      setState(() {
+        for (var p in profiles) {
+          if (p["userId"] == userId) {
+            p["user"]["isOnline"] = true;
+          }
         }
-      }
+      });
+    }
 
-      if (message["type"] == "USER_ONLINE") {
-        final userId = message["userId"] ?? message["data"]?["userId"];
+    if (type == "USER_OFFLINE") {
+      final userId = message["userId"] ?? message["data"]?["userId"];
 
-        setState(() {
-          for (var p in profiles) {
-            if (p["userId"] == userId) {
-              p["user"]["isOnline"] = true;
-            }
+      setState(() {
+        for (var p in profiles) {
+          if (p["userId"] == userId) {
+            p["user"]["isOnline"] = false;
           }
-        });
-      }
+        }
+      });
+    }
 
-      if (message["type"] == "USER_OFFLINE") {
-        final userId = message["userId"] ?? message["data"]?["userId"];
+    if (type == "NEW_MESSAGE") {
+      final msg = message["data"];
 
-        setState(() {
-          for (var p in profiles) {
-            if (p["userId"] == userId) {
-              p["user"]["isOnline"] = false;
-            }
-          }
-        });
-      }
+      ChatController.instance.handleNewMessage(msg);
 
-      if (message["type"] == "NEW_MESSAGE") {
+      setState(() {
+        unreadCount++;
+      });
+    }
 
-        final msg = message["data"];
-
-        // update chat list
-        ChatController.instance.handleNewMessage(msg);
-
-        setState(() {
-          unreadCount++;
-          
-          _fetchUnread();
-        });
-
-      }
-
-      if (message["type"] == "MESSAGES_READ") {
-        _fetchUnread();
-      }
-    });
+    if (type == "MESSAGES_READ") {
+      _fetchUnread();
+    }
+  });
   }
 
   @override
