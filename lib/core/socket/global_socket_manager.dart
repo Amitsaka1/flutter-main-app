@@ -80,9 +80,10 @@ class GlobalSocketManager with WidgetsBindingObserver {
           UnreadCounterService.increment(senderId);
         }
 
+        ChatController.instance.handleNewMessage(event);
+
       }
 
-      ChatController.instance.handleNewMessage(event);
 
       _messageController.add(event);
     });
