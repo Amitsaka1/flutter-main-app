@@ -53048,40 +53048,41 @@ case 2:return A.t(o.at(-1),r)}})
 return A.v($async$AV,r)},
 rM(){var s=0,r=A.w(t.H),q,p=2,o=[],n=this,m,l,k,j,i,h,g,f,e,d,c
 var $async$rM=A.x(function(a,b){if(a===1){o.push(b)
-s=p}for(;;)switch(s){case 0:e=n.d.a.a
-d=A.jk(e," ","")
-e=n.e
-if(B.c.dt(e.a.a).length===0){n.P(new A.aBS(n))
+s=p}for(;;)switch(s){case 0:if(n.r){s=1
+break}g=n.d.a.a
+m=A.jk(g," ","")
+g=n.e
+if(B.c.dt(g.a.a).length===0){n.P(new A.aBS(n))
 s=1
 break}n.P(new A.aBT(n))
 p=4
 s=7
-return A.p(A.em("/verify-otp",A.af(["phone",d,"otp",B.c.dt(e.a.a)],t.N,t.z)),$async$rM)
-case 7:m=b
-s=J.c(J.a7(m,"success"),!0)?8:10
+return A.p(A.em("/verify-otp",A.af(["phone",m,"otp",B.c.dt(g.a.a)],t.N,t.z)),$async$rM)
+case 7:l=b
+s=J.c(J.a7(l,"success"),!0)?8:10
 break
-case 8:l=J.a7(m,"token")
+case 8:k=J.a7(l,"token")
 s=11
-return A.p(A.aKd(l),$async$rM)
-case 11:k=J.aK1(l,".")
-s=J.c(J.bL(k),3)?12:13
+return A.p(A.aKd(k),$async$rM)
+case 11:j=J.aK1(k,".")
+s=J.c(J.bL(j),3)?12:13
 break
-case 12:j=B.D.j5(0,B.Z.eb(0,B.dD.bX(B.fX.ol(0,J.a7(k,1)))),null)
-i=J.a7(j,"id")
-s=i!=null?14:15
+case 12:i=B.D.j5(0,B.Z.eb(0,B.dD.bX(B.fX.ol(0,J.a7(j,1)))),null)
+h=J.a7(i,"id")
+s=h!=null?14:15
 break
-case 14:$.yI=J.cq(i)
+case 14:$.yI=J.cq(h)
 s=16
-return A.p($.mh().mC(J.cq(i)),$async$rM)
+return A.p($.mh().mC(J.cq(h)),$async$rM)
 case 16:case 15:case 13:if(n.c==null){s=1
-break}e=J.c(J.a7(m,"profileRequired"),!0)
-h=t.X
-g=n.c
-if(e){g.toString
-A.eq(g).qq("/create-profile",null,h)}else{g.toString
-A.eq(g).qq("/dashboard",null,h)}s=9
+break}g=J.c(J.a7(l,"profileRequired"),!0)
+f=t.X
+e=n.c
+if(g){e.toString
+A.eq(e).qq("/create-profile",null,f)}else{e.toString
+A.eq(e).qq("/dashboard",null,f)}s=9
 break
-case 10:n.P(new A.aBU(n,m))
+case 10:n.P(new A.aBU(n,l))
 case 9:p=2
 s=6
 break
