@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:app_project/core/network/api_client.dart';
 
 class WebSocketService {
   final String userId;
 
-  WebSocket? _socket;
+  WebSocketChannel? _channel;
 
   bool _connected = false;
   bool _connecting = false;
@@ -42,8 +42,10 @@ class WebSocketService {
 
       final token = await ApiClient.getToken();
 
-      _socket = await WebSocket.connect(
-        "wss://momo-1etm.onrender.com/ws?token=$token",
+      _channel = WebSocketChannel.connect(
+        Uri.parse(
+          "wss://momo-1etm.onrender.com/ws?token=$token",
+        ),
       );
 
       _connected = true;
@@ -52,7 +54,7 @@ class WebSocketService {
 
       print("🔥 SOCKET CONNECTED for user: $userId");
 
-      _socket!.listen(
+      _channel!.stream.listen(
         (data) {
           try {
             final decoded = jsonDecode(data);
@@ -88,8 +90,8 @@ class WebSocketService {
 
     _manualDisconnect = true;
     _reconnectTimer?.cancel();
-    _socket?.close();
-    _socket = null;
+    _channel?.sink.close();
+    _channel = null;
     _connected = false;
   }
 
@@ -98,7 +100,7 @@ class WebSocketService {
   void _handleDisconnect() {
     print("❌ SOCKET DISCONNECTED for user: $userId");
 
-    _socket = null;
+    _channel = null;
     _connected = false;
 
     if (!_manualDisconnect) {
@@ -132,8 +134,8 @@ class WebSocketService {
   // ================= SEND =================
 
   void send(Map<String, dynamic> data) {
-    if (_connected && _socket != null) {
-      _socket!.add(jsonEncode(data));
+    if (_connected && _channel != null) {
+      _channel!.sink.add(jsonEncode(data));
     } else {
       print("⚠ Cannot send. Socket not connected.");
     }
@@ -150,8 +152,8 @@ class WebSocketService {
 
     _manualDisconnect = true;
     _reconnectTimer?.cancel();
-    _socket?.close();
-    _socket = null;
+    _channel?.sink.close();
+    _channel = null;
     _connected = false;
 
     _messageController.close();
