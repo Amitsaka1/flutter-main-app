@@ -75,6 +75,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _verifyOtp() async {
 
+    if (loading) return;
+
     final trimmed =
         _phoneController.text.replaceAll(" ", "");
 
