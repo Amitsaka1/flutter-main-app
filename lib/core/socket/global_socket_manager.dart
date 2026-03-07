@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'websocket_service.dart';
 import 'package:app_project/features/call/presentation/incoming_call_screen.dart';
 import 'package:app_project/main.dart';
+import 'package:app_project/core/chat/unread_counter_service.dart';
 
 class GlobalSocketManager with WidgetsBindingObserver {
   GlobalSocketManager._internal();
@@ -76,6 +77,17 @@ class GlobalSocketManager with WidgetsBindingObserver {
       WidgetsBinding.instance.addObserver(this);
       _observerAdded = true;
     }
+
+    if (event["type"] == "NEW_MESSAGE") {
+
+    final senderId = event["senderId"];
+
+    if (senderId != _userId) {
+
+      UnreadCounterService.increment(senderId);
+
+    }
+      }
 
     await _socketService!.connect();
 
