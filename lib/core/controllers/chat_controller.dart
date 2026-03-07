@@ -63,8 +63,7 @@ class ChatController {
 
   // 🔥 Update from Socket
   void handleNewMessage(dynamic message) {
-    final senderId = message["senderId"];
-
+    final senderId = message["senderId"] ?? message["receiverId"];
     final updatedChats = List<dynamic>.from(_chats);
 
     for (int i = 0; i < updatedChats.length; i++) {
