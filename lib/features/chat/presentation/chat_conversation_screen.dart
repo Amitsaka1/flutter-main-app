@@ -6,6 +6,7 @@ import '../../../core/network/api_client.dart';
 import '../../../core/controllers/conversation_controller.dart';
 import 'package:app_project/features/call/presentation/call_screen.dart';
 import '../../../core/controllers/chat_controller.dart';
+import 'package:app_project/core/chat/unread_counter_service.dart';
 
 class ChatConversationScreen extends StatefulWidget {
   final String chatUserId;
@@ -74,6 +75,8 @@ class _ChatConversationScreenState
     });
 
     await _logic.loadMessages(widget.chatUserId);
+    ChatController.instance.markAsRead(widget.chatUserId);
+    UnreadCounterService.clearChat(widget.chatUserId);
     
     ChatController.instance.markAsRead(widget.chatUserId);
   }
