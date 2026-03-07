@@ -101,6 +101,10 @@ class _LoginScreenState extends State<LoginScreen> {
       if (res["success"] == true) {
 
         final token = res["token"];
+        if (token == null) {
+          setState(() => message = "Login failed");
+          return;
+        }
         await ApiClient.saveToken(token);
 
         // 🔥 Decode JWT safely
@@ -138,9 +142,8 @@ class _LoginScreenState extends State<LoginScreen> {
             res["message"] ?? "Invalid OTP");
       }
 
-    } catch (_) {
-      setState(() =>
-          message = "Verification failed");
+    } catch (e) {
+        setState(() => message = e.toString());
     }
 
     if (mounted) {
