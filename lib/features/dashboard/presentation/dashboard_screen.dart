@@ -50,6 +50,19 @@ class _DashboardScreenState extends State<DashboardScreen>
     return;
   }
 
+    final payload = jsonDecode(
+      utf8.decode(
+        base64Url.decode(
+          base64Url.normalize(token.split(".")[1]),
+        ),
+      ),
+    );
+
+    final myId = payload["id"];
+
+    // 🔥 SOCKET START
+    await GlobalSocketManager.instance.init(myId);
+
   // 🔥 Don't block UI
   _fetchProfiles();
   _fetchUnread();
