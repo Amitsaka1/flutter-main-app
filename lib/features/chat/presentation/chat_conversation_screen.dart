@@ -75,10 +75,9 @@ class _ChatConversationScreenState
     });
 
     await _logic.loadMessages(widget.chatUserId);
+
     ChatController.instance.markAsRead(widget.chatUserId);
     UnreadCounterService.clearChat(widget.chatUserId);
-    
-    ChatController.instance.markAsRead(widget.chatUserId);
   }
 
   Future<void> sendMessage() async {
