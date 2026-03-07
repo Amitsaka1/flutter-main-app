@@ -10,7 +10,7 @@ class ApiClient {
   static String? _token;
 
   static const Duration _timeout =
-      Duration(seconds: 15);
+      Duration(seconds: 40);
 
   // ================= TOKEN =================
 
@@ -107,7 +107,7 @@ class ApiClient {
       http.Response response) {
 
     if (response.body.isEmpty) {
-      return {"success": false};
+    throw Exception("Empty server response");
     }
 
     final decoded = jsonDecode(response.body);
