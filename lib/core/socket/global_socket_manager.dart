@@ -51,43 +51,42 @@ class GlobalSocketManager with WidgetsBindingObserver {
     _socketService = WebSocketService(userId: userId);
 
     _socketSubscription =
-        _socketService!.messages.listen((event) {
+    _socketService!.messages.listen((event) {
 
-      final type = event["type"];
+  final type = event["type"];
 
-      // 🔥 Incoming Call
-      if (type == "INCOMING_CALL") {
-        _handleIncomingCall(event);
-      }
+  // 🔥 Incoming Call
+  if (type == "INCOMING_CALL") {
+    _handleIncomingCall(event);
+  }
 
-      // 🔥 Seat map update
-      if (type == "SEAT_MAP_UPDATE") {
-        _seatMapController.add(event);
-      }
+  // 🔥 Seat map update
+  if (type == "SEAT_MAP_UPDATE") {
+    _seatMapController.add(event);
+  }
 
-      // 🔥 Room closed
-      if (type == "ROOM_CLOSED") {
-        _roomClosedController.add(null);
-      }
+  // 🔥 Room closed
+  if (type == "ROOM_CLOSED") {
+    _roomClosedController.add(null);
+  }
 
-      _messageController.add(event);
-    });
+  // 🔥 NEW MESSAGE → unread increment
+  if (type == "NEW_MESSAGE") {
+    final senderId = event["senderId"];
+
+    if (senderId != _userId) {
+      UnreadCounterService.increment(senderId);
+    }
+  }
+
+  _messageController.add(event);
+});
 
     if (!_observerAdded) {
       WidgetsBinding.instance.addObserver(this);
       _observerAdded = true;
     }
 
-    if (event["type"] == "NEW_MESSAGE") {
-
-    final senderId = event["senderId"];
-
-    if (senderId != _userId) {
-
-      UnreadCounterService.increment(senderId);
-
-    }
-      }
 
     await _socketService!.connect();
 
