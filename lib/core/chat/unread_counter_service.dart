@@ -27,7 +27,7 @@ class UnreadCounterService {
 
     _totalUnread++;
 
-    _chatController.add(_chatUnread);
+    _chatController.add(Map.from(_chatUnread));
     _totalController.add(_totalUnread);
   }
 
@@ -40,7 +40,7 @@ class UnreadCounterService {
 
     _chatUnread[chatId] = 0;
 
-    _chatController.add(_chatUnread);
+    _chatController.add(Map.from(_chatUnread));
     _totalController.add(_totalUnread);
   }
 
