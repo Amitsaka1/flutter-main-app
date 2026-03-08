@@ -104,7 +104,7 @@ class ConversationController {
     if (_myId == null) return;
 
     if (data["type"] == "NEW_MESSAGE") {
-      final msg = data;
+      final msg = data["data"];
       final sender = msg["senderId"];
       final receiver = msg["receiverId"];
 
