@@ -49448,7 +49448,7 @@ $1(a){var s,r=this,q=J.al(a),p=q.h(a,"type"),o=J.jJ(p)
 if(o.j(p,"INCOMING_CALL"))r.a.afz(a)
 if(o.j(p,"SEAT_MAP_UPDATE"))r.a.x.D(0,a)
 if(o.j(p,"ROOM_CLOSED"))r.a.y.D(0,null)
-if(o.j(p,"NEW_MESSAGE")){s=q.h(a,"senderId")
+if(o.j(p,"NEW_MESSAGE")){s=J.a6(q.h(a,"data"),"senderId")
 if(!J.c(s,r.a.c)){q=$.GD.h(0,s)
 $.GD.m(0,s,(q==null?0:q)+1)
 $.GE=$.GE+1
