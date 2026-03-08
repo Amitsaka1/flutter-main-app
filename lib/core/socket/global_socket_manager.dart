@@ -74,7 +74,7 @@ class GlobalSocketManager with WidgetsBindingObserver {
       // 🔥 NEW MESSAGE
       if (type == "NEW_MESSAGE") {
 
-        final senderId = event["senderId"];
+        final senderId = event["data"]["senderId"];
 
         if (senderId != _userId) {
           UnreadCounterService.increment(senderId);
