@@ -2,7 +2,7 @@ import 'dart:async';
 import '../network/api_client.dart';
 
 class ChatController {
-  // 🔥 Singleton
+  //  Singleton
   ChatController._internal();
   static final ChatController _instance = ChatController._internal();
   static ChatController get instance => _instance;
