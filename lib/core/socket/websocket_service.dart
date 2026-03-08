@@ -54,6 +54,15 @@ class WebSocketService {
 
       print("🔥 SOCKET CONNECTED for user: $userId");
 
+      Timer.periodic(
+        const Duration(seconds: 20),
+        (_) {
+          if (_connected && _channel != null) {
+            _channel!.sink.add('ping');
+          }
+        },
+      );
+
       _channel!.stream.listen(
         (data) {
           try {
