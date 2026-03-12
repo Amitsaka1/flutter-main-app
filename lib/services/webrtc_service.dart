@@ -187,13 +187,19 @@ class WebRTCService {
   // =========================
   // PLAY REMOTE AUDIO
   // =========================
-  void _playRemoteAudio(MediaStream stream) async {
+  void _playRemoteAudio(String producerId, MediaStream stream) async {
 
-    final renderer = RTCVideoRenderer();
+  if (remoteStreams.containsKey(producerId)) {
+    return;
+  }
 
-    await renderer.initialize();
+  remoteStreams[producerId] = stream;
 
-    renderer.srcObject = stream;
+  final renderer = RTCVideoRenderer();
+
+  await renderer.initialize();
+
+  renderer.srcObject = stream;
 
   }
 
