@@ -1,4 +1,5 @@
 import '../services/webrtc_service.dart';
+import 'dart:convert';
 
 class VoiceRoomController {
 
@@ -31,7 +32,7 @@ class VoiceRoomController {
 
           listenSpeaker(
             data["producerId"],
-            data["rtpCapabilities"]
+            data["rtpCapabilities"] ?? {}
           );
 
         }
