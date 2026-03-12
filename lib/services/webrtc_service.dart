@@ -44,15 +44,16 @@ class WebRTCService {
   // =========================
   // CREATE PEER CONNECTION
   // =========================
-  Future createPeer() async {
-
-    final config = {
-      "iceServers": [
-        {
-          "urls": "stun:stun.l.google.com:19302"
-        }
-      ]
-    };
+  final config = {
+    "sdpSemantics": "unified-plan",
+    "bundlePolicy": "max-bundle",
+    "rtcpMuxPolicy": "require",
+    "iceServers": [
+     {
+        "urls": "stun:stun.l.google.com:19302"
+      }
+    ]
+  };
 
     peerConnection = await createPeerConnection(config);
 
