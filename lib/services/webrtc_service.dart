@@ -32,6 +32,48 @@ class WebRTCService {
   }
 
   // =========================
+  // START MICROPHONE
+  // =========================
+  Future startMicrophone() async {
+
+    final mediaConstraints = {
+      "audio": true,
+      "video": false
+    };
+
+    localStream = await navigator.mediaDevices.getUserMedia(
+      mediaConstraints,
+    );
+
+    localStream!.getTracks().forEach((track) {
+      peerConnection?.addTrack(track, localStream!);
+    });
+
+  }
+
+  // =========================
+  // GET RTP PARAMETERS
+  // =========================
+  Future<Map<String, dynamic>?> getRtpParameters() async {
+
+    final senders = await peerConnection?.getSenders();
+
+    if (senders == null) return null;
+
+    for (var sender in senders) {
+
+      if (sender.track?.kind == "audio") {
+
+        final params = await sender.getParameters();
+
+        return params.toMap();
+      }
+    }
+
+    return null;
+  }
+
+  // =========================
   // CREATE TRANSPORT
   // =========================
   void createTransport(String roomId, String userId) {
@@ -74,11 +116,10 @@ class WebRTCService {
   // CONSUME AUDIO (Listener)
   // =========================
   void consumeAudio(
-    String roomId,
-    String transportId,
-    String producerId,
-    dynamic rtpCapabilities
-  ) {
+      String roomId,
+      String transportId,
+      String producerId,
+      dynamic rtpCapabilities) {
 
     socket?.sink.add(jsonEncode({
       "type": "CONSUME_AUDIO",
@@ -87,6 +128,21 @@ class WebRTCService {
       "producerId": producerId,
       "rtpCapabilities": rtpCapabilities
     }));
+
+  }
+
+  // =========================
+  // START PRODUCING AUDIO
+  // =========================
+  Future startProducingAudio(String transportId) async {
+
+    await startMicrophone();
+
+    final rtp = await getRtpParameters();
+
+    if (rtp != null) {
+      produceAudio(transportId, rtp);
+    }
 
   }
 
