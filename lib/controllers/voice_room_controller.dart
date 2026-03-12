@@ -37,6 +37,14 @@ class VoiceRoomController {
 
       final type = data["type"];
 
+      if (type == "ROUTER_RTP_CAPABILITIES") {
+
+        routerCapabilities = data["rtpCapabilities"];
+
+        print("Router RTP capabilities received");
+
+      }
+
       // =========================
       // TRANSPORT CONNECTED
       // =========================
