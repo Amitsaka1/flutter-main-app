@@ -12,7 +12,30 @@ class WebRTCService {
   // INIT SOCKET
   // =========================
   Future init(String wsUrl) async {
-    socket = WebSocketChannel.connect(Uri.parse(wsUrl));
+
+  socket = WebSocketChannel.connect(Uri.parse(wsUrl));
+
+  socket?.stream.listen((message) {
+
+    final data = jsonDecode(message);
+
+    if (data["type"] == "TRANSPORT_CREATED") {
+
+      final transport = data["transport"];
+
+      final transportId = transport["transportId"];
+
+      final params = transport["params"];
+
+      connectTransport(
+        transportId,
+        params["dtlsParameters"],
+      );
+
+    }
+
+  });
+
   }
 
   // =========================
