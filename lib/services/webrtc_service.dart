@@ -41,8 +41,7 @@ class WebRTCService {
       }
 
     };
-
-    }
+  }
 
   // =========================
   // START MICROPHONE
@@ -156,6 +155,19 @@ class WebRTCService {
     if (rtp != null) {
       produceAudio(transportId, rtp);
     }
+
+  }
+
+  // =========================
+  // PLAY REMOTE AUDIO
+  // =========================
+  void _playRemoteAudio(MediaStream stream) async {
+
+    final renderer = RTCVideoRenderer();
+
+    await renderer.initialize();
+
+    renderer.srcObject = stream;
 
   }
 
