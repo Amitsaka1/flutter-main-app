@@ -45,6 +45,8 @@ class _RoomScreenState extends State<RoomScreen> {
       GlobalSocketManager.instance.wsUrl,
     );
 
+    print("🚀 WebRTC initialized");
+
     // 🔥 Seat map listener
     GlobalSocketManager.instance
         .onSeatMapUpdate((data) {
