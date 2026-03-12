@@ -6,6 +6,8 @@ import 'package:app_project/core/network/api_client.dart';
 class WebSocketService {
   final String userId;
 
+  final String wsUrl = "wss://momo-1etm.onrender.com/ws";
+
   WebSocketChannel? _channel;
 
   bool _connected = false;
@@ -44,8 +46,8 @@ class WebSocketService {
 
       _channel = WebSocketChannel.connect(
         Uri.parse(
-          "wss://momo-1etm.onrender.com/ws?token=$token",
-        ),
+         "$wsUrl?token=$token",
+        )
       );
 
       _connected = true;
