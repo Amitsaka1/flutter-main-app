@@ -22,7 +22,23 @@ class VoiceRoomController {
 
     webrtc.createTransport(roomId!, userId!);
 
-  }
+    webrtc.socket?.stream.listen((message) {
+
+        final data = jsonDecode(message);
+
+        // 🔊 new speaker audio
+        if (data["type"] == "NEW_PRODUCER") {
+
+          listenSpeaker(
+            data["producerId"],
+            data["rtpCapabilities"]
+          );
+
+        }
+
+      });
+
+   }
 
   // =========================
   // CONNECT TRANSPORT
