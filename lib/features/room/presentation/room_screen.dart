@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/session/user_session.dart';
 import '../../../core/socket/global_socket_manager.dart';
 import '../data/room_api.dart';
+import '../../controllers/voice_room_controller.dart';
 
 class RoomScreen extends StatefulWidget {
   final String roomId;
@@ -22,6 +23,8 @@ class _RoomScreenState extends State<RoomScreen> {
   bool loading = true;
   bool isHost = false;
 
+  final VoiceRoomController voiceController = VoiceRoomController();
+
   @override
   void initState() {
     super.initState();
@@ -35,6 +38,12 @@ class _RoomScreenState extends State<RoomScreen> {
 
     GlobalSocketManager.instance
         .joinRoom(widget.roomId);
+
+    await voiceController.joinRoom(
+      widget.roomId,
+      userId!,
+      GlobalSocketManager.instance.wsUrl,
+    );
 
     // 🔥 Seat map listener
     GlobalSocketManager.instance
@@ -86,6 +95,8 @@ class _RoomScreenState extends State<RoomScreen> {
           userId: userId,
           roomId: widget.roomId,
         );
+
+        await voiceController.startSpeaking();
 
         if (!mounted) return;
 
