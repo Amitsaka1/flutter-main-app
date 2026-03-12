@@ -31,19 +31,52 @@ class VoiceRoomController {
 
     webrtc.socket?.stream.listen((message) {
 
-        final data = jsonDecode(message);
+      final data = jsonDecode(message);
 
-        // 🔊 new speaker audio
-        if (data["type"] == "NEW_PRODUCER") {
+      final type = data["type"];
 
-          listenSpeaker(
-            data["producerId"],
-            data["rtpCapabilities"] ?? {}
-          );
+      // =========================
+      // TRANSPORT CONNECTED
+      // =========================
+      if (type == "TRANSPORT_CONNECTED") {
 
-        }
+         print("Transport connected");
 
-      });
+      }
+
+      // =========================
+      // PRODUCER CREATED
+      // =========================
+      if (type == "PRODUCER_CREATED") {
+
+        print("Audio producer created");
+
+      }
+
+      // =========================
+      // CONSUMER CREATED
+      // =========================
+       if (type == "CONSUMER_CREATED") {
+
+        final consumer = data["consumer"];
+
+        print("Consumer created: ${consumer["id"]}");
+
+      }
+
+      // =========================
+      // NEW SPEAKER
+      // =========================
+      if (type == "NEW_PRODUCER") {
+
+        listenSpeaker(
+          data["producerId"],
+          data["rtpCapabilities"] ?? {}
+        );
+
+      }
+
+    });
 
    }
 
