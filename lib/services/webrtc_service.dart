@@ -78,7 +78,11 @@ class WebRTCService {
   Future startMicrophone() async {
 
     final mediaConstraints = {
-      "audio": true,
+      "audio": {
+        "echoCancellation": true,
+        "noiseSuppression": true,
+        "autoGainControl": true
+      },
       "video": false
     };
 
