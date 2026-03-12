@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/session/user_session.dart';
 import '../../../core/socket/global_socket_manager.dart';
 import '../data/room_api.dart';
-import '../controllers/voice_room_controller.dart';
+import '../../../controllers/voice_room_controller.dart';
 
 class RoomScreen extends StatefulWidget {
   final String roomId;
