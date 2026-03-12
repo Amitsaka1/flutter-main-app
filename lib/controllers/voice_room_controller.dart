@@ -18,6 +18,11 @@ class VoiceRoomController {
     roomId = rId;
     userId = uId;
 
+    if (kIsWeb) {
+      print("Web mode: WebRTC disabled");
+      return;
+     }
+
     await webrtc.init(wsUrl);
 
     await webrtc.createPeer();
