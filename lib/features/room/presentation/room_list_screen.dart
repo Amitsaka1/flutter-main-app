@@ -68,7 +68,6 @@ class _RoomListScreenState
         ),
       );
 
-      // 🔥 Next step: navigate to RoomScreen
       context.push(
         "/room",
         extra: {
@@ -139,18 +138,31 @@ class _RoomListScreenState
 
                 try {
 
-                  await RoomApi.createRoom(
+                  // 🔥 Create room
+                  final roomId = await RoomApi.createRoom(
                     userId: userId,
                     name: nameController.text.trim(),
                     description:
                         descController.text.trim(),
                   );
 
+                  // 🔥 Activate room
+                  await RoomApi.activateRoom(
+                    userId: userId,
+                    roomId: roomId,
+                  );
+
                   if (!mounted) return;
 
                   Navigator.pop(context);
 
-                  _loadRooms();
+                  // 🔥 Host direct room enter
+                  context.push(
+                    "/room",
+                    extra: {
+                      "roomId": roomId,
+                    },
+                  );
 
                 } catch (e) {
 
