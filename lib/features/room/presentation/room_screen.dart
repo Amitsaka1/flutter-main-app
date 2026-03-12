@@ -3,6 +3,7 @@ import '../../../core/session/user_session.dart';
 import '../../../core/socket/global_socket_manager.dart';
 import '../data/room_api.dart';
 import '../../../controllers/voice_room_controller.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class RoomScreen extends StatefulWidget {
   final String roomId;
@@ -31,7 +32,21 @@ class _RoomScreenState extends State<RoomScreen> {
     _initRoom();
   }
 
+  Future<void> requestMicPermission() async {
+
+  var status = await Permission.microphone.request();
+
+  if (!status.isGranted) {
+
+    throw Exception("Microphone permission denied");
+
+  }
+
+  }
+
   Future<void> _initRoom() async {
+
+    await requestMicPermission();
 
     final userId = UserSession.getUserId();
     if (userId == null) return;
