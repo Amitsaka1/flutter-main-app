@@ -46,9 +46,27 @@ class _RoomScreenState extends State<RoomScreen> {
 
   Future<void> _initRoom() async {
 
+  try {
+
     await requestMicPermission();
 
-    final userId = UserSession.getUserId();
+  } catch (e) {
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Microphone permission required"),
+      ),
+    );
+
+    Navigator.pop(context);
+
+    return;
+
+  }
+
+  final userId = UserSession.getUserId();
     if (userId == null) return;
 
     GlobalSocketManager.instance
