@@ -62,7 +62,9 @@ class WebRTCService {
 
         final remoteStream = event.streams[0];
 
-        _playRemoteAudio(remoteStream);
+        final producerId = event.track.id;
+
+        _playRemoteAudio(producerId, remoteStream);
 
       }
 
