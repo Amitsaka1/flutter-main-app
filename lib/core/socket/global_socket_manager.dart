@@ -188,6 +188,8 @@ class GlobalSocketManager with WidgetsBindingObserver {
   bool get isConnected =>
       _socketService?.isConnected ?? false;
 
+  String get wsUrl => _socketService?.wsUrl ?? "";
+
   // ================= DISPOSE =================
 
   void dispose() {
