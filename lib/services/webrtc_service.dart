@@ -29,7 +29,20 @@ class WebRTCService {
     };
 
     peerConnection = await createPeerConnection(config);
-  }
+
+    peerConnection?.onTrack = (RTCTrackEvent event) {
+
+      if (event.track.kind == "audio") {
+
+        final remoteStream = event.streams[0];
+
+        _playRemoteAudio(remoteStream);
+
+      }
+
+    };
+
+    }
 
   // =========================
   // START MICROPHONE
