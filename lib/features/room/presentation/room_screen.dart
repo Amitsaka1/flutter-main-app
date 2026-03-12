@@ -96,7 +96,10 @@ class _RoomScreenState extends State<RoomScreen> {
           roomId: widget.roomId,
         );
 
-        await voiceController.startSpeaking();
+        // mic start after seat map update
+        Future.delayed(const Duration(milliseconds: 500), () {
+          voiceController.startSpeaking();
+        });
 
         if (!mounted) return;
 
