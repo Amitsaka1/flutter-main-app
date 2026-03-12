@@ -8,6 +8,9 @@ class WebRTCService {
   RTCPeerConnection? peerConnection;
   MediaStream? localStream;
 
+  final Map<String, MediaStream> remoteStreams = {};
+}
+
   // =========================
   // INIT SOCKET
   // =========================
