@@ -10,6 +10,8 @@ class VoiceRoomController {
   String? userId;
   String? transportId;
 
+  dynamic routerCapabilities;
+
   // =========================
   // JOIN ROOM
   // =========================
@@ -71,7 +73,7 @@ class VoiceRoomController {
 
         listenSpeaker(
           data["producerId"],
-          data["rtpCapabilities"] ?? {}
+          routerCapabilities
         );
 
       }
