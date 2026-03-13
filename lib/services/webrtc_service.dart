@@ -9,51 +9,51 @@ class WebRTCService {
   MediaStream? localStream;
 
   final Map<String, MediaStream> remoteStreams = {};
-}
 
   // =========================
   // INIT SOCKET
   // =========================
   Future init(String wsUrl) async {
 
-  socket = WebSocketChannel.connect(Uri.parse(wsUrl));
+    socket = WebSocketChannel.connect(Uri.parse(wsUrl));
 
-  socket?.stream.listen((message) {
+    socket?.stream.listen((message) {
 
-    final data = jsonDecode(message);
+      final data = jsonDecode(message);
 
-    if (data["type"] == "TRANSPORT_CREATED") {
+      if (data["type"] == "TRANSPORT_CREATED") {
 
-      final transport = data["transport"];
+        final transport = data["transport"];
 
-      final transportId = transport["transportId"];
+        final transportId = transport["transportId"];
+        final params = transport["params"];
 
-      final params = transport["params"];
+        connectTransport(
+          transportId,
+          params["dtlsParameters"],
+        );
 
-      connectTransport(
-        transportId,
-        params["dtlsParameters"],
-      );
+      }
 
-    }
-
-  });
+    });
 
   }
 
   // =========================
   // CREATE PEER CONNECTION
   // =========================
-  final config = {
-    "sdpSemantics": "unified-plan",
-    "bundlePolicy": "max-bundle",
-    "rtcpMuxPolicy": "require",
-    "iceServers": [
-     {
-        "urls": "stun:stun.l.google.com:19302"
-      }
-    ]
-  };
+  Future createPeer() async {
+
+    final config = {
+      "sdpSemantics": "unified-plan",
+      "bundlePolicy": "max-bundle",
+      "rtcpMuxPolicy": "require",
+      "iceServers": [
+        {
+          "urls": "stun:stun.l.google.com:19302"
+        }
+      ]
+    };
 
     peerConnection = await createPeerConnection(config);
 
@@ -62,7 +62,6 @@ class WebRTCService {
       if (event.track.kind == "audio") {
 
         final remoteStream = event.streams[0];
-
         final producerId = event.track.id;
 
         _playRemoteAudio(producerId, remoteStream);
@@ -70,6 +69,7 @@ class WebRTCService {
       }
 
     };
+
   }
 
   // =========================
@@ -145,7 +145,7 @@ class WebRTCService {
   }
 
   // =========================
-  // PRODUCE AUDIO (Speaker)
+  // PRODUCE AUDIO
   // =========================
   void produceAudio(String transportId, dynamic rtpParameters) {
 
@@ -158,7 +158,7 @@ class WebRTCService {
   }
 
   // =========================
-  // CONSUME AUDIO (Listener)
+  // CONSUME AUDIO
   // =========================
   void consumeAudio(
       String roomId,
@@ -196,17 +196,17 @@ class WebRTCService {
   // =========================
   void _playRemoteAudio(String producerId, MediaStream stream) async {
 
-  if (remoteStreams.containsKey(producerId)) {
-    return;
-  }
+    if (remoteStreams.containsKey(producerId)) {
+      return;
+    }
 
-  remoteStreams[producerId] = stream;
+    remoteStreams[producerId] = stream;
 
-  final renderer = RTCVideoRenderer();
+    final renderer = RTCVideoRenderer();
 
-  await renderer.initialize();
+    await renderer.initialize();
 
-  renderer.srcObject = stream;
+    renderer.srcObject = stream;
 
   }
 
