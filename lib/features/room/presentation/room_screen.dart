@@ -97,10 +97,12 @@ class _RoomScreenState extends State<RoomScreen> {
     });
 
     // 🔥 Room closed listener
-    GlobalSocketManager.instance
-        .onRoomClosed(() {
+    GlobalSocketManager.instance.onRoomClosed(() {
       if (!mounted) return;
-      Navigator.pop(context);
+
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
     });
 
     await RoomApi.joinRoom(
