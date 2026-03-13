@@ -62,7 +62,7 @@ class WebRTCService {
       if (event.track.kind == "audio") {
 
         final remoteStream = event.streams[0];
-        final producerId = event.track.id;
+        final producerId = event.track.id ?? "";
 
         _playRemoteAudio(producerId, remoteStream);
 
