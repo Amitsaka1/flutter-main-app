@@ -318,28 +318,116 @@ class _RoomScreenState extends State<RoomScreen> {
   }
 
   @override
-Widget build(BuildContext context) {
+  Widget build(BuildContext context) {
 
-  return Scaffold(
+    return Scaffold(
 
-    body: loading
-        ? const Center(child: CircularProgressIndicator())
-        : Stack(
-            children: [
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : Stack(
+              children: [
 
-              // BACKGROUND
-              Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Color(0xFF0F0F1A),
-                      Color(0xFF1B1B2F),
-                    ],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
+                // BACKGROUND
+                Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Color(0xFF0F0F1A),
+                        Color(0xFF1B1B2F),
+                      ],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
                   ),
                 ),
-              ),
+
+                // CHAT PANEL
+                Positioned(
+                  left: 0,
+                  top: 120,
+                  bottom: 120,
+                  width: 250,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.4),
+                      borderRadius: const BorderRadius.only(
+                        topRight: Radius.circular(16),
+                        bottomRight: Radius.circular(16),
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+
+                        const Padding(
+                          padding: EdgeInsets.all(10),
+                          child: Text(
+                            "Chat",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+  
+                        Expanded(
+                          child: ListView.builder(
+                            padding: const EdgeInsets.all(10),
+                            itemCount: messages.length,
+                            itemBuilder: (context, index) {
+
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white10,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  messages[index],
+                                  style: const TextStyle(color: Colors.white),
+                                ),
+                              );
+
+                            },
+                          ),
+                        ),
+
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          margin: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            children: [
+
+                              Expanded(
+                                child: TextField(
+                                  controller: chatController,
+                                  style: const TextStyle(color: Colors.white),
+                                  decoration: const InputDecoration(
+                                    hintText: "Type message...",
+                                    hintStyle: TextStyle(color: Colors.white54),
+                                    border: InputBorder.none,
+                                  ),
+                                ),
+                              ),
+
+                              IconButton(
+                                icon: const Icon(Icons.send, color: Colors.blue),
+                                onPressed: sendMessage,
+                              )
+
+                            ],
+                          ),
+                        )
+
+                      ],
+                    ),
+                  ),
+                ),
 
               Column(
                 children: [
