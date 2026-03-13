@@ -129,6 +129,7 @@ class _RoomScreenState extends State<RoomScreen> {
         });
       }
     });
+  }
   
 
   // ================= SEAT TAP =================
@@ -280,8 +281,6 @@ class _RoomScreenState extends State<RoomScreen> {
     final userId =
         UserSession.getUserId();
     if (userId == null) return;
-
-    await voiceController.dispose();
 
     await RoomApi.leaveRoom(
       userId: userId,
