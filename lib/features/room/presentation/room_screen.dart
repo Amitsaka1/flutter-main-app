@@ -23,6 +23,7 @@ class _RoomScreenState extends State<RoomScreen> {
   List<dynamic> seats = [];
   bool loading = true;
   bool isHost = false;
+  bool leavingRoom = false;
 
   final VoiceRoomController voiceController = VoiceRoomController();
 
@@ -102,6 +103,8 @@ class _RoomScreenState extends State<RoomScreen> {
     // 🔥 Room closed listener
     GlobalSocketManager.instance.onRoomClosed(() {
       if (!mounted) return;
+
+      if (leavingRoom) return;
 
       if (Navigator.canPop(context)) {
         Navigator.pop(context);
@@ -280,6 +283,8 @@ class _RoomScreenState extends State<RoomScreen> {
   // ================= LEAVE ROOM =================
 
   Future<void> _leaveRoom() async {
+
+    leavingRoom = true;
 
     final userId =
         UserSession.getUserId();
