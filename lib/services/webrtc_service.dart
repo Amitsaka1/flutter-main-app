@@ -109,9 +109,8 @@ class WebRTCService {
 
       if (sender.track?.kind == "audio") {
 
-        final params = await sender.getParameters();
-
-        return params.toMap();
+        return {};
+      
       }
     }
 
