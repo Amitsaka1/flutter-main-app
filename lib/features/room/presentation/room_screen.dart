@@ -26,6 +26,9 @@ class _RoomScreenState extends State<RoomScreen> {
 
   final VoiceRoomController voiceController = VoiceRoomController();
 
+  final TextEditingController chatController = TextEditingController();
+  List<String> messages = [];
+
   @override
   void initState() {
     super.initState();
