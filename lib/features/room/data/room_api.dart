@@ -20,27 +20,48 @@ class RoomApi {
 
   /// 🔹 Create Room
   static Future<String> createRoom({
-  required String userId,
-  required String name,
-  String? description,
-}) async {
+    required String userId,
+    required String name,
+    String? description,
+  }) async {
 
-  final response = await ApiClient.post(
-    "/room/create",
-    {
-      "userId": userId,
-      "name": name,
-      "description": description ?? "",
-    },
-  );
+    final response = await ApiClient.post(
+      "/room/create",
+      {
+        "userId": userId,
+        "name": name,
+        "description": description ?? "",
+      },
+    );
 
-  if (response["success"] == true) {
-    return response["room"]["id"];
+    if (response["success"] == true) {
+      return response["room"]["id"];
+    }
+
+    throw Exception(
+      response["message"] ?? "Room creation failed"
+    );
   }
 
-  throw Exception(
-    response["message"] ?? "Room creation failed"
-  );
+  /// 🔹 Activate Room
+  static Future<void> activateRoom({
+    required String userId,
+    required String roomId,
+  }) async {
+
+    final response = await ApiClient.post(
+      "/room/activate",
+      {
+        "userId": userId,
+        "roomId": roomId,
+      },
+    );
+
+    if (response["success"] != true) {
+      throw Exception(
+        response["message"] ?? "Room activation failed"
+      );
+    }
   }
 
   /// 🔹 Join Room
@@ -78,7 +99,8 @@ class RoomApi {
 
     if (response["success"] != true) {
       throw Exception(
-          response["message"] ?? "Seat request failed");
+        response["message"] ?? "Seat request failed"
+      );
     }
   }
 
@@ -97,7 +119,7 @@ class RoomApi {
         "targetUserId": targetUserId,
       },
     );
-  
+
     if (response["success"] != true) {
       throw Exception(
         response["message"] ?? "Demote failed",
@@ -123,25 +145,5 @@ class RoomApi {
       throw Exception(response["message"] ?? "Leave failed");
     }
   }
-}
 
-
-static Future<void> activateRoom({
-  required String userId,
-  required String roomId,
-}) async {
-
-  final response = await ApiClient.post(
-    "/room/activate",
-    {
-      "userId": userId,
-      "roomId": roomId,
-    },
-  );
-
-  if (response["success"] != true) {
-    throw Exception(
-      response["message"] ?? "Room activation failed"
-    );
-  }
 }
