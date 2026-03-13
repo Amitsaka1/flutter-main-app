@@ -19,14 +19,17 @@ jobs:
       - name: Install Dependencies
         run: flutter pub get
 
-      - name: Build Release APK (Auto Version)
+      - name: Clean Project
+        run: flutter clean
+
+      - name: Build Split APK
         run: |
           flutter build apk --release --split-per-abi \
             --build-name=1.0.${{ github.run_number }} \
             --build-number=${{ github.run_number }}
 
-      - name: Upload APK
+      - name: Upload APKs
         uses: actions/upload-artifact@v4
         with:
           name: release-apk
-          path: build/app/outputs/flutter-apk/
+          path: build/app/outputs/flutter-apk/*.apk
