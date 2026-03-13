@@ -107,16 +107,16 @@ class _RoomScreenState extends State<RoomScreen> {
       userId: userId,
       roomId: widget.roomId,
     );
-    
-    GlobalSocketManager.instance
-        .joinRoom(widget.roomId);
 
+    GlobalSocketManager.instance.joinRoom(widget.roomId);
 
     await voiceController.joinRoom(
       widget.roomId,
-      userId!,
+      userId,
       GlobalSocketManager.instance.wsUrl,
     );
+
+    if (!mounted) return;
 
     setState(() {
       loading = false;
