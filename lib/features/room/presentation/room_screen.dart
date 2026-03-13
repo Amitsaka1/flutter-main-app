@@ -102,15 +102,15 @@ class _RoomScreenState extends State<RoomScreen> {
       if (!mounted) return;
       Navigator.pop(context);
     });
-    
-
-    GlobalSocketManager.instance
-        .joinRoom(widget.roomId);
 
     await RoomApi.joinRoom(
       userId: userId,
       roomId: widget.roomId,
     );
+    
+    GlobalSocketManager.instance
+        .joinRoom(widget.roomId);
+
 
     await voiceController.joinRoom(
       widget.roomId,
