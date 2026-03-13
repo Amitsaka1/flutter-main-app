@@ -297,6 +297,18 @@ class _RoomScreenState extends State<RoomScreen> {
     Navigator.pop(context);
   }
 
+  void sendMessage() {
+
+  if (chatController.text.trim().isEmpty) return;
+
+  setState(() {
+    messages.add(chatController.text);
+  });
+
+  chatController.clear();
+
+  }
+
   @override
   void dispose() {
     try {
