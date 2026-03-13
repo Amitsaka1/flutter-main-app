@@ -132,13 +132,12 @@ class _RoomScreenState extends State<RoomScreen> {
         );
 
         // mic start after seat map update
-        Future.delayed(const Duration(milliseconds: 500), async {
-
-          await voiceController.startSpeaking();
-
-          print("🎤 Microphone started");
-
-         });
+       Future.delayed(
+         const Duration(milliseconds: 500),
+         () async {
+           await voiceController.startSpeaking();
+         },
+       );
 
         if (!mounted) return;
 
