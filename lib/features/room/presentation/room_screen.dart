@@ -281,6 +281,8 @@ class _RoomScreenState extends State<RoomScreen> {
         UserSession.getUserId();
     if (userId == null) return;
 
+    await voiceController.dispose();
+
     await RoomApi.leaveRoom(
       userId: userId,
       roomId: widget.roomId,
