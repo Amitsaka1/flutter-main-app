@@ -289,8 +289,9 @@ class _RoomScreenState extends State<RoomScreen> {
 
   @override
   void dispose() {
-    GlobalSocketManager.instance
-        .leaveRoom(widget.roomId);
+    try {
+      GlobalSocketManager.instance.leaveRoom(widget.roomId);
+    } catch (_) {}
     super.dispose();
   }
 
