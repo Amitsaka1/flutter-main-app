@@ -303,76 +303,243 @@ class _RoomScreenState extends State<RoomScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
+Widget build(BuildContext context) {
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Room"),
-        actions: [
-          IconButton(
-            icon: const Icon(
-                Icons.exit_to_app),
-            onPressed: _leaveRoom,
-          ),
-        ],
-      ),
-      body: loading
-          ? const Center(
-              child:
-                  CircularProgressIndicator(),
-            )
-          : GridView.builder(
-              padding:
-                  const EdgeInsets.all(16),
-              gridDelegate:
-                  const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
+  return Scaffold(
+
+    body: loading
+        ? const Center(child: CircularProgressIndicator())
+        : Stack(
+            children: [
+
+              // BACKGROUND
+              Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Color(0xFF0F0F1A),
+                      Color(0xFF1B1B2F),
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                ),
               ),
-              itemCount: seats.length,
-              itemBuilder:
-                  (context, index) {
 
-                final seat =
-                    seats[index];
+              Column(
+                children: [
 
-                final occupied =
-                    seat["userId"] != null;
+                  const SizedBox(height: 50),
 
-                return GestureDetector(
-                  onTap: () =>
-                      _onSeatTap(seat),
-                  child: Container(
-                    decoration:
-                        BoxDecoration(
-                      color: occupied
-                          ? const Color(
-                              0xFF00F5A0)
-                          : Colors
-                              .grey[800],
-                      borderRadius:
-                          BorderRadius
-                              .circular(12),
-                    ),
-                    child: Center(
-                      child: Text(
-                        occupied
-                            ? seat["userId"]
-                            : "Empty",
-                        style:
-                            const TextStyle(
-                                fontSize:
-                                    12),
-                        textAlign:
-                            TextAlign
-                                .center,
+                  // HEADER
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+
+                      const Text(
+                        "Voice Party",
+                        style: TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
+
+                      const SizedBox(width: 16),
+
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          "LIVE ${seats.length}/12",
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      )
+
+                    ],
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // SEATS GRID
+                  Expanded(
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+
+                        int columns = 3;
+
+                        if (constraints.maxWidth > 900) {
+                          columns = 5;
+                        } else if (constraints.maxWidth > 600) {
+                          columns = 4;
+                        }
+
+                        return GridView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: columns,
+                            crossAxisSpacing: 20,
+                            mainAxisSpacing: 20,
+                          ),
+                          itemCount: seats.length,
+                          itemBuilder: (context, index) {
+
+                            final seat = seats[index];
+                            final occupied = seat["userId"] != null;
+
+                            return GestureDetector(
+                              onTap: () => _onSeatTap(seat),
+                              child: Column(
+                                children: [
+
+                                  Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+
+                                      // SPEAKING GLOW
+                                      if (occupied)
+                                        Container(
+                                          width: 80,
+                                          height: 80,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.green
+                                                    .withOpacity(0.6),
+                                                blurRadius: 15,
+                                                spreadRadius: 3,
+                                              )
+                                            ],
+                                          ),
+                                        ),
+
+                                      CircleAvatar(
+                                        radius: 35,
+                                        backgroundColor:
+                                            Colors.grey.shade800,
+                                        child: occupied
+                                            ? const Icon(Icons.person,
+                                                color: Colors.white)
+                                            : const Icon(Icons.add,
+                                                color: Colors.white54),
+                                      ),
+
+                                      // MIC ICON
+                                      Positioned(
+                                        bottom: 0,
+                                        right: 0,
+                                        child: Container(
+                                          padding: const EdgeInsets.all(3),
+                                          decoration: const BoxDecoration(
+                                            color: Colors.black,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: const Icon(
+                                            Icons.mic,
+                                            size: 14,
+                                            color: Colors.green,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+
+                                  const SizedBox(height: 6),
+
+                                  Text(
+                                    occupied
+                                        ? seat["userId"]
+                                        : "Empty",
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                    ),
+                                  )
+
+                                ],
+                              ),
+                            );
+                          },
+                        );
+                      },
                     ),
                   ),
-                );
-              },
-            ),
-    );
-  }
+
+                  const SizedBox(height: 80),
+                ],
+              ),
+
+              // BOTTOM CONTROLS
+              Positioned(
+                bottom: 30,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 30, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.6),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+
+                        Column(
+                          children: [
+                            Icon(Icons.card_giftcard,
+                                color: Colors.amber),
+                            SizedBox(height: 4),
+                            Text("Gift",
+                                style: TextStyle(color: Colors.white))
+                          ],
+                        ),
+
+                        SizedBox(width: 40),
+
+                        Column(
+                          children: [
+                            Icon(Icons.mic, color: Colors.white),
+                            SizedBox(height: 4),
+                            Text("Mic",
+                                style: TextStyle(color: Colors.white))
+                          ],
+                        ),
+
+                        SizedBox(width: 40),
+
+                        Column(
+                          children: [
+                            Icon(Icons.image, color: Colors.white),
+                            SizedBox(height: 4),
+                            Text("Frame",
+                                style: TextStyle(color: Colors.white))
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              // EXIT BUTTON
+              Positioned(
+                top: 40,
+                right: 10,
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white),
+                  onPressed: _leaveRoom,
+                ),
+              ),
+
+            ],
+          ),
+  );
 }
