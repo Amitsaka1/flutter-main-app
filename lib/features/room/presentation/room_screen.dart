@@ -118,12 +118,6 @@ class _RoomScreenState extends State<RoomScreen> {
       GlobalSocketManager.instance.wsUrl,
     );
 
-    if (!mounted) return;
-
-    setState(() {
-      loading = false;
-    });
-
     print("🚀 WebRTC initialized");
 
     Future.delayed(const Duration(seconds: 2), () {
