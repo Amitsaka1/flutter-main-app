@@ -125,7 +125,17 @@ class _RoomScreenState extends State<RoomScreen> {
     });
 
     print("🚀 WebRTC initialized");
-  }
+
+    Future.delayed(const Duration(seconds: 2), () {
+      if (!mounted) return;
+
+      if (loading) {
+        setState(() {
+          loading = false;
+        });
+      }
+    });
+  
 
   // ================= SEAT TAP =================
 
