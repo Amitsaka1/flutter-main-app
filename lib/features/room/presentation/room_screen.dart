@@ -69,18 +69,7 @@ class _RoomScreenState extends State<RoomScreen> {
   final userId = UserSession.getUserId();
     if (userId == null) return;
 
-    GlobalSocketManager.instance
-        .joinRoom(widget.roomId);
-
-    await voiceController.joinRoom(
-      widget.roomId,
-      userId!,
-      GlobalSocketManager.instance.wsUrl,
-    );
-
-    print("🚀 WebRTC initialized");
-
-    // 🔥 Seat map listener
+     // 🔥 Seat map listener
     GlobalSocketManager.instance
         .onSeatMapUpdate((data) {
 
@@ -113,6 +102,18 @@ class _RoomScreenState extends State<RoomScreen> {
       if (!mounted) return;
       Navigator.pop(context);
     });
+    
+
+    GlobalSocketManager.instance
+        .joinRoom(widget.roomId);
+
+    await voiceController.joinRoom(
+      widget.roomId,
+      userId!,
+      GlobalSocketManager.instance.wsUrl,
+    );
+
+    print("🚀 WebRTC initialized");
   }
 
   // ================= SEAT TAP =================
