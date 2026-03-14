@@ -43,7 +43,7 @@ class BottomControls extends StatelessWidget {
             ],
           ),
 
-          /// CHAT
+          /// CHAT BUTTON
           GestureDetector(
             onTap: onChat,
             child: const Column(
