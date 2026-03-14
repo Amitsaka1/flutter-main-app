@@ -18,28 +18,33 @@ class ChatPanel extends StatelessWidget {
 
     return Container(
 
-      width:250,
-      margin:const EdgeInsets.only(top:120,bottom:120),
+      padding: const EdgeInsets.all(10),
 
-      color: Colors.black38,
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.35),
+        borderRadius: BorderRadius.circular(14),
+      ),
 
       child: Column(
         children: [
 
-          const Padding(
-            padding: EdgeInsets.all(10),
-            child: Text("Chat",style: TextStyle(color: Colors.white)),
+          const Text(
+            "Chat",
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
           ),
+
+          const SizedBox(height: 6),
 
           Expanded(
             child: ListView.builder(
-
               itemCount: messages.length,
-
-              itemBuilder:(context,index){
+              itemBuilder: (context,index){
 
                 return Padding(
-                  padding: const EdgeInsets.all(6),
+                  padding: const EdgeInsets.symmetric(vertical:4),
                   child: Text(
                     messages[index],
                     style: const TextStyle(color: Colors.white),
@@ -47,9 +52,10 @@ class ChatPanel extends StatelessWidget {
                 );
 
               },
-
             ),
           ),
+
+          const SizedBox(height:6),
 
           Row(
             children: [
