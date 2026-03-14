@@ -11,6 +11,10 @@ class RoomUI extends StatelessWidget {
   final VoidCallback onSend;
   final Function onSeatTap;
 
+  /// NEW
+  final bool showChat;
+  final VoidCallback onChatToggle;
+
   const RoomUI({
     super.key,
     required this.seats,
@@ -18,6 +22,10 @@ class RoomUI extends StatelessWidget {
     required this.controller,
     required this.onSend,
     required this.onSeatTap,
+
+    /// NEW
+    required this.showChat,
+    required this.onChatToggle,
   });
 
   @override
@@ -36,90 +44,97 @@ class RoomUI extends StatelessWidget {
       ),
 
       child: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
 
-            /// HEADER
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 10,
-              ),
-              child: Row(
-                children: [
+            /// MAIN UI
+            Column(
+              children: [
 
-                  const Text(
-                    "Voice Party",
-                    style: TextStyle(
-                      fontSize: 20,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
+                /// HEADER
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
                   ),
+                  child: Row(
+                    children: [
 
-                  const Spacer(),
-
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      "LIVE ${seats.length}/12",
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
+                      const Text(
+                        "Voice Party",
+                        style: TextStyle(
+                          fontSize: 20,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                  )
 
-                ],
-              ),
-            ),
+                      const Spacer(),
 
-            /// SEATS GRID
-            Expanded(
-              flex: 4,
-              child: SeatGrid(
-                seats: seats,
-                onSeatTap: onSeatTap,
-              ),
-            ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          "LIVE ${seats.length}/12",
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      )
 
-            /// CHAT PANEL AREA
-            SizedBox(
-              height: 220,
-              child: Row(
-                children: [
-
-                  /// CHAT PANEL (LEFT)
-                  SizedBox(
-                    width: 200,
-                    child: ChatPanel(
-                      messages: messages,
-                      controller: controller,
-                      onSend: onSend,
-                    ),
+                    ],
                   ),
+                ),
 
-                  /// RIGHT SIDE EMPTY SPACE
-                  const Expanded(child: SizedBox()),
+                /// SEATS GRID
+                Expanded(
+                  child: SeatGrid(
+                    seats: seats,
+                    onSeatTap: onSeatTap,
+                  ),
+                ),
 
-                ],
-              ),
+                const SizedBox(height: 80),
+
+              ],
             ),
 
-            const SizedBox(height: 10),
+            /// CHAT PANEL
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 300),
+
+              bottom: showChat ? 70 : -400,
+
+              left: 0,
+              right: 0,
+
+              height: MediaQuery.of(context).size.height / 3,
+
+              child: ChatPanel(
+                messages: messages,
+                controller: controller,
+                onSend: onSend,
+                onClose: onChatToggle,
+              ),
+            ),
 
             /// BOTTOM CONTROLS
-            const BottomControls(),
-
-            const SizedBox(height: 10),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 10,
+              child: BottomControls(
+                onChat: onChatToggle,
+              ),
+            ),
 
           ],
         ),
