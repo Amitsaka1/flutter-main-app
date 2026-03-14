@@ -361,8 +361,6 @@ class _RoomScreenState extends State<RoomScreen> {
 
     chatController.dispose();
 
-    voiceController.dispose();
-
     super.dispose();
   }
 }
