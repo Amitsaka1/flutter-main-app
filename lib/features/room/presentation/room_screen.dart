@@ -423,11 +423,11 @@ class _RoomScreenState extends State<RoomScreen> {
                               IconButton(
                                 icon: const Icon(Icons.send, color: Colors.blue),
                                 onPressed: sendMessage,
-                              )
+                              ),
 
                             ],
                           ),
-                        )
+                        ),
 
                       ],
                     ),
