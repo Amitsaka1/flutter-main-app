@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 class SeatGrid extends StatelessWidget {
 
-  final List<Map<String,dynamic>> seats;
-  final Function(Map<String,dynamic>) onSeatTap;
+  final List seats;
+  final Function onSeatTap;
 
   const SeatGrid({
     super.key,
@@ -14,41 +14,50 @@ class SeatGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
-    return GridView.builder(
+    return Center(
+      child: GridView.builder(
+        padding: const EdgeInsets.all(20),
+        shrinkWrap: true,
+        gridDelegate:
+            const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          crossAxisSpacing: 20,
+          mainAxisSpacing: 20,
+        ),
+        itemCount: seats.length,
+        itemBuilder: (context, index) {
 
-      padding: const EdgeInsets.all(16),
+          final seat = seats[index];
+          final occupied = seat["userId"] != null;
 
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount:3,
-        crossAxisSpacing:20,
-        mainAxisSpacing:20,
+          return GestureDetector(
+            onTap: () => onSeatTap(seat),
+            child: Column(
+              children: [
+
+                CircleAvatar(
+                  radius: 30,
+                  backgroundColor: Colors.grey.shade800,
+                  child: occupied
+                      ? const Icon(Icons.person, color: Colors.white)
+                      : const Icon(Icons.add, color: Colors.white54),
+                ),
+
+                const SizedBox(height: 5),
+
+                Text(
+                  occupied ? seat["userId"] : "Empty",
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                  ),
+                )
+
+              ],
+            ),
+          );
+        },
       ),
-
-      itemCount: seats.length,
-
-      itemBuilder:(context,index){
-
-        final seat = seats[index];
-        final occupied = seat["userId"] != null;
-
-        return GestureDetector(
-
-          onTap:()=>onSeatTap(seat),
-
-          child: CircleAvatar(
-            radius:35,
-            backgroundColor: Colors.grey.shade800,
-            child: occupied
-                ? const Icon(Icons.person,color: Colors.white)
-                : const Icon(Icons.add,color: Colors.white54),
-          ),
-
-        );
-
-      },
-
     );
-
   }
-
 }
