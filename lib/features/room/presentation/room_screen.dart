@@ -14,13 +14,14 @@ class RoomScreen extends StatefulWidget {
   });
 
   @override
-  State<RoomScreen> createState() =>
-      _RoomScreenState();
+  State<RoomScreen> createState() => _RoomScreenState();
 }
 
 class _RoomScreenState extends State<RoomScreen> {
 
-  List<dynamic> seats = [];
+  /// TYPE SAFE
+  List<Map<String, dynamic>> seats = [];
+
   bool loading = true;
   bool isHost = false;
   bool leavingRoom = false;
@@ -28,7 +29,10 @@ class _RoomScreenState extends State<RoomScreen> {
   final VoiceRoomController voiceController = VoiceRoomController();
 
   final TextEditingController chatController = TextEditingController();
+
   List<String> messages = [];
+
+  bool micStarted = false;
 
   @override
   void initState() {
@@ -36,60 +40,73 @@ class _RoomScreenState extends State<RoomScreen> {
     _initRoom();
   }
 
+  /// ================= MIC PERMISSION =================
+
   Future<void> requestMicPermission() async {
 
-  var status = await Permission.microphone.request();
+    final status = await Permission.microphone.request();
 
-  if (!status.isGranted) {
-
-    throw Exception("Microphone permission denied");
-
-  }
+    if (!status.isGranted) {
+      throw Exception("Microphone permission denied");
+    }
 
   }
+
+  /// ================= INIT ROOM =================
 
   Future<void> _initRoom() async {
 
-  try {
+    try {
 
-    await requestMicPermission();
+      await requestMicPermission();
 
-  } catch (e) {
-
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Microphone permission required"),
-      ),
-    );
-
-    Navigator.pop(context);
-
-    return;
-
-  }
-
-  final userId = UserSession.getUserId();
-    if (userId == null) return;
-
-     // 🔥 Seat map listener
-    GlobalSocketManager.instance
-        .onSeatMapUpdate((data) {
+    } catch (e) {
 
       if (!mounted) return;
 
-      final updatedSeats = data["seats"];
-      final currentUserId =
-          UserSession.getUserId();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Microphone permission required"),
+        ),
+      );
+
+      Navigator.pop(context);
+
+      return;
+    }
+
+    final userId = UserSession.getUserId();
+
+    if (userId == null) return;
+
+    /// ================= SEAT MAP LISTENER =================
+
+    GlobalSocketManager.instance.onSeatMapUpdate((data) {
+
+      if (!mounted) return;
+
+      final seatData = data["seats"];
+
+      if (seatData == null || seatData is! List) return;
+
+      final updatedSeats = List<Map<String, dynamic>>.from(seatData);
+
+      final currentUserId = UserSession.getUserId();
 
       bool hostFlag = false;
 
       for (final seat in updatedSeats) {
-        if (seat["userId"] == currentUserId &&
-            seat["role"] == "HOST") {
+
+        if (seat["userId"] == currentUserId && seat["role"] == "HOST") {
           hostFlag = true;
-          break;
+        }
+
+        /// auto start mic when seat assigned
+        if (!micStarted && seat["userId"] == currentUserId) {
+
+          micStarted = true;
+
+          voiceController.startSpeaking().catchError((_) {});
         }
       }
 
@@ -98,10 +115,13 @@ class _RoomScreenState extends State<RoomScreen> {
         isHost = hostFlag;
         loading = false;
       });
+
     });
 
-    // 🔥 Room closed listener
+    /// ================= ROOM CLOSED =================
+
     GlobalSocketManager.instance.onRoomClosed(() {
+
       if (!mounted) return;
 
       if (leavingRoom) return;
@@ -109,157 +129,160 @@ class _RoomScreenState extends State<RoomScreen> {
       if (Navigator.canPop(context)) {
         Navigator.pop(context);
       }
+
     });
 
-    await RoomApi.joinRoom(
-      userId: userId,
-      roomId: widget.roomId,
-    );
+    try {
 
-    GlobalSocketManager.instance.joinRoom(widget.roomId);
+      await RoomApi.joinRoom(
+        userId: userId,
+        roomId: widget.roomId,
+      );
 
-    await voiceController.joinRoom(
-      widget.roomId,
-      userId,
-      GlobalSocketManager.instance.wsUrl,
-    );
+      GlobalSocketManager.instance.joinRoom(widget.roomId);
 
-    print("🚀 WebRTC initialized");
+      await voiceController.joinRoom(
+        widget.roomId,
+        userId,
+        GlobalSocketManager.instance.wsUrl,
+      );
+
+      debugPrint("🚀 WebRTC initialized");
+
+    } catch (e) {
+
+      debugPrint("Room init error: $e");
+
+    }
+
+    /// fallback loading protection
 
     Future.delayed(const Duration(seconds: 2), () {
+
       if (!mounted) return;
 
       if (loading) {
+
         setState(() {
           loading = false;
         });
-      }
-    });
-  }
-  
 
-  // ================= SEAT TAP =================
+      }
+
+    });
+
+  }
+
+  /// ================= SEAT TAP =================
 
   void _onSeatTap(Map<String, dynamic> seat) async {
 
     final userId = UserSession.getUserId();
+
     if (userId == null) return;
 
-    // 🔹 EMPTY SEAT → Request speaker
+    /// EMPTY SEAT
+
     if (seat["userId"] == null) {
 
       try {
+
         await RoomApi.requestSpeaker(
           userId: userId,
           roomId: widget.roomId,
         );
 
-        // mic start after seat map update
-       Future.delayed(
-         const Duration(milliseconds: 500),
-         () async {
-           await voiceController.startSpeaking();
-         },
-       );
-
         if (!mounted) return;
 
-        ScaffoldMessenger.of(context)
-            .showSnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text("Seat request sent"),
           ),
         );
 
       } catch (e) {
+
         if (!mounted) return;
 
-        ScaffoldMessenger.of(context)
-            .showSnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              e.toString()
-                  .replaceAll("Exception: ", ""),
+              e.toString().replaceAll("Exception: ", ""),
             ),
           ),
         );
+
       }
 
       return;
     }
 
-    // 🔹 HOST → Demote speaker
+    /// HOST CONTROL
+
     if (isHost &&
         seat["role"] == "SPEAKER" &&
         seat["userId"] != userId) {
 
       showModalBottomSheet(
         context: context,
-        backgroundColor:
-            const Color(0xFF111111),
+        backgroundColor: const Color(0xFF111111),
         builder: (_) {
+
           return SafeArea(
             child: Padding(
-              padding:
-                  const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               child: Column(
-                mainAxisSize:
-                    MainAxisSize.min,
+                mainAxisSize: MainAxisSize.min,
                 children: [
 
                   const Text(
                     "Speaker Controls",
                     style: TextStyle(
                       fontSize: 16,
-                      fontWeight:
-                          FontWeight.bold,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
 
                   const SizedBox(height: 20),
 
                   ListTile(
-                    leading:
-                        const Icon(
+                    leading: const Icon(
                       Icons.remove_circle,
                       color: Colors.red,
                     ),
                     title: const Text(
                       "Remove from Speaker",
-                      style: TextStyle(
-                          color: Colors.red),
+                      style: TextStyle(color: Colors.red),
                     ),
                     onTap: () async {
 
                       Navigator.pop(context);
 
                       try {
-                        await RoomApi
-                            .demoteSpeaker(
+
+                        await RoomApi.demoteSpeaker(
                           hostId: userId,
-                          roomId:
-                              widget.roomId,
-                          targetUserId:
-                              seat["userId"],
+                          roomId: widget.roomId,
+                          targetUserId: seat["userId"],
                         );
+
                       } catch (e) {
+
                         if (!mounted) return;
 
-                        ScaffoldMessenger
-                                .of(context)
-                            .showSnackBar(
+                        ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                              e.toString()
-                                  .replaceAll(
-                                      "Exception: ",
-                                      ""),
+                              e.toString().replaceAll("Exception: ", ""),
                             ),
                           ),
                         );
+
                       }
+
                     },
                   ),
+
                 ],
               ),
             ),
@@ -270,57 +293,79 @@ class _RoomScreenState extends State<RoomScreen> {
       return;
     }
 
-    // 🔹 Otherwise
-    ScaffoldMessenger.of(context)
-        .showSnackBar(
+    /// OTHERWISE
+
+    ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content:
-            Text("Seat already occupied"),
+        content: Text("Seat already occupied"),
       ),
     );
+
   }
 
-  // ================= LEAVE ROOM =================
+  /// ================= LEAVE ROOM =================
 
   Future<void> _leaveRoom() async {
 
     leavingRoom = true;
 
-    final userId =
-        UserSession.getUserId();
+    final userId = UserSession.getUserId();
+
     if (userId == null) return;
 
-    await RoomApi.leaveRoom(
-      userId: userId,
-      roomId: widget.roomId,
-    );
+    try {
 
-    GlobalSocketManager.instance
-        .leaveRoom(widget.roomId);
+      await RoomApi.leaveRoom(
+        userId: userId,
+        roomId: widget.roomId,
+      );
+
+    } catch (_) {}
+
+    try {
+
+      GlobalSocketManager.instance.leaveRoom(widget.roomId);
+
+    } catch (_) {}
 
     if (!mounted) return;
+
     Navigator.pop(context);
+
   }
+
+  /// ================= CHAT =================
 
   void sendMessage() {
 
-  if (chatController.text.trim().isEmpty) return;
+    final text = chatController.text.trim();
 
-  setState(() {
-    messages.add(chatController.text);
-  });
+    if (text.isEmpty) return;
 
-  chatController.clear();
+    setState(() {
+      messages.add(text);
+    });
+
+    chatController.clear();
 
   }
+
+  /// ================= DISPOSE =================
 
   @override
   void dispose() {
+
     try {
       GlobalSocketManager.instance.leaveRoom(widget.roomId);
     } catch (_) {}
+
+    chatController.dispose();
+
+    voiceController.dispose();
+
     super.dispose();
   }
+}
 
   @override
   Widget build(BuildContext context) {
