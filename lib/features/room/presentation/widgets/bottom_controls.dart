@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 class BottomControls extends StatelessWidget {
 
   final VoidCallback onChat;
+  final VoidCallback onGift;
 
   const BottomControls({
     super.key,
     required this.onChat,
+    required this.onGift,
   });
 
   @override
@@ -28,19 +30,22 @@ class BottomControls extends StatelessWidget {
         children: [
 
           /// GIFT
-          const Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.card_giftcard, color: Colors.amber, size: 24),
-              SizedBox(height: 4),
-              Text(
-                "Gift",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                ),
-              )
-            ],
+          GestureDetector(
+            onTap: onGift,
+            child: const Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.card_giftcard, color: Colors.amber, size: 24),
+                SizedBox(height: 4),
+                Text(
+                  "Gift",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                  ),
+                )
+              ],
+            ),
           ),
 
           /// CHAT BUTTON
