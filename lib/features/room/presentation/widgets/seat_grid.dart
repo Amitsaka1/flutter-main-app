@@ -11,7 +11,7 @@ class SeatGrid extends StatelessWidget {
     required this.onSeatTap,
   });
 
-  Widget buildSeat(Map seat) {
+  Widget buildSeat(Map<String, dynamic> seat) {
 
     final occupied = seat["userId"] != null;
 
@@ -33,7 +33,7 @@ class SeatGrid extends StatelessWidget {
           const SizedBox(height: 6),
 
           Text(
-            occupied ? seat["userId"] : "Empty",
+            occupied ? seat["userId"].toString() : "Empty",
             style: const TextStyle(
               color: Colors.white,
               fontSize: 12,
@@ -43,18 +43,19 @@ class SeatGrid extends StatelessWidget {
         ],
       ),
     );
-
   }
 
   @override
   Widget build(BuildContext context) {
 
-    if (seats.isEmpty) return const SizedBox();
+    if (seats.isEmpty) {
+      return const SizedBox();
+    }
 
     return Column(
       children: [
 
-        /// TOP HOST SEAT
+        /// HOST SEAT (TOP CENTER)
         Padding(
           padding: const EdgeInsets.only(bottom: 20),
           child: Center(
@@ -62,31 +63,33 @@ class SeatGrid extends StatelessWidget {
           ),
         ),
 
-        /// REST SEATS GRID
+        /// OTHER SEATS GRID
         Expanded(
           child: GridView.builder(
 
             itemCount: seats.length - 1,
 
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 3,
-              mainAxisSpacing: 18,
               crossAxisSpacing: 18,
+              mainAxisSpacing: 18,
             ),
 
             itemBuilder: (context, index) {
 
-              final seat = seats[index + 1];
+              final Map<String, dynamic> seat =
+                  seats[index + 1] as Map<String, dynamic>;
 
               return buildSeat(seat);
 
             },
+
           ),
         ),
 
       ],
     );
-
   }
-
 }
