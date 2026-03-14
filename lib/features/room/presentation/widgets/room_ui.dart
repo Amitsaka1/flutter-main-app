@@ -41,21 +41,21 @@ class RoomUI extends StatelessWidget {
 
             /// HEADER
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
 
-                  const Text(
-                    "Voice Party",
-                    style: TextStyle(
-                      fontSize: 22,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
+                  const Expanded(
+                    child: Text(
+                      "Voice Party",
+                      style: TextStyle(
+                        fontSize: 22,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-
-                  const SizedBox(width: 10),
 
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -66,9 +66,13 @@ class RoomUI extends StatelessWidget {
                     ),
                     child: Text(
                       "LIVE ${seats.length}/12",
-                      style: const TextStyle(color: Colors.white),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   )
+
                 ],
               ),
             ),
