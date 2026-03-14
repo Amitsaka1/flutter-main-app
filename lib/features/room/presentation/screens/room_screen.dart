@@ -37,10 +37,22 @@ class _RoomScreenState extends State<RoomScreen> {
 
   bool micStarted = false;
 
+  /// CHAT TOGGLE STATE
+  bool showChat = false;
+
   @override
   void initState() {
     super.initState();
     _initRoom();
+  }
+
+  /// TOGGLE CHAT
+  void toggleChat() {
+
+    setState(() {
+      showChat = !showChat;
+    });
+
   }
 
   Future<void> requestMicPermission() async {
@@ -170,6 +182,10 @@ class _RoomScreenState extends State<RoomScreen> {
       controller: chatController,
       onSend: sendMessage,
       onSeatTap: _onSeatTap,
+
+      /// CHAT CONTROL
+      showChat: showChat,
+      onChatToggle: toggleChat,
     );
 
   }
