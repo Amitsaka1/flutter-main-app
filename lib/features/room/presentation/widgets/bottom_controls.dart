@@ -7,51 +7,66 @@ class BottomControls extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
-    return Center(
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-            horizontal: 30, vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.6),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: const [
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 30,
+        vertical: 10,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.7),
+        borderRadius: BorderRadius.circular(25),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: const [
 
-            Column(
-              children: [
-                Icon(Icons.card_giftcard, color: Colors.amber),
-                SizedBox(height: 4),
-                Text("Gift",
-                    style: TextStyle(color: Colors.white))
-              ],
-            ),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.card_giftcard, color: Colors.amber, size: 24),
+              SizedBox(height: 4),
+              Text(
+                "Gift",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                ),
+              )
+            ],
+          ),
 
-            SizedBox(width: 40),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.mic, color: Colors.white, size: 24),
+              SizedBox(height: 4),
+              Text(
+                "Mic",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                ),
+              )
+            ],
+          ),
 
-            Column(
-              children: [
-                Icon(Icons.mic, color: Colors.white),
-                SizedBox(height: 4),
-                Text("Mic",
-                    style: TextStyle(color: Colors.white))
-              ],
-            ),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.image, color: Colors.white, size: 24),
+              SizedBox(height: 4),
+              Text(
+                "Frame",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                ),
+              )
+            ],
+          ),
 
-            SizedBox(width: 40),
-
-            Column(
-              children: [
-                Icon(Icons.image, color: Colors.white),
-                SizedBox(height: 4),
-                Text("Frame",
-                    style: TextStyle(color: Colors.white))
-              ],
-            ),
-
-          ],
-        ),
+        ],
       ),
     );
   }
