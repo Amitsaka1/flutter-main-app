@@ -11,7 +11,6 @@ class RoomUI extends StatelessWidget {
   final VoidCallback onSend;
   final Function onSeatTap;
 
-  /// NEW
   final bool showChat;
   final VoidCallback onChatToggle;
 
@@ -22,8 +21,6 @@ class RoomUI extends StatelessWidget {
     required this.controller,
     required this.onSend,
     required this.onSeatTap,
-
-    /// NEW
     required this.showChat,
     required this.onChatToggle,
   });
@@ -47,7 +44,7 @@ class RoomUI extends StatelessWidget {
         child: Stack(
           children: [
 
-            /// MAIN UI
+            /// MAIN CONTENT
             Column(
               children: [
 
@@ -107,7 +104,7 @@ class RoomUI extends StatelessWidget {
               ],
             ),
 
-            /// CHAT PANEL
+            /// CHAT PANEL (SLIDE)
             AnimatedPositioned(
               duration: const Duration(milliseconds: 300),
 
@@ -126,7 +123,7 @@ class RoomUI extends StatelessWidget {
               ),
             ),
 
-            /// BOTTOM CONTROLS
+            /// BOTTOM BAR
             Positioned(
               left: 0,
               right: 0,
