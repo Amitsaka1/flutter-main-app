@@ -160,6 +160,8 @@ class RoomUI extends StatelessWidget {
                   ),
 
                   itemBuilder: (context,index){
+     
+                    final gift = giftList[index];
 
                     return Column(
                       mainAxisSize: MainAxisSize.min,
@@ -168,21 +170,22 @@ class RoomUI extends StatelessWidget {
                         Container(
                           width: 40,
                           height: 40,
+                          padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
                             color: Colors.grey.shade800,
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Icon(
-                            Icons.card_giftcard,
-                            color: Colors.amber,
+                          child: Image.asset(
+                            gift.image,
+                            fit: BoxFit.contain,
                           ),
                         ),
 
                         const SizedBox(height:4),
 
-                        const Text(
-                          "Gift",
-                          style: TextStyle(
+                        Text(
+                          "${gift.price}",
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 10,
                           ),
