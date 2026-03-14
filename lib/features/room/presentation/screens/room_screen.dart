@@ -37,22 +37,13 @@ class _RoomScreenState extends State<RoomScreen> {
 
   bool micStarted = false;
 
-  /// CHAT TOGGLE STATE
+  /// CHAT STATE
   bool showChat = false;
 
   @override
   void initState() {
     super.initState();
     _initRoom();
-  }
-
-  /// TOGGLE CHAT
-  void toggleChat() {
-
-    setState(() {
-      showChat = !showChat;
-    });
-
   }
 
   Future<void> requestMicPermission() async {
@@ -84,6 +75,7 @@ class _RoomScreenState extends State<RoomScreen> {
     final userId = UserSession.getUserId();
     if (userId == null) return;
 
+    /// SEAT MAP LISTENER
     GlobalSocketManager.instance.onSeatMapUpdate((data) {
 
       if (!mounted) return;
@@ -121,6 +113,7 @@ class _RoomScreenState extends State<RoomScreen> {
 
     });
 
+    /// JOIN ROOM
     await RoomApi.joinRoom(
       userId: userId,
       roomId: widget.roomId,
@@ -136,6 +129,7 @@ class _RoomScreenState extends State<RoomScreen> {
 
   }
 
+  /// CHAT SEND
   void sendMessage() {
 
     final text = chatController.text.trim();
@@ -150,6 +144,16 @@ class _RoomScreenState extends State<RoomScreen> {
 
   }
 
+  /// CHAT TOGGLE
+  void toggleChat() {
+
+    setState(() {
+      showChat = !showChat;
+    });
+
+  }
+
+  /// LEAVE ROOM
   Future<void> _leaveRoom() async {
 
     leavingRoom = true;
@@ -171,21 +175,28 @@ class _RoomScreenState extends State<RoomScreen> {
 
   }
 
+  /// SEAT TAP
   void _onSeatTap(Map<String,dynamic> seat){}
 
   @override
   Widget build(BuildContext context) {
 
-    return RoomUI(
-      seats: seats,
-      messages: messages,
-      controller: chatController,
-      onSend: sendMessage,
-      onSeatTap: _onSeatTap,
+    if (loading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
-      /// CHAT CONTROL
-      showChat: showChat,
-      onChatToggle: toggleChat,
+    return Scaffold(
+      body: RoomUI(
+        seats: seats,
+        messages: messages,
+        controller: chatController,
+        onSend: sendMessage,
+        onSeatTap: _onSeatTap,
+        showChat: showChat,
+        onChatToggle: toggleChat,
+      ),
     );
 
   }
