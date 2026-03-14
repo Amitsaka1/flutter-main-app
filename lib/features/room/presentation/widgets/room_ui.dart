@@ -6,9 +6,9 @@ import 'bottom_controls.dart';
 class RoomUI extends StatelessWidget {
 
   final List seats;
-  final List messages;
+  final List<String> messages;
   final TextEditingController controller;
-  final Function onSend;
+  final VoidCallback onSend;
   final Function onSeatTap;
 
   const RoomUI({
@@ -26,7 +26,7 @@ class RoomUI extends StatelessWidget {
     return Stack(
       children: [
 
-        /// BACKGROUND
+        /// background
         Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
@@ -40,9 +40,9 @@ class RoomUI extends StatelessWidget {
           ),
         ),
 
-        /// HEADER
+        /// header
         Positioned(
-          top: 40,
+          top: 50,
           left: 0,
           right: 0,
           child: Center(
@@ -59,7 +59,7 @@ class RoomUI extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
 
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -78,14 +78,14 @@ class RoomUI extends StatelessWidget {
           ),
         ),
 
-        /// MAIN CONTENT
+        /// main layout
         Positioned.fill(
-          top: 100,
-          bottom: 100,
+          top: 110,
+          bottom: 110,
           child: Row(
             children: [
 
-              /// CHAT PANEL
+              /// chat left
               SizedBox(
                 width: 250,
                 child: ChatPanel(
@@ -95,7 +95,7 @@ class RoomUI extends StatelessWidget {
                 ),
               ),
 
-              /// SEAT GRID
+              /// seats right
               Expanded(
                 child: SeatGrid(
                   seats: seats,
@@ -106,7 +106,7 @@ class RoomUI extends StatelessWidget {
           ),
         ),
 
-        /// BOTTOM CONTROLS
+        /// bottom controls
         const Positioned(
           bottom: 30,
           left: 0,
