@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'seat_grid.dart';
 import 'chat_panel.dart';
 import 'bottom_controls.dart';
+import '../../data/gift_list.dart';
 
 class RoomUI extends StatelessWidget {
 
@@ -150,7 +151,7 @@ class RoomUI extends StatelessWidget {
 
                 child: GridView.builder(
 
-                  itemCount: 20,
+                  itemCount: giftList.length,
 
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 5,
