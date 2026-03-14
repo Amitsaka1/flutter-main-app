@@ -5,11 +5,11 @@ import 'bottom_controls.dart';
 
 class RoomUI extends StatelessWidget {
 
-  final List seats;
+  final List<Map<String, dynamic>> seats;
   final List<String> messages;
   final TextEditingController controller;
   final VoidCallback onSend;
-  final Function onSeatTap;
+  final void Function(Map<String, dynamic>) onSeatTap;
 
   final bool showChat;
   final VoidCallback onChatToggle;
@@ -104,7 +104,7 @@ class RoomUI extends StatelessWidget {
               ],
             ),
 
-            /// CHAT PANEL (SLIDE)
+            /// CHAT PANEL (SLIDE UP)
             AnimatedPositioned(
               duration: const Duration(milliseconds: 300),
 
