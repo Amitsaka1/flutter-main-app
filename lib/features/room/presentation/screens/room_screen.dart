@@ -165,7 +165,6 @@ class _RoomScreenState extends State<RoomScreen> {
   Widget build(BuildContext context) {
 
     return RoomUI(
-      loading: loading,
       seats: seats,
       messages: messages,
       chatController: chatController,
