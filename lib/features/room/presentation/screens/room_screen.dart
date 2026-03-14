@@ -167,7 +167,7 @@ class _RoomScreenState extends State<RoomScreen> {
     return RoomUI(
       seats: seats,
       messages: messages,
-      Controller: chatController,
+      controller: chatController,
       onSend: sendMessage,
       onSeatTap: _onSeatTap,
     );
