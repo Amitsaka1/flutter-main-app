@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'chat_panel.dart';
 import 'seat_grid.dart';
+import 'chat_panel.dart';
 import 'bottom_controls.dart';
 
 class RoomUI extends StatelessWidget {
@@ -23,98 +23,84 @@ class RoomUI extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
-    return Stack(
-      children: [
-
-        /// background
-        Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Color(0xFF0F0F1A),
-                Color(0xFF1B1B2F),
-              ],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-          ),
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Color(0xFF0F0F1A),
+            Color(0xFF1B1B2F),
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
         ),
+      ),
 
-        /// header
-        Positioned(
-          top: 50,
-          left: 0,
-          right: 0,
-          child: Center(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
+      child: SafeArea(
+        child: Column(
+          children: [
 
-                const Text(
-                  "Voice Party",
-                  style: TextStyle(
-                    fontSize: 24,
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
+            /// HEADER
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+
+                  const Text(
+                    "Voice Party",
+                    style: TextStyle(
+                      fontSize: 22,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
 
-                const SizedBox(width: 10),
+                  const SizedBox(width: 10),
 
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.red,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    "LIVE ${seats.length}/12",
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                )
-              ],
-            ),
-          ),
-        ),
-
-        /// main layout
-        Positioned.fill(
-          top: 110,
-          bottom: 110,
-          child: Row(
-            children: [
-
-              /// chat left
-              SizedBox(
-                width: 250,
-                child: ChatPanel(
-                  messages: messages,
-                  controller: controller,
-                  onSend: onSend,
-                ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      "LIVE ${seats.length}/12",
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  )
+                ],
               ),
+            ),
 
-              /// seats right
-              Expanded(
-                child: SeatGrid(
-                  seats: seats,
-                  onSeatTap: onSeatTap,
-                ),
+            /// SEATS
+            Expanded(
+              flex: 3,
+              child: SeatGrid(
+                seats: seats,
+                onSeatTap: onSeatTap,
               ),
-            ],
-          ),
-        ),
+            ),
 
-        /// bottom controls
-        const Positioned(
-          bottom: 30,
-          left: 0,
-          right: 0,
-          child: BottomControls(),
-        ),
+            /// CHAT
+            Expanded(
+              flex: 2,
+              child: ChatPanel(
+                messages: messages,
+                controller: controller,
+                onSend: onSend,
+              ),
+            ),
 
-      ],
+            /// NAVBAR
+            const Padding(
+              padding: EdgeInsets.only(bottom: 10),
+              child: BottomControls(),
+            ),
+
+          ],
+        ),
+      ),
     );
   }
 }
