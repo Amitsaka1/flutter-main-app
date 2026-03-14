@@ -40,6 +40,9 @@ class _RoomScreenState extends State<RoomScreen> {
   /// CHAT STATE
   bool showChat = false;
 
+  /// GIFT STATE
+  bool showGift = false;
+
   @override
   void initState() {
     super.initState();
@@ -148,7 +151,30 @@ class _RoomScreenState extends State<RoomScreen> {
   void toggleChat() {
 
     setState(() {
+
       showChat = !showChat;
+
+      /// close gift if open
+      if (showChat) {
+        showGift = false;
+      }
+
+    });
+
+  }
+
+  /// GIFT TOGGLE
+  void toggleGift() {
+
+    setState(() {
+
+      showGift = !showGift;
+
+      /// close chat if open
+      if (showGift) {
+        showChat = false;
+      }
+
     });
 
   }
@@ -194,8 +220,14 @@ class _RoomScreenState extends State<RoomScreen> {
         controller: chatController,
         onSend: sendMessage,
         onSeatTap: _onSeatTap,
+
+        /// CHAT
         showChat: showChat,
         onChatToggle: toggleChat,
+
+        /// GIFT
+        showGift: showGift,
+        onGiftToggle: toggleGift,
       ),
     );
 
