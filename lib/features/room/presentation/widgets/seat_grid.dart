@@ -13,36 +13,62 @@ class SeatGrid extends StatelessWidget {
 
   Widget buildSeat(Map<String, dynamic> seat) {
 
-    final occupied = seat["userId"] != null;
+  final occupied = seat["userId"] != null;
 
-    return GestureDetector(
-      onTap: () => onSeatTap(seat),
+  return GestureDetector(
+    onTap: () => onSeatTap(seat),
 
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
 
-          CircleAvatar(
-            radius: 28,
-            backgroundColor: Colors.grey.shade800,
-            child: occupied
-                ? const Icon(Icons.person, color: Colors.white)
-                : const Icon(Icons.add, color: Colors.white54),
-          ),
+        Stack(
+          children: [
 
-          const SizedBox(height: 6),
-
-          Text(
-            occupied ? seat["userId"].toString() : "Empty",
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
+            /// AVATAR
+            CircleAvatar(
+              radius: 28,
+              backgroundColor: Colors.grey.shade800,
+              child: occupied
+                  ? const Icon(Icons.person, color: Colors.white)
+                  : const Icon(Icons.add, color: Colors.white54),
             ),
-          )
 
-        ],
-      ),
-    );
+            /// GREEN MIC ICON
+            if (occupied)
+              Positioned(
+                right: -2,
+                bottom: -2,
+                child: Container(
+                  padding: const EdgeInsets.all(3),
+                  decoration: const BoxDecoration(
+                    color: Colors.black,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.mic,
+                    size: 14,
+                    color: Colors.green,
+                  ),
+                ),
+              ),
+
+          ],
+        ),
+
+        const SizedBox(height: 6),
+
+        Text(
+          occupied ? seat["userId"].toString() : "Empty",
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+          ),
+        )
+
+      ],
+    ),
+  );
   }
 
   @override
