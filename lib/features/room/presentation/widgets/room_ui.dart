@@ -14,6 +14,9 @@ class RoomUI extends StatelessWidget {
   final bool showChat;
   final VoidCallback onChatToggle;
 
+  final bool showGift;
+  final VoidCallback onGiftToggle;
+
   const RoomUI({
     super.key,
     required this.seats,
@@ -23,6 +26,8 @@ class RoomUI extends StatelessWidget {
     required this.onSeatTap,
     required this.showChat,
     required this.onChatToggle,
+    required this.showGift,
+    required this.onGiftToggle,
   });
 
   @override
@@ -104,7 +109,7 @@ class RoomUI extends StatelessWidget {
               ],
             ),
 
-            /// CHAT PANEL (SLIDE UP)
+            /// CHAT PANEL
             AnimatedPositioned(
               duration: const Duration(milliseconds: 300),
 
@@ -123,6 +128,74 @@ class RoomUI extends StatelessWidget {
               ),
             ),
 
+            /// GIFT PANEL
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 300),
+
+              bottom: showGift ? 70 : -400,
+
+              left: 0,
+              right: 0,
+
+              height: MediaQuery.of(context).size.height / 3,
+
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.9),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(20),
+                  ),
+                ),
+
+                child: GridView.builder(
+
+                  itemCount: 20,
+
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 5,
+                    mainAxisSpacing: 10,
+                    crossAxisSpacing: 10,
+                  ),
+
+                  itemBuilder: (context,index){
+
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade800,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.card_giftcard,
+                            color: Colors.amber,
+                          ),
+                        ),
+
+                        const SizedBox(height:4),
+
+                        const Text(
+                          "Gift",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                          ),
+                        )
+
+                      ],
+                    );
+
+                  },
+
+                ),
+              ),
+            ),
+
             /// BOTTOM BAR
             Positioned(
               left: 0,
@@ -130,6 +203,7 @@ class RoomUI extends StatelessWidget {
               bottom: 10,
               child: BottomControls(
                 onChat: onChatToggle,
+                onGift: onGiftToggle,
               ),
             ),
 
