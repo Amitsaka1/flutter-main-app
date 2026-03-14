@@ -1,7 +1,7 @@
 import 'gift_model.dart';
 
 /// TOTAL GIFTS
-const int totalGifts = 30;
+const int totalGifts = 29;
 
 /// AUTO GENERATE GIFTS
 final List<GiftModel> giftList = List.generate(
