@@ -5,12 +5,14 @@ class ChatPanel extends StatelessWidget {
   final List<String> messages;
   final TextEditingController controller;
   final VoidCallback onSend;
+  final VoidCallback onClose;
 
   const ChatPanel({
     super.key,
     required this.messages,
     required this.controller,
     required this.onSend,
+    required this.onClose,
   });
 
   @override
@@ -21,27 +23,41 @@ class ChatPanel extends StatelessWidget {
       padding: const EdgeInsets.all(10),
 
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.35),
-        borderRadius: BorderRadius.circular(14),
+        color: Colors.black.withOpacity(0.8),
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(20),
+        ),
       ),
 
       child: Column(
         children: [
 
-          const Text(
-            "Chat",
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
+          /// HEADER
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+
+              const Text(
+                "Chat",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+
+              IconButton(
+                icon: const Icon(Icons.close,color: Colors.white),
+                onPressed: onClose,
+              )
+
+            ],
           ),
 
-          const SizedBox(height: 6),
-
+          /// MESSAGES
           Expanded(
             child: ListView.builder(
               itemCount: messages.length,
-              itemBuilder: (context,index){
+              itemBuilder:(context,index){
 
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical:4),
@@ -55,8 +71,7 @@ class ChatPanel extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height:6),
-
+          /// INPUT
           Row(
             children: [
 
