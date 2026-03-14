@@ -41,25 +41,29 @@ class RoomUI extends StatelessWidget {
 
             /// HEADER
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 10,
+              ),
               child: Row(
                 children: [
 
-                  const Expanded(
-                    child: Text(
-                      "Voice Party",
-                      style: TextStyle(
-                        fontSize: 22,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      overflow: TextOverflow.ellipsis,
+                  const Text(
+                    "Voice Party",
+                    style: TextStyle(
+                      fontSize: 20,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
 
+                  const Spacer(),
+
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.red,
                       borderRadius: BorderRadius.circular(8),
@@ -68,6 +72,7 @@ class RoomUI extends StatelessWidget {
                       "LIVE ${seats.length}/12",
                       style: const TextStyle(
                         color: Colors.white,
+                        fontSize: 14,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -79,7 +84,7 @@ class RoomUI extends StatelessWidget {
 
             /// SEATS
             Expanded(
-              flex: 3,
+              flex: 4,
               child: SeatGrid(
                 seats: seats,
                 onSeatTap: onSeatTap,
@@ -87,8 +92,9 @@ class RoomUI extends StatelessWidget {
             ),
 
             /// CHAT
-            Expanded(
-              flex: 2,
+            Container(
+              height: 160,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
               child: ChatPanel(
                 messages: messages,
                 controller: controller,
@@ -96,11 +102,12 @@ class RoomUI extends StatelessWidget {
               ),
             ),
 
+            const SizedBox(height: 10),
+
             /// NAVBAR
-            const Padding(
-              padding: EdgeInsets.only(bottom: 10),
-              child: BottomControls(),
-            ),
+            const BottomControls(),
+
+            const SizedBox(height: 10),
 
           ],
         ),
