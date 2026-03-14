@@ -15,14 +15,13 @@ class SeatGrid extends StatelessWidget {
   Widget build(BuildContext context) {
 
     return GridView.builder(
-      padding: const EdgeInsets.all(20),
-      gridDelegate:
-          const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 20,
-        mainAxisSpacing: 20,
-      ),
+      padding: const EdgeInsets.all(16),
       itemCount: seats.length,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+      ),
       itemBuilder: (context, index) {
 
         final seat = seats[index];
@@ -31,17 +30,18 @@ class SeatGrid extends StatelessWidget {
         return GestureDetector(
           onTap: () => onSeatTap(seat),
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
 
               CircleAvatar(
-                radius: 30,
+                radius: 28,
                 backgroundColor: Colors.grey.shade800,
                 child: occupied
                     ? const Icon(Icons.person, color: Colors.white)
                     : const Icon(Icons.add, color: Colors.white54),
               ),
 
-              const SizedBox(height: 5),
+              const SizedBox(height: 6),
 
               Text(
                 occupied ? seat["userId"] : "Empty",
