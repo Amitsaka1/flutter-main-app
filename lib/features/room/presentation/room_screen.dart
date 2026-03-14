@@ -434,8 +434,8 @@ class _RoomScreenState extends State<RoomScreen> {
                   ),
                 ),
 
-              Column(
-                children: [
+                Column(
+                  children: [
 
                   const SizedBox(height: 50),
 
