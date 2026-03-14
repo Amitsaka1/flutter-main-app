@@ -16,8 +16,8 @@ class SeatGrid extends StatelessWidget {
 
     return Center(
       child: GridView.builder(
-        padding: const EdgeInsets.all(20),
         shrinkWrap: true,
+        padding: const EdgeInsets.all(20),
         gridDelegate:
             const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 3,
