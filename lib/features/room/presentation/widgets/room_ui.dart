@@ -82,7 +82,7 @@ class RoomUI extends StatelessWidget {
               ),
             ),
 
-            /// SEATS
+            /// SEATS GRID
             Expanded(
               flex: 4,
               child: SeatGrid(
@@ -91,20 +91,32 @@ class RoomUI extends StatelessWidget {
               ),
             ),
 
-            /// CHAT
-            Container(
-              height: 160,
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: ChatPanel(
-                messages: messages,
-                controller: controller,
-                onSend: onSend,
+            /// CHAT PANEL AREA
+            SizedBox(
+              height: 220,
+              child: Row(
+                children: [
+
+                  /// CHAT PANEL (LEFT)
+                  SizedBox(
+                    width: 200,
+                    child: ChatPanel(
+                      messages: messages,
+                      controller: controller,
+                      onSend: onSend,
+                    ),
+                  ),
+
+                  /// RIGHT SIDE EMPTY SPACE
+                  const Expanded(child: SizedBox()),
+
+                ],
               ),
             ),
 
             const SizedBox(height: 10),
 
-            /// NAVBAR
+            /// BOTTOM CONTROLS
             const BottomControls(),
 
             const SizedBox(height: 10),
