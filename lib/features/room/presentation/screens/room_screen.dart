@@ -93,7 +93,13 @@ class _RoomScreenState extends State<RoomScreen> {
 
       bool hostFlag = false;
 
+      bool userOnSeat = false;
+
       for (final seat in updatedSeats) {
+
+        if (seat["userId"] == currentUserId) {
+          userOnSeat = true;
+        }
 
         if (seat["userId"] == currentUserId && seat["role"] == "HOST") {
           hostFlag = true;
@@ -109,6 +115,15 @@ class _RoomScreenState extends State<RoomScreen> {
 
           micStarted = true;
         }
+
+      }
+
+      /// 🔥 USER LEFT SEAT → MIC OFF
+      if (!userOnSeat && micStarted) {
+
+        voiceController.webrtc.localStream?.dispose();
+
+        micStarted = false;
 
       }
 
