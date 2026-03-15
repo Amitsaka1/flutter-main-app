@@ -99,27 +99,22 @@ class WebRTCService {
   // =========================
   Future<Map<String, dynamic>?> getRtpParameters() async {
 
-    final senders = await peerConnection?.getSenders();
+  final senders = await peerConnection?.getSenders();
 
-    if (senders == null) return null;
+  if (senders == null) return null;
 
-    for (var sender in senders) {
+  for (var sender in senders) {
 
-      if (sender.track?.kind == "audio") {
+    if (sender.track?.kind == "audio") {
 
-        final params = await sender.getParameters();
-
-        return {
-          "encodings": params.encodings?.map((e) => e.toMap()).toList(),
-          "codecs": params.codecs?.map((e) => e.toMap()).toList(),
-          "headerExtensions": params.headerExtensions?.map((e) => e.toMap()).toList(),
-        };
-
-      }
+      /// mediasoup client side empty rtpParameters acceptable
+      return {};
 
     }
 
-    return null;
+  }
+
+  return null;
 
   }
 
