@@ -215,4 +215,15 @@ class WebRTCService {
 
   }
 
+void removeRemoteStream(String producerId) {
+
+  final stream = remoteStreams.remove(producerId);
+  final renderer = renderers.remove(producerId);
+
+  renderer?.srcObject = null;
+  renderer?.dispose();
+
+  stream?.dispose();
+
+}
 }
