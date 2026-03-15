@@ -87,6 +87,7 @@ class RoomApi {
   static Future<void> requestSpeaker({
     required String userId,
     required String roomId,
+    required int seatIndex,
   }) async {
 
     final response = await ApiClient.post(
@@ -94,6 +95,7 @@ class RoomApi {
       {
         "userId": userId,
         "roomId": roomId,
+        "seatIndex": seatIndex,
       },
     );
 
