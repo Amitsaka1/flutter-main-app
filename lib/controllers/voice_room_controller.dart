@@ -27,7 +27,13 @@ class VoiceRoomController {
 
     await webrtc.init(wsUrl);
 
-    await webrtc.createPeer();
+    /// 🔥 JOIN ROOM SOCKET (IMPORTANT)
+    webrtc.socket?.sink.add(jsonEncode({
+      "type": "JOIN_ROOM_SOCKET",
+      "roomId": roomId,
+    }));
+
+     await webrtc.createPeer();
 
     webrtc.createTransport(roomId!, userId!);
 
