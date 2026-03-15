@@ -56,7 +56,15 @@ class VoiceRoomController {
 
         final tId = transport["transportId"];
 
+        final params = transport["params"];
+
         transportId = tId;
+
+        /// 🔥 CONNECT TRANSPORT
+        connectTransport(
+          tId,
+          params["dtlsParameters"],
+        );
 
       }
 
