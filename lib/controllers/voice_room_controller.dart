@@ -43,6 +43,16 @@ class VoiceRoomController {
 
       final type = data["type"];
 
+      if (type == "TRANSPORT_CREATED") {
+
+        final transport = data["transport"];
+
+        final tId = transport["transportId"];
+
+        transportId = tId;
+
+      }
+
       if (type == "ROUTER_RTP_CAPABILITIES") {
 
         routerCapabilities = data["rtpCapabilities"];
