@@ -35,9 +35,16 @@ class VoiceRoomController {
 
      await webrtc.createPeer();
 
-    webrtc.createTransport(roomId!, userId!);
+     /// 🔥 REQUEST ROUTER RTP CAPABILITIES
+     webrtc.socket?.sink.add(jsonEncode({
+       "type": "GET_ROUTER_RTP_CAPABILITIES",
+       "roomId": roomId
+     }));
 
-    webrtc.socket?.stream.listen((message) {
+     /// 🔥 CREATE TRANSPORT
+     webrtc.createTransport(roomId!, userId!);
+
+     webrtc.socket?.stream.listen((message) {
 
       final data = jsonDecode(message);
 
