@@ -21,20 +21,6 @@ class WebRTCService {
 
       final data = jsonDecode(message);
 
-      if (data["type"] == "TRANSPORT_CREATED") {
-
-        final transport = data["transport"];
-
-        final transportId = transport["transportId"];
-        final params = transport["params"];
-
-        connectTransport(
-          transportId,
-          params["dtlsParameters"],
-        );
-
-      }
-
     });
 
   }
@@ -101,22 +87,26 @@ class WebRTCService {
   // =========================
   Future<Map<String, dynamic>?> getRtpParameters() async {
 
-    final senders = await peerConnection?.getSenders();
+  final senders = await peerConnection?.getSenders();
 
-    if (senders == null) return null;
+  if (senders == null) return null;
 
-    for (var sender in senders) {
+  for (var sender in senders) {
 
-      if (sender.track?.kind == "audio") {
+    if (sender.track?.kind == "audio") {
 
-        final params = await sender.getParameters();
+      final params = await sender.getParameters();
 
-        return params.toMap();
-      
-      }
+      return {
+        "encodings": params.encodings,
+        "codecs": params.codecs,
+        "headerExtensions": params.headerExtensions,
+      };
+
     }
+  }
 
-    return null;
+  return null;
   }
 
   // =========================
