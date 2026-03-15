@@ -95,6 +95,8 @@ class VoiceRoomController {
       // =========================
       if (type == "NEW_PRODUCER") {
 
+        if (routerCapabilities == null) return;
+
         listenSpeaker(
           data["producerId"],
           routerCapabilities
