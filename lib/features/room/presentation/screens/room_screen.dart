@@ -99,11 +99,15 @@ class _RoomScreenState extends State<RoomScreen> {
           hostFlag = true;
         }
 
-        if (!micStarted && seat["userId"] == currentUserId) {
+        if (!micStarted &&
+            seat["userId"] == currentUserId &&
+            (seat["role"] == "HOST" || seat["role"] == "SPEAKER")) {
+
+          Future.delayed(const Duration(milliseconds: 500), () {
+            voiceController.startSpeaking().catchError((_) {});
+          });
 
           micStarted = true;
-
-          voiceController.startSpeaking().catchError((_) {});
         }
 
       }
