@@ -210,7 +210,47 @@ class _RoomScreenState extends State<RoomScreen> {
   }
 
   /// SEAT TAP
-  void _onSeatTap(Map<String,dynamic> seat){}
+  void _onSeatTap(Map<String, dynamic> seat) async {
+
+  final userId = UserSession.getUserId();
+  if (userId == null) return;
+
+  final seatUserId = seat["userId"];
+  final seatIndex = seat["seatIndex"];
+
+  // 🔒 host seat lock
+  if (seatIndex == 1 && !isHost) {
+    return;
+  }
+
+  // ❌ seat occupied
+  if (seatUserId != null) {
+    return;
+  }
+
+  try {
+
+    // 🔥 Request speaker / shift seat
+    await RoomApi.requestSpeaker(
+      userId: userId,
+      roomId: widget.roomId,
+    );
+
+  } catch (e) {
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          e.toString().replaceAll("Exception: ", ""),
+        ),
+      ),
+    );
+
+  }
+
+  }
 
   @override
   Widget build(BuildContext context) {
