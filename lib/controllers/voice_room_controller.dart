@@ -159,9 +159,16 @@ class VoiceRoomController {
   // =========================
   Future startSpeaking() async {
 
+  if (transportId == null) {
+
+    /// wait for transport
+    await Future.delayed(const Duration(milliseconds: 300));
+
     if (transportId == null) return;
 
-    await webrtc.startProducingAudio(transportId!);
+  }
+
+  await webrtc.startProducingAudio(transportId!);
 
   }
 
