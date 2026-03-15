@@ -10,6 +10,8 @@ class WebRTCService {
 
   final Map<String, MediaStream> remoteStreams = {};
 
+  final Map<String, RTCVideoRenderer> renderers = {};
+
   // =========================
   // INIT SOCKET
   // =========================
@@ -198,6 +200,8 @@ class WebRTCService {
     await renderer.initialize();
 
     renderer.srcObject = stream;
+
+    renderers[producerId] = renderer;
 
   }
 
