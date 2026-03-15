@@ -119,6 +119,26 @@ class VoiceRoomController {
 
       }
 
+       // =========================
+       // EXISTING SPEAKERS
+       // =========================
+       if (type == "EXISTING_PRODUCERS") {
+
+        final producers = data["producers"];
+
+        if (routerCapabilities == null) return;
+
+        for (final producerId in producers) {
+
+          listenSpeaker(
+            producerId,
+            routerCapabilities,
+          );
+
+        }
+
+      }
+
     });
 
    }
