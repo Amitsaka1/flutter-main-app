@@ -9,22 +9,13 @@ class WebRTCService {
   MediaStream? localStream;
 
   final Map<String, MediaStream> remoteStreams = {};
-
   final Map<String, RTCVideoRenderer> renderers = {};
 
   // =========================
   // INIT SOCKET
   // =========================
   Future init(String wsUrl) async {
-
     socket = WebSocketChannel.connect(Uri.parse(wsUrl));
-
-    socket?.stream.listen((message) {
-
-      final data = jsonDecode(message);
-
-    });
-
   }
 
   // =========================
@@ -78,9 +69,9 @@ class WebRTCService {
       mediaConstraints,
     );
 
-    localStream!.getTracks().forEach((track) {
+    for (var track in localStream!.getTracks()) {
       peerConnection?.addTrack(track, localStream!);
-    });
+    }
 
   }
 
@@ -89,26 +80,28 @@ class WebRTCService {
   // =========================
   Future<Map<String, dynamic>?> getRtpParameters() async {
 
-  final senders = await peerConnection?.getSenders();
+    final senders = await peerConnection?.getSenders();
 
-  if (senders == null) return null;
+    if (senders == null) return null;
 
-  for (var sender in senders) {
+    for (var sender in senders) {
 
-    if (sender.track?.kind == "audio") {
+      if (sender.track?.kind == "audio") {
 
-      final params = await sender.getParameters();
+        final params = await sender.getParameters();
 
-      return {
-        "encodings": params.encodings,
-        "codecs": params.codecs,
-        "headerExtensions": params.headerExtensions,
-      };
+        return {
+          "encodings": params.encodings?.map((e) => e.toMap()).toList(),
+          "codecs": params.codecs?.map((e) => e.toMap()).toList(),
+          "headerExtensions": params.headerExtensions?.map((e) => e.toMap()).toList(),
+        };
+
+      }
 
     }
-  }
 
-  return null;
+    return null;
+
   }
 
   // =========================
@@ -189,9 +182,7 @@ class WebRTCService {
   // =========================
   void _playRemoteAudio(String producerId, MediaStream stream) async {
 
-    if (remoteStreams.containsKey(producerId)) {
-      return;
-    }
+    if (remoteStreams.containsKey(producerId)) return;
 
     remoteStreams[producerId] = stream;
 
