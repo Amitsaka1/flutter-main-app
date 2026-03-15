@@ -59,7 +59,9 @@ class SeatGrid extends StatelessWidget {
         const SizedBox(height: 6),
 
         Text(
-          occupied ? seat["userId"].toString() : "Empty",
+          occupied
+              ? (seat["name"] ?? "User")
+              : "Empty",
           style: const TextStyle(
             color: Colors.white,
             fontSize: 12,
