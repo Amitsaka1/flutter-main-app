@@ -196,6 +196,8 @@ class WebRTCService {
   // =========================
   void _playRemoteAudio(String producerId, MediaStream stream) async {
 
+    print("REMOTE AUDIO RECEIVED FROM: $producerId");
+
     if (remoteStreams.containsKey(producerId)) return;
 
     remoteStreams[producerId] = stream;
