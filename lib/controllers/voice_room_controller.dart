@@ -11,6 +11,7 @@ class VoiceRoomController {
   String? transportId;
 
   bool _joined = false;
+  bool _socketListening = false;
 
   dynamic routerCapabilities;
 
@@ -22,16 +23,17 @@ class VoiceRoomController {
     if (_joined) {
       print("Voice already connected");
       return;
-  }
+    }
 
-  _joined = true;
     roomId = rId;
     userId = uId;
 
     if (kIsWeb) {
       print("Web mode: WebRTC disabled");
       return;
-     }
+    }
+
+    _joined = true;
 
     await webrtc.init(wsUrl);
 
