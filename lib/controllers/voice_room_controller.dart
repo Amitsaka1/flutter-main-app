@@ -74,9 +74,9 @@ class VoiceRoomController {
 
       if (type == "ROUTER_RTP_CAPABILITIES") {
 
-        routerCapabilities = data["rtpCapabilities"];
+        print("ROUTER CAPABILITIES RECEIVED");
 
-        print("Router RTP capabilities received");
+        routerCapabilities = data["rtpCapabilities"];
 
       }
 
@@ -85,7 +85,7 @@ class VoiceRoomController {
       // =========================
       if (type == "TRANSPORT_CONNECTED") {
 
-         print("Transport connected");
+         print("TRANSPORT CONNECTED");
 
       }
 
@@ -94,7 +94,7 @@ class VoiceRoomController {
       // =========================
       if (type == "PRODUCER_CREATED") {
 
-        print("Audio producer created");
+        print("AUDIO PRODUCER CREATED");
 
       }
 
@@ -105,7 +105,7 @@ class VoiceRoomController {
 
         final consumer = data["consumer"];
 
-        print("Consumer created: ${consumer["id"]}");
+        print("AUDIO CONSUMER CREATED: ${consumer["id"]}");
 
       }
 
@@ -113,6 +113,7 @@ class VoiceRoomController {
       // NEW SPEAKER
       // =========================
       if (type == "NEW_PRODUCER") {
+        print("NEW SPEAKER JOINED");
 
         if (routerCapabilities == null) return;
 
