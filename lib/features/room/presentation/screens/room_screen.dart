@@ -248,6 +248,44 @@ class _RoomScreenState extends State<RoomScreen> {
 
   }
 
+  Future<bool> _onBackPressed() async {
+
+  final result = await showDialog(
+    context: context,
+    builder: (context) {
+
+      return AlertDialog(
+        title: const Text("Leave Room"),
+        content: const Text("Keep room running or exit completely?"),
+        actions: [
+
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context, false);
+            },
+            child: const Text("Keep"),
+          ),
+
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context, true);
+            },
+            child: const Text("Exit"),
+          ),
+
+        ],
+      );
+
+    },
+  );
+
+  if (result == true) {
+    await _leaveRoom();
+  }
+
+  return false;
+  }
+
   /// SEAT TAP
   void _onSeatTap(Map<String, dynamic> seat) async {
 
