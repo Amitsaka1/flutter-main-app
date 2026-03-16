@@ -121,6 +121,10 @@ class _RoomScreenState extends State<RoomScreen> {
       /// 🔥 USER LEFT SEAT → MIC OFF
       if (!userOnSeat && micStarted) {
 
+        voiceController.webrtc.localStream?.getTracks().forEach((track) {
+          track.stop();
+        });
+
         voiceController.webrtc.localStream?.dispose();
 
         micStarted = false;
