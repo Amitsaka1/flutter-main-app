@@ -233,7 +233,14 @@ class _RoomScreenState extends State<RoomScreen> {
 
       // 🔥 STOP WEBRTC CONNECTION
     voiceController.webrtc.peerConnection?.close();
+
+    voiceController.webrtc.localStream?.getTracks().forEach((track) {
+        track.stop();
+    });
+    
     voiceController.webrtc.localStream?.dispose();
+
+    voiceController.reset();
 
     if (!mounted) return;
 
