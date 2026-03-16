@@ -301,35 +301,6 @@ class _RoomScreenState extends State<RoomScreen> {
       );
     }
 
-    return Scaffold(
-      body: RoomUI(
-        seats: seats,
-        messages: messages,
-        controller: chatController,
-        onSend: sendMessage,
-        onSeatTap: _onSeatTap,
-
-        /// CHAT
-        showChat: showChat,
-        onChatToggle: toggleChat,
-
-        /// GIFT
-        showGift: showGift,
-        onGiftToggle: toggleGift,
-      ),
-    );
-
-  }
-
-  @override
-  Widget build(BuildContext context) {
-
-    if (loading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
     return WillPopScope(
       onWillPop: _onBackPressed,
       child: Scaffold(
