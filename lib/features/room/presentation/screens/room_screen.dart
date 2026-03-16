@@ -143,6 +143,19 @@ class _RoomScreenState extends State<RoomScreen> {
 
     GlobalSocketManager.instance.joinRoom(widget.roomId);
 
+    /// 🔥 ROOM CLOSED LISTENER
+    GlobalSocketManager.instance.onRoomClosed(() {
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Room closed")),
+      );
+
+      Navigator.pop(context);
+ 
+    });
+
     await voiceController.joinRoom(
       widget.roomId,
       userId,
