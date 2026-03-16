@@ -10,6 +10,8 @@ class VoiceRoomController {
   String? userId;
   String? transportId;
 
+  bool _joined = false;
+
   dynamic routerCapabilities;
 
   // =========================
@@ -17,6 +19,12 @@ class VoiceRoomController {
   // =========================
   Future joinRoom(String rId, String uId, String wsUrl) async {
 
+    if (_joined) {
+      print("Voice already connected");
+      return;
+  }
+
+  _joined = true;
     roomId = rId;
     userId = uId;
 
