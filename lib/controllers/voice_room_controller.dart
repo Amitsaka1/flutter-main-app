@@ -153,14 +153,10 @@ class VoiceRoomController {
             producerId,
             routerCapabilities,
           );
-
         }
-
-      }
-
-    });
-
-   }
+      });
+    }
+  }
 
   // =========================
   // CONNECT TRANSPORT
