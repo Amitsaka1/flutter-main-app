@@ -71,6 +71,16 @@ class GlobalSocketManager with WidgetsBindingObserver {
         _roomClosedController.add(null);
       }
 
+      // 🔥 User kicked from room
+      if (type == "ROOM_KICKED") {
+        _roomClosedController.add(null);
+      }
+
+      // 🔥 Speaker demoted
+      if (type == "DEMOTED_TO_LISTENER") {
+        _messageController.add(event);
+      }
+
       // 🔥 NEW MESSAGE
       if (type == "NEW_MESSAGE") {
 
