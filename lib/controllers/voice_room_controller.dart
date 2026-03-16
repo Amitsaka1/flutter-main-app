@@ -206,4 +206,17 @@ class VoiceRoomController {
 
   }
 
+  // =========================
+  // RESET VOICE STATE
+  // =========================
+  void reset() {
+
+    _joined = false;
+    _socketListening = false;
+
+    transportId = null;
+    routerCapabilities = null;
+
+  }
+
 }
