@@ -54,6 +54,10 @@ class VoiceRoomController {
      /// 🔥 CREATE TRANSPORT
      webrtc.createTransport(roomId!, userId!);
 
+    if (!_socketListening) {
+
+      _socketListening = true;
+
      webrtc.socket?.stream.listen((message) {
 
       final data = jsonDecode(message);
