@@ -314,4 +314,51 @@ class _RoomScreenState extends State<RoomScreen> {
 
   }
 
+  @override
+  Widget build(BuildContext context) {
+
+    if (loading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    return Scaffold(
+      body: RoomUI(
+        seats: seats,
+        messages: messages,
+        controller: chatController,
+        onSend: sendMessage,
+        onSeatTap: _onSeatTap,
+
+        /// CHAT
+        showChat: showChat,
+        onChatToggle: toggleChat,
+
+        /// GIFT
+        showGift: showGift,
+        onGiftToggle: toggleGift,
+      ),
+    );
+
+  }
+
+  // 🔥 ADD THIS HERE
+  @override
+  void dispose() {
+
+    voiceController.webrtc.peerConnection?.close();
+
+    voiceController.webrtc.localStream?.getTracks().forEach((track) {
+      track.stop();
+    });
+
+    voiceController.webrtc.localStream?.dispose();
+
+    chatController.dispose();
+
+    super.dispose();
+
+  }
+
 }
