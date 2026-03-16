@@ -75,6 +75,8 @@ class WebRTCService {
   // =========================
   Future startMicrophone() async {
 
+    print("MICROPHONE STARTED");
+
     final mediaConstraints = {
       "audio": {
         "echoCancellation": true,
