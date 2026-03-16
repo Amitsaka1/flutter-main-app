@@ -323,42 +323,46 @@ class _RoomScreenState extends State<RoomScreen> {
       );
     }
 
-    return Scaffold(
-      body: RoomUI(
-        seats: seats,
-        messages: messages,
-        controller: chatController,
-        onSend: sendMessage,
-        onSeatTap: _onSeatTap,
+    return WillPopScope(
+      onWillPop: _onBackPressed,
+      child: Scaffold
+        body: RoomUI(
+          seats: seats,
+          messages: messages,
+          controller: chatController,
+          onSend: sendMessage,
+          onSeatTap: _onSeatTap,
 
-        /// CHAT
-        showChat: showChat,
-        onChatToggle: toggleChat,
+          /// CHAT
+          showChat: showChat,
+          onChatToggle: toggleChat,
 
-        /// GIFT
-        showGift: showGift,
-        onGiftToggle: toggleGift,
-      ),
-    );
+          /// GIFT
+          showGift: showGift,
+          onGiftToggle: toggleGift,
+          onLeaveRoom: _leaveRoom,
+          ),
+        ),
+      );
+
+    }
+
+    // 🔥 ADD THIS HERE
+    @override
+    void dispose() {
+
+      voiceController.webrtc.peerConnection?.close();
+
+      voiceController.webrtc.localStream?.getTracks().forEach((track) {
+        track.stop();
+      });
+  
+      voiceController.webrtc.localStream?.dispose();
+
+      chatController.dispose();
+
+      super.dispose();
+
+    }
 
   }
-
-  // 🔥 ADD THIS HERE
-  @override
-  void dispose() {
-
-    voiceController.webrtc.peerConnection?.close();
-
-    voiceController.webrtc.localStream?.getTracks().forEach((track) {
-      track.stop();
-    });
-
-    voiceController.webrtc.localStream?.dispose();
-
-    chatController.dispose();
-
-    super.dispose();
-
-  }
-
-}
