@@ -50,7 +50,11 @@ class VoiceRoomController {
 
       final type = data["type"];
 
+       print("VOICE SOCKET EVENT: $type");
+
       if (type == "TRANSPORT_CREATED") {
+
+        print("TRANSPORT CREATED");
 
         final transport = data["transport"];
 
