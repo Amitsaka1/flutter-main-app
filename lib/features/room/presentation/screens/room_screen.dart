@@ -325,7 +325,7 @@ class _RoomScreenState extends State<RoomScreen> {
 
     return WillPopScope(
       onWillPop: _onBackPressed,
-      child: Scaffold
+      child: Scaffold(
         body: RoomUI(
           seats: seats,
           messages: messages,
@@ -344,7 +344,6 @@ class _RoomScreenState extends State<RoomScreen> {
           ),
         ),
       );
-
     }
 
     // 🔥 ADD THIS HERE
