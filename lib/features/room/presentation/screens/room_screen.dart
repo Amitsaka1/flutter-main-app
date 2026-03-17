@@ -356,7 +356,6 @@ class _RoomScreenState extends State<RoomScreen> {
           /// GIFT
           showGift: showGift,
           onGiftToggle: toggleGift,
-          onLeaveRoom: _leaveRoom,
           ),
         ),
       );
