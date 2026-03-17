@@ -43,120 +43,108 @@ class VoiceRoomController {
       "roomId": roomId,
     }));
 
-     await webrtc.createPeer();
+    await webrtc.createPeer();
 
-     /// 🔥 REQUEST ROUTER RTP CAPABILITIES
-     webrtc.socket?.sink.add(jsonEncode({
-       "type": "GET_ROUTER_RTP_CAPABILITIES",
-       "roomId": roomId
-     }));
+    /// 🔥 REQUEST ROUTER RTP CAPABILITIES
+    webrtc.socket?.sink.add(jsonEncode({
+      "type": "GET_ROUTER_RTP_CAPABILITIES",
+      "roomId": roomId
+    }));
 
-     /// 🔥 CREATE TRANSPORT
-     webrtc.createTransport(roomId!, userId!);
+    /// 🔥 CREATE TRANSPORT
+    webrtc.createTransport(roomId!, userId!);
 
+    // =========================
+    // SOCKET LISTENER
+    // =========================
     if (!_socketListening) {
 
       _socketListening = true;
 
-     webrtc.socket?.stream.listen((message) {
+      webrtc.socket?.stream.listen((message) {
 
-      final data = jsonDecode(message);
+        final data = jsonDecode(message);
+        final type = data["type"];
 
-      final type = data["type"];
+        print("VOICE SOCKET EVENT: $type");
 
-       print("VOICE SOCKET EVENT: $type");
+        if (type == "TRANSPORT_CREATED") {
 
-      if (type == "TRANSPORT_CREATED") {
+          print("TRANSPORT CREATED");
 
-        print("TRANSPORT CREATED");
+          final transport = data["transport"];
+          final tId = transport["transportId"];
+          final params = transport["params"];
 
-        final transport = data["transport"];
+          transportId = tId;
 
-        final tId = transport["transportId"];
+          /// 🔥 CONNECT TRANSPORT
+          connectTransport(
+            tId,
+            params["dtlsParameters"],
+          );
+        }
 
-        final params = transport["params"];
+        if (type == "ROUTER_RTP_CAPABILITIES") {
 
-        transportId = tId;
+          print("ROUTER CAPABILITIES RECEIVED");
 
-        /// 🔥 CONNECT TRANSPORT
-        connectTransport(
-          tId,
-          params["dtlsParameters"],
-        );
+          routerCapabilities = data["rtpCapabilities"];
+        }
 
-      }
+        if (type == "TRANSPORT_CONNECTED") {
+          print("TRANSPORT CONNECTED");
+        }
 
-      if (type == "ROUTER_RTP_CAPABILITIES") {
+        if (type == "PRODUCER_CREATED") {
+          print("AUDIO PRODUCER CREATED");
+        }
 
-        print("ROUTER CAPABILITIES RECEIVED");
+        if (type == "CONSUMER_CREATED") {
 
-        routerCapabilities = data["rtpCapabilities"];
+          final consumer = data["consumer"];
 
-      }
+          print("AUDIO CONSUMER CREATED: ${consumer["id"]}");
+        }
 
-      // =========================
-      // TRANSPORT CONNECTED
-      // =========================
-      if (type == "TRANSPORT_CONNECTED") {
+        // =========================
+        // NEW SPEAKER
+        // =========================
+        if (type == "NEW_PRODUCER") {
 
-         print("TRANSPORT CONNECTED");
+          print("NEW SPEAKER JOINED");
 
-      }
-
-      // =========================
-      // PRODUCER CREATED
-      // =========================
-      if (type == "PRODUCER_CREATED") {
-
-        print("AUDIO PRODUCER CREATED");
-
-      }
-
-      // =========================
-      // CONSUMER CREATED
-      // =========================
-       if (type == "CONSUMER_CREATED") {
-
-        final consumer = data["consumer"];
-
-        print("AUDIO CONSUMER CREATED: ${consumer["id"]}");
-
-      }
-
-      // =========================
-      // NEW SPEAKER
-      // =========================
-      if (type == "NEW_PRODUCER") {
-        print("NEW SPEAKER JOINED");
-
-        if (routerCapabilities == null) return;
-
-        listenSpeaker(
-          data["producerId"],
-          routerCapabilities
-        );
-
-      }
-
-       // =========================
-       // EXISTING SPEAKERS
-       // =========================
-       if (type == "EXISTING_PRODUCERS") {
-
-        final producers = data["producers"];
-
-        if (routerCapabilities == null) return;
-
-        for (final producerId in producers) {
+          if (routerCapabilities == null) return;
 
           listenSpeaker(
-            producerId,
+            data["producerId"],
             routerCapabilities,
           );
         }
-      }
-    });
- }
+
+        // =========================
+        // EXISTING SPEAKERS
+        // =========================
+        if (type == "EXISTING_PRODUCERS") {
+
+          final producers = data["producers"];
+
+          if (routerCapabilities == null) return;
+
+          for (final producerId in producers) {
+
+            listenSpeaker(
+              producerId,
+              routerCapabilities,
+            );
+          }
+        }
+
+      }); // ✅ FIX: listen properly closed
+
+    } // ✅ FIX: if (_socketListening) properly closed
+
+  } // ✅ FIX: joinRoom properly closed
 
   // =========================
   // CONNECT TRANSPORT
@@ -174,16 +162,15 @@ class VoiceRoomController {
   // =========================
   Future startSpeaking() async {
 
-  if (transportId == null) {
+    if (transportId == null) {
 
-    /// wait for transport
-    await Future.delayed(const Duration(milliseconds: 300));
+      /// wait for transport
+      await Future.delayed(const Duration(milliseconds: 300));
 
-    if (transportId == null) return;
+      if (transportId == null) return;
+    }
 
-  }
-
-  await webrtc.startProducingAudio(transportId!);
+    await webrtc.startProducingAudio(transportId!);
 
   }
 
@@ -191,17 +178,17 @@ class VoiceRoomController {
   // LISTEN AUDIO
   // =========================
   void listenSpeaker(
-      String producerId,
-      dynamic rtpCapabilities
-      ) {
+    String producerId,
+    dynamic rtpCapabilities
+  ) {
 
     if (transportId == null) return;
 
     webrtc.consumeAudio(
-        roomId!,
-        transportId!,
-        producerId,
-        rtpCapabilities
+      roomId!,
+      transportId!,
+      producerId,
+      rtpCapabilities
     );
 
   }
