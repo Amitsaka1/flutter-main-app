@@ -322,7 +322,7 @@ class _RoomScreenState extends State<RoomScreen> {
     await RoomApi.requestSpeaker(
       userId: userId,
       roomId: widget.roomId,
-      seatIndex: seat["seatIndex"],
+      seatIndex: seatIndex, // 🔥 IMPORTANT
     );
 
   } catch (e) {
