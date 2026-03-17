@@ -152,6 +152,12 @@ class _RoomScreenState extends State<RoomScreen> {
 
     GlobalSocketManager.instance.joinRoom(widget.roomId);
 
+      /// 🔥 FIX: FORCE SEAT MAP FETCH
+      GlobalSocketManager.instance.send({
+        "type": "GET_SEAT_MAP",
+        "roomId": widget.roomId,
+      });
+
     /// 🔥 ROOM CLOSED LISTENER
     GlobalSocketManager.instance.onRoomClosed(() {
 
