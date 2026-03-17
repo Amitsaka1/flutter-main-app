@@ -154,9 +154,9 @@ class VoiceRoomController {
             routerCapabilities,
           );
         }
-      });
-    }
-  }
+      }
+    });
+ }
 
   // =========================
   // CONNECT TRANSPORT
