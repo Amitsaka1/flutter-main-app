@@ -28,6 +28,7 @@ class _RoomScreenState extends State<RoomScreen> {
   bool loading = true;
   bool isHost = false;
   bool leavingRoom = false;
+  bool _roomJoined = false; // 🔥 FIX: prevent duplicate join
 
   final VoiceRoomController voiceController = VoiceRoomController();
 
@@ -60,6 +61,10 @@ class _RoomScreenState extends State<RoomScreen> {
   }
 
   Future<void> _initRoom() async {
+
+    // 🔥 FIX: duplicate join रोकना
+    if (_roomJoined) return;
+    _roomJoined = true;
 
     try {
       await requestMicPermission();
