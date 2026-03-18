@@ -255,8 +255,6 @@ class _RoomScreenState extends State<RoomScreen> {
 
     if (!mounted) return;
 
-    Navigator.pop(context);
-
   }
 
   Future<bool> _onBackPressed() async {
