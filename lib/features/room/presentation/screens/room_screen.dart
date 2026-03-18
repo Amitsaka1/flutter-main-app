@@ -270,16 +270,18 @@ class _RoomScreenState extends State<RoomScreen> {
         content: const Text("Keep room running or exit completely?"),
         actions: [
 
+          /// 🔥 KEEP → just go back (no leave)
           TextButton(
             onPressed: () {
-              Navigator.pop(context, false);
+              Navigator.pop(context, "KEEP");
             },
             child: const Text("Keep"),
           ),
 
+          /// 🔥 EXIT → leave room
           TextButton(
-            onPressed: () async {
-              Navigator.pop(context, true);
+            onPressed: () {
+              Navigator.pop(context, "EXIT");
             },
             child: const Text("Exit"),
           ),
@@ -290,8 +292,20 @@ class _RoomScreenState extends State<RoomScreen> {
     },
   );
 
-  if (result == true) {
-    await _leaveRoom();
+  // 🔥 USER PRESSED KEEP
+  if (result == "KEEP") {
+
+    Navigator.pop(context); // ✅ screen close
+    return false;
+
+  }
+
+  // 🔥 USER PRESSED EXIT
+  if (result == "EXIT") {
+
+    await _leaveRoom(); // ✅ API + socket leave
+    return false;
+
   }
 
   return false;
