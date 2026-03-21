@@ -18,6 +18,21 @@ class WebRTCService {
 
   socket = WebSocketChannel.connect(Uri.parse(wsUrl));
 
+  // 🔥 THIS WAS MISSING → ADD THIS
+  socket?.stream.listen((message) {
+
+    final data = jsonDecode(message);
+
+    print("SOCKET EVENT: ${data["type"]}");
+
+    // 🔥 handle speaker leave
+    if (data["type"] == "PRODUCER_CLOSED") {
+      final producerId = data["producerId"];
+      removeRemoteStream(producerId);
+    }
+
+  });
+
   }
 
   // =========================
