@@ -155,6 +155,8 @@ class VoiceRoomController {
   // =========================
   void connectTransport(String tId, dynamic dtls) {
 
+    AppDebug.log("[VOICE] CONNECTING TRANSPORT: $tId");
+
     transportId = tId;
 
     webrtc.connectTransport(tId, dtls);
