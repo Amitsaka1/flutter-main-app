@@ -21,15 +21,17 @@ class VoiceRoomController {
   Future joinRoom(String rId, String uId, String wsUrl) async {
 
     if (_joined) {
-      print("Voice already connected");
+      AppDebug.log("[VOICE] Already connected (skip join)");
       return;
     }
 
     roomId = rId;
     userId = uId;
 
+    AppDebug.log("[VOICE] Joining room: $roomId as user: $userId");
+
     if (kIsWeb) {
-      print("Web mode: WebRTC disabled");
+      AppDebug.log("[VOICE] Web mode detected → WebRTC disabled");
       return;
     }
 
