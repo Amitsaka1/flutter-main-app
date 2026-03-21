@@ -98,12 +98,18 @@ class VoiceRoomController {
         }
 
         if (type == "TRANSPORT_CONNECTED") {
+
           AppDebug.log("[VOICE] TRANSPORT CONNECTED");
 
-          // 🔥 FINAL FIX: start mic here
-          startSpeaking().catchError((e) {
-            AppDebug.log("[VOICE] MIC ERROR: $e");
-          });
+          // 🔥 ADD THIS LINE (VERY IMPORTANT)
+          Future.delayed(const Duration(milliseconds: 500), () async {
+
+            await startSpeaking().catchError((e) {
+              AppDebug.log("[VOICE] MIC ERROR: $e");
+           });
+
+         });
+
         }
 
         if (type == "PRODUCER_CREATED") {
