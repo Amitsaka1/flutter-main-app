@@ -30,7 +30,7 @@ class _RoomScreenState extends State<RoomScreen> {
   bool isHost = false;
   bool leavingRoom = false;
   bool _roomJoined = false;
-  bool _micStarted = false;
+  
 
   final VoiceRoomController voiceController = VoiceRoomController();
 
