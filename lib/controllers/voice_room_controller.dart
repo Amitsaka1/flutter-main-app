@@ -133,6 +133,8 @@ class VoiceRoomController {
 
           for (final producerId in producers) {
 
+            AppDebug.log("[VOICE] EXISTING SPEAKER FOUND");
+
             listenSpeaker(
               producerId,
               routerCapabilities,
