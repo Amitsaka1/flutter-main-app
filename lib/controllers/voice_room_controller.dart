@@ -12,6 +12,7 @@ class VoiceRoomController {
 
   bool _joined = false;
   bool _socketListening = false;
+  bool _micStarted = false;
 
   dynamic routerCapabilities;
 
