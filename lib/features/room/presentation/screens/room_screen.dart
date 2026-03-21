@@ -102,6 +102,7 @@ class _RoomScreenState extends State<RoomScreen> {
         if (seat["userId"] == currentUserId && seat["role"] == "HOST") {
           hostFlag = true;
         }
+      }
 
 
       /// 🔥 USER LEFT SEAT → MIC OFF
