@@ -251,7 +251,6 @@ class _RoomScreenState extends State<RoomScreen> {
     );
 
     if (result == "KEEP") {
-      Navigator.of(context).pop(); // 🔥 FIX
       return false;
     }
 
