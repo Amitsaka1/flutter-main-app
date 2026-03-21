@@ -233,6 +233,7 @@ class VoiceRoomController {
 
     _joined = false;
     _socketListening = false;
+    _micStarted = false;
 
     transportId = null;
     routerCapabilities = null;
