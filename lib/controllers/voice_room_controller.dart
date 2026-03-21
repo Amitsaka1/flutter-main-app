@@ -1,7 +1,7 @@
 import '../services/webrtc_service.dart';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-
+import '../core/debug/app_debug.dart';
 class VoiceRoomController {
 
   final WebRTCService webrtc = WebRTCService();
@@ -66,11 +66,11 @@ class VoiceRoomController {
         final data = jsonDecode(message);
         final type = data["type"];
 
-        print("VOICE SOCKET EVENT: $type");
+        AppDebug.log("[VOICE] EVENT: $type");
 
         if (type == "TRANSPORT_CREATED") {
 
-          print("TRANSPORT CREATED");
+          AppDebug.log("[VOICE] TRANSPORT CREATED");
 
           final transport = data["transport"];
           final tId = transport["transportId"];
@@ -87,13 +87,13 @@ class VoiceRoomController {
 
         if (type == "ROUTER_RTP_CAPABILITIES") {
 
-          print("ROUTER CAPABILITIES RECEIVED");
+          AppDebug.log("[VOICE] ROUTER CAPABILITIES RECEIVED");
 
           routerCapabilities = data["rtpCapabilities"];
         }
 
         if (type == "TRANSPORT_CONNECTED") {
-          print("TRANSPORT CONNECTED");
+          AppDebug.log("[VOICE] TRANSPORT CONNECTED");
         }
 
         if (type == "PRODUCER_CREATED") {
