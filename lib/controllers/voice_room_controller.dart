@@ -20,6 +20,8 @@ class VoiceRoomController {
   // =========================
   Future joinRoom(String rId, String uId, String wsUrl) async {
 
+    reset();
+
     if (_joined) {
       AppDebug.log("[VOICE] Already connected (skip join)");
       return;
