@@ -175,25 +175,23 @@ class VoiceRoomController {
   // =========================
   Future startSpeaking() async {
 
-  AppDebug.log("[VOICE] TRY START MIC"); // 🔥 ADD
-
-  if (transportId == null) {
-
-    AppDebug.log("[VOICE] transport not ready, waiting..."); // 🔥 ADD
-
-    await Future.delayed(const Duration(milliseconds: 300));
-
-    if (transportId == null) {
-      AppDebug.log("[VOICE] FAILED: transport still null"); // 🔥 ADD
+    if (_micStarted) {
+      AppDebug.log("[VOICE] Mic already started");
       return;
     }
-  }
 
-  AppDebug.log("[VOICE] STARTING AUDIO PRODUCER"); // 🔥 ADD
+    if (transportId == null) {
+      AppDebug.log("[VOICE] ERROR: transport null, cannot start mic");
+      return;
+    }
 
-  await webrtc.startProducingAudio(transportId!);
+    _micStarted = true;
 
-  }
+    AppDebug.log("[VOICE] STARTING AUDIO PRODUCER");
+
+    await webrtc.startProducingAudio(transportId!);
+  
+    }
 
   // =========================
   // LISTEN AUDIO
