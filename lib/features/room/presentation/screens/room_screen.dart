@@ -114,13 +114,25 @@ class _RoomScreenState extends State<RoomScreen> {
             seat["userId"] == currentUserId &&
             (seat["role"] == "HOST" || seat["role"] == "SPEAKER")) {
 
-          Future.delayed(const Duration(milliseconds: 500), () {
-            voiceController.startSpeaking().catchError((_) {});
+          Future.delayed(const Duration(seconds: 2), () async {
+
+             // 🔥 FIX: wait until transport ready
+            int retry = 0;
+
+            while (voiceController.transportId == null && retry < 10) {
+               await Future.delayed(const Duration(milliseconds: 300));
+              retry++;
+             }
+
+            if (voiceController.transportId != null) {
+              AppDebug.log("[VOICE] Transport ready → starting mic");
+              await voiceController.startSpeaking().catchError((_) {});
+              micStarted = true;
+            } else {
+              AppDebug.log("[VOICE] ERROR: transport not ready after wait");
+            }
           });
-
-          micStarted = true;
         }
-
       }
 
       /// 🔥 USER LEFT SEAT → MIC OFF
