@@ -14,6 +14,7 @@ import 'package:app_project/features/subscription/presentation/premium_screen.da
 import 'main.dart';
 import 'package:app_project/features/room/presentation/room_list_screen.dart';
 import 'package:app_project/features/room/presentation/screens/room_screen.dart';
+import 'core/debug/global_debug_widget.dart';
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
@@ -142,6 +143,18 @@ class _MyAppState extends State<MyApp> {
       debugShowCheckedModeBanner: false,
       routerConfig: _router,
       theme: ThemeData.dark(),
-     );
+
+      builder: (context, child) {
+        return Stack(
+          children: [
+
+            child!, // 🔥 app content
+
+            const GlobalDebugWidget(), // 🔥 debug icon + panel
+
+          ],
+        );
+      },
+    );
    }
-}
+ }
