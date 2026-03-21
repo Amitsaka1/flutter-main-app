@@ -217,12 +217,19 @@ class VoiceRoomController {
   // =========================
   void reset() {
 
+    AppDebug.log("[VOICE] RESET CALLED");
+
     _joined = false;
     _socketListening = false;
 
     transportId = null;
     routerCapabilities = null;
 
-  }
+    // 🔥 ADD THIS
+    try {
+      webrtc.socket?.sink.close();
+    } catch (_) {}
 
+    webrtc.socket = null;
+  }
 }
