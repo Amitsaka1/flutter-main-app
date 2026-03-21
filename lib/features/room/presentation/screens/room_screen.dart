@@ -262,13 +262,11 @@ class _RoomScreenState extends State<RoomScreen> {
   final result = await showDialog(
     context: context,
     builder: (context) {
-
       return AlertDialog(
         title: const Text("Leave Room"),
         content: const Text("Keep room running or exit completely?"),
         actions: [
 
-          /// 🔥 KEEP → just go back (no leave)
           TextButton(
             onPressed: () {
               Navigator.pop(context, "KEEP");
@@ -276,7 +274,6 @@ class _RoomScreenState extends State<RoomScreen> {
             child: const Text("Keep"),
           ),
 
-          /// 🔥 EXIT → leave room
           TextButton(
             onPressed: () {
               Navigator.pop(context, "EXIT");
@@ -286,29 +283,22 @@ class _RoomScreenState extends State<RoomScreen> {
 
         ],
       );
-
     },
   );
 
-  // 🔥 USER PRESSED KEEP
   if (result == "KEEP") {
-
-    Navigator.pop(context); // ✅ screen close
-    return false;
-
+    return true; // ✅ system handle करेगा pop
   }
 
-  // 🔥 USER PRESSED EXIT
   if (result == "EXIT") {
-
-    await _leaveRoom(); // ✅ API + socket leave
-    return false;
-
+    await _leaveRoom();
+    return true; // ✅ system pop करेगा
   }
 
   return false;
   }
 
+  
   /// SEAT TAP
   void _onSeatTap(Map<String, dynamic> seat) async {
 
