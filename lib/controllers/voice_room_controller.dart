@@ -97,14 +97,14 @@ class VoiceRoomController {
         }
 
         if (type == "PRODUCER_CREATED") {
-          print("AUDIO PRODUCER CREATED");
+          AppDebug.log("[VOICE] AUDIO PRODUCER CREATED");
         }
 
         if (type == "CONSUMER_CREATED") {
 
           final consumer = data["consumer"];
 
-          print("AUDIO CONSUMER CREATED: ${consumer["id"]}");
+          AppDebug.log("[VOICE] AUDIO CONSUMER CREATED");
         }
 
         // =========================
@@ -112,7 +112,7 @@ class VoiceRoomController {
         // =========================
         if (type == "NEW_PRODUCER") {
 
-          print("NEW SPEAKER JOINED");
+          AppDebug.log("[VOICE] NEW SPEAKER JOINED");
 
           if (routerCapabilities == null) return;
 
