@@ -135,7 +135,7 @@ class VoiceRoomController {
 
           for (final producerId in producers) {
 
-            AppDebug.log("[VOICE] EXISTING SPEAKER FOUND");
+            AppDebug.log("[VOICE] EXISTING SPEAKER: $producerId");
 
             listenSpeaker(
               producerId,
@@ -168,15 +168,23 @@ class VoiceRoomController {
   // =========================
   Future startSpeaking() async {
 
+  AppDebug.log("[VOICE] TRY START MIC"); // 🔥 ADD
+
+  if (transportId == null) {
+
+    AppDebug.log("[VOICE] transport not ready, waiting..."); // 🔥 ADD
+
+    await Future.delayed(const Duration(milliseconds: 300));
+
     if (transportId == null) {
-
-      /// wait for transport
-      await Future.delayed(const Duration(milliseconds: 300));
-
-      if (transportId == null) return;
+      AppDebug.log("[VOICE] FAILED: transport still null"); // 🔥 ADD
+      return;
     }
+  }
 
-    await webrtc.startProducingAudio(transportId!);
+  AppDebug.log("[VOICE] STARTING AUDIO PRODUCER"); // 🔥 ADD
+
+  await webrtc.startProducingAudio(transportId!);
 
   }
 
@@ -184,18 +192,23 @@ class VoiceRoomController {
   // LISTEN AUDIO
   // =========================
   void listenSpeaker(
-    String producerId,
-    dynamic rtpCapabilities
-  ) {
+  String producerId,
+  dynamic rtpCapabilities
+) {
 
-    if (transportId == null) return;
+  if (transportId == null) {
+    AppDebug.log("[VOICE] Cannot listen → transport null"); // 🔥 ADD
+    return;
+  }
 
-    webrtc.consumeAudio(
-      roomId!,
-      transportId!,
-      producerId,
-      rtpCapabilities
-    );
+  AppDebug.log("[VOICE] START LISTENING: $producerId"); // 🔥 ADD
+
+  webrtc.consumeAudio(
+    roomId!,
+    transportId!,
+    producerId,
+    rtpCapabilities
+  );
 
   }
 
