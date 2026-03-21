@@ -227,6 +227,10 @@ class _RoomScreenState extends State<RoomScreen> {
 
     GlobalSocketManager.instance.leaveRoom(widget.roomId);
 
+    // 🔥 ADD THIS (VERY IMPORTANT)
+    voiceController.webrtc.socket?.sink.close();
+    voiceController.webrtc.socket = null;
+
     voiceController.webrtc.peerConnection?.close();
 
     voiceController.webrtc.localStream?.getTracks().forEach((track) {
