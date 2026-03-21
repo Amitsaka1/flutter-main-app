@@ -167,7 +167,9 @@ class _RoomScreenState extends State<RoomScreen> {
         const SnackBar(content: Text("Room closed")),
       );
 
-      Navigator.pop(context);
+        if (mounted) {
+          Navigator.of(context).maybePop(); // ✅ safe pop
+        }
  
     });
 
