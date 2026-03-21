@@ -142,15 +142,15 @@ class _RoomScreenState extends State<RoomScreen> {
     /// 🔥 ROOM CLOSED LISTENER
     GlobalSocketManager.instance.onRoomClosed(() {
 
+      AppDebug.log("[ROOM] ROOM CLOSED EVENT RECEIVED");
+
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Room closed")),
-      );
+      Future.microtask(() {
+        if (!mounted) return;
 
-      if (mounted) {
-        Navigator.of(context).maybePop(); // ✅ safe
-      }
+        Navigator.of(context).pop(); // 🔥 force pop
+      });
 
     });
 
