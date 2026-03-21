@@ -4,6 +4,7 @@ import '../../../../core/session/user_session.dart';
 import '../../../../core/socket/global_socket_manager.dart';
 import '../../../../controllers/voice_room_controller.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../../../../core/debug/app_debug.dart'; // 🔥 FIX: missing import
 
 import '../widgets/room_ui.dart';
 
@@ -28,7 +29,7 @@ class _RoomScreenState extends State<RoomScreen> {
   bool loading = true;
   bool isHost = false;
   bool leavingRoom = false;
-  bool _roomJoined = false; // 🔥 FIX: prevent duplicate join
+  bool _roomJoined = false;
 
   final VoiceRoomController voiceController = VoiceRoomController();
 
@@ -38,10 +39,7 @@ class _RoomScreenState extends State<RoomScreen> {
 
   bool micStarted = false;
 
-  /// CHAT STATE
   bool showChat = false;
-
-  /// GIFT STATE
   bool showGift = false;
 
   @override
@@ -51,18 +49,15 @@ class _RoomScreenState extends State<RoomScreen> {
   }
 
   Future<void> requestMicPermission() async {
-
     final status = await Permission.microphone.request();
 
     if (!status.isGranted) {
       throw Exception("Microphone permission denied");
     }
-
   }
 
   Future<void> _initRoom() async {
 
-    // 🔥 FIX: duplicate join रोकना
     if (_roomJoined) return;
     _roomJoined = true;
 
@@ -83,21 +78,18 @@ class _RoomScreenState extends State<RoomScreen> {
     final userId = UserSession.getUserId();
     if (userId == null) return;
 
-    /// SEAT MAP LISTENER
+    /// 🔥 SEAT MAP LISTENER
     GlobalSocketManager.instance.onSeatMapUpdate((data) {
 
       if (!mounted) return;
 
       final seatData = data["seats"];
-
       if (seatData == null || seatData is! List) return;
 
       final updatedSeats = List<Map<String, dynamic>>.from(seatData);
-
       final currentUserId = UserSession.getUserId();
 
       bool hostFlag = false;
-
       bool userOnSeat = false;
 
       for (final seat in updatedSeats) {
@@ -110,19 +102,19 @@ class _RoomScreenState extends State<RoomScreen> {
           hostFlag = true;
         }
 
+        /// 🔥 MIC START FIX (transport wait)
         if (!micStarted &&
             seat["userId"] == currentUserId &&
             (seat["role"] == "HOST" || seat["role"] == "SPEAKER")) {
 
           Future.delayed(const Duration(seconds: 2), () async {
 
-             // 🔥 FIX: wait until transport ready
             int retry = 0;
 
             while (voiceController.transportId == null && retry < 10) {
-               await Future.delayed(const Duration(milliseconds: 300));
+              await Future.delayed(const Duration(milliseconds: 300));
               retry++;
-             }
+            }
 
             if (voiceController.transportId != null) {
               AppDebug.log("[VOICE] Transport ready → starting mic");
@@ -131,6 +123,7 @@ class _RoomScreenState extends State<RoomScreen> {
             } else {
               AppDebug.log("[VOICE] ERROR: transport not ready after wait");
             }
+
           });
         }
       }
@@ -145,7 +138,6 @@ class _RoomScreenState extends State<RoomScreen> {
         voiceController.webrtc.localStream?.dispose();
 
         micStarted = false;
-
       }
 
       setState(() {
@@ -156,7 +148,7 @@ class _RoomScreenState extends State<RoomScreen> {
 
     });
 
-    /// JOIN ROOM
+    /// 🔥 JOIN ROOM
     await RoomApi.joinRoom(
       userId: userId,
       roomId: widget.roomId,
@@ -164,11 +156,11 @@ class _RoomScreenState extends State<RoomScreen> {
 
     GlobalSocketManager.instance.joinRoom(widget.roomId);
 
-      /// 🔥 FIX: FORCE SEAT MAP FETCH
-      GlobalSocketManager.instance.send({
-        "type": "GET_SEAT_MAP",
-        "roomId": widget.roomId,
-      });
+    /// 🔥 FORCE SEAT MAP FETCH
+    GlobalSocketManager.instance.send({
+      "type": "GET_SEAT_MAP",
+      "roomId": widget.roomId,
+    });
 
     /// 🔥 ROOM CLOSED LISTENER
     GlobalSocketManager.instance.onRoomClosed(() {
@@ -179,12 +171,13 @@ class _RoomScreenState extends State<RoomScreen> {
         const SnackBar(content: Text("Room closed")),
       );
 
-        if (mounted) {
-          Navigator.of(context).maybePop(); // ✅ safe pop
-        }
- 
+      if (mounted) {
+        Navigator.of(context).maybePop(); // ✅ safe
+      }
+
     });
 
+    /// 🔥 VOICE JOIN
     await voiceController.joinRoom(
       widget.roomId,
       userId,
@@ -195,9 +188,7 @@ class _RoomScreenState extends State<RoomScreen> {
 
   /// CHAT SEND
   void sendMessage() {
-
     final text = chatController.text.trim();
-
     if (text.isEmpty) return;
 
     setState(() {
@@ -205,48 +196,28 @@ class _RoomScreenState extends State<RoomScreen> {
     });
 
     chatController.clear();
-
   }
 
-  /// CHAT TOGGLE
   void toggleChat() {
-
     setState(() {
-
       showChat = !showChat;
-
-      /// close gift if open
-      if (showChat) {
-        showGift = false;
-      }
-
+      if (showChat) showGift = false;
     });
-
   }
 
-  /// GIFT TOGGLE
   void toggleGift() {
-
     setState(() {
-
       showGift = !showGift;
-
-      /// close chat if open
-      if (showGift) {
-        showChat = false;
-      }
-
+      if (showGift) showChat = false;
     });
-
   }
 
-  /// LEAVE ROOM
+  /// 🔥 LEAVE ROOM
   Future<void> _leaveRoom() async {
 
     leavingRoom = true;
 
     final userId = UserSession.getUserId();
-
     if (userId == null) return;
 
     await RoomApi.leaveRoom(
@@ -256,105 +227,93 @@ class _RoomScreenState extends State<RoomScreen> {
 
     GlobalSocketManager.instance.leaveRoom(widget.roomId);
 
-      // 🔥 STOP WEBRTC CONNECTION
     voiceController.webrtc.peerConnection?.close();
 
     voiceController.webrtc.localStream?.getTracks().forEach((track) {
-        track.stop();
+      track.stop();
     });
-    
+
     voiceController.webrtc.localStream?.dispose();
 
-    voiceController.reset();
-
-    if (!mounted) return;
+    voiceController.reset(); // 🔥 FIX
 
   }
 
+  /// 🔥 BACK PRESS
   Future<bool> _onBackPressed() async {
 
-  final result = await showDialog(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        title: const Text("Leave Room"),
-        content: const Text("Keep room running or exit completely?"),
-        actions: [
+    final result = await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Leave Room"),
+          content: const Text("Keep room running or exit completely?"),
+          actions: [
 
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context, "KEEP");
-            },
-            child: const Text("Keep"),
-          ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context, "KEEP");
+              },
+              child: const Text("Keep"),
+            ),
 
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context, "EXIT");
-            },
-            child: const Text("Exit"),
-          ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context, "EXIT");
+              },
+              child: const Text("Exit"),
+            ),
 
-        ],
-      );
-    },
-  );
+          ],
+        );
+      },
+    );
 
-  if (result == "KEEP") {
-    return true; // ✅ system handle करेगा pop
+    if (result == "KEEP") {
+      Navigator.of(context).pop(); // 🔥 FIX
+      return false;
+    }
+
+    if (result == "EXIT") {
+      await _leaveRoom();
+      return true;
+    }
+
+    return false;
   }
 
-  if (result == "EXIT") {
-    await _leaveRoom();
-    return true; // ✅ system pop करेगा
-  }
-
-  return false;
-  }
-
-  
   /// SEAT TAP
   void _onSeatTap(Map<String, dynamic> seat) async {
 
-  final userId = UserSession.getUserId();
-  if (userId == null) return;
+    final userId = UserSession.getUserId();
+    if (userId == null) return;
 
-  final seatUserId = seat["userId"];
-  final seatIndex = seat["seatIndex"];
+    final seatUserId = seat["userId"];
+    final seatIndex = seat["seatIndex"];
 
-  // 🔒 host seat lock
-  if (seatIndex == 1 && !isHost) {
-    return;
-  }
+    if (seatIndex == 1 && !isHost) return;
+    if (seatUserId != null) return;
 
-  // ❌ seat occupied
-  if (seatUserId != null) {
-    return;
-  }
+    try {
 
-  try {
+      await RoomApi.requestSpeaker(
+        userId: userId,
+        roomId: widget.roomId,
+        seatIndex: seatIndex,
+      );
 
-    // 🔥 Request speaker / shift seat
-    await RoomApi.requestSpeaker(
-      userId: userId,
-      roomId: widget.roomId,
-      seatIndex: seatIndex, // 🔥 IMPORTANT
-    );
+    } catch (e) {
 
-  } catch (e) {
+      if (!mounted) return;
 
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          e.toString().replaceAll("Exception: ", ""),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.toString().replaceAll("Exception: ", ""),
+          ),
         ),
-      ),
-    );
-
-  }
-
+      );
+    }
   }
 
   @override
@@ -375,35 +334,32 @@ class _RoomScreenState extends State<RoomScreen> {
           controller: chatController,
           onSend: sendMessage,
           onSeatTap: _onSeatTap,
-
-          /// CHAT
           showChat: showChat,
           onChatToggle: toggleChat,
-
-          /// GIFT
           showGift: showGift,
           onGiftToggle: toggleGift,
-          ),
         ),
-      );
-    }
-
-    // 🔥 ADD THIS HERE
-    @override
-    void dispose() {
-
-      voiceController.webrtc.peerConnection?.close();
-
-      voiceController.webrtc.localStream?.getTracks().forEach((track) {
-        track.stop();
-      });
-  
-      voiceController.webrtc.localStream?.dispose();
-
-      chatController.dispose();
-
-      super.dispose();
-
-    }
-
+      ),
+    );
   }
+
+  /// 🔥 DISPOSE FIXED POSITION
+  @override
+  void dispose() {
+
+    voiceController.webrtc.peerConnection?.close();
+
+    voiceController.webrtc.localStream?.getTracks().forEach((track) {
+      track.stop();
+    });
+
+    voiceController.webrtc.localStream?.dispose();
+
+    voiceController.reset(); // 🔥 IMPORTANT
+
+    chatController.dispose();
+
+    super.dispose();
+  }
+
+}
