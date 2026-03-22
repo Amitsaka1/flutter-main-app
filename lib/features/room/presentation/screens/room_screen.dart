@@ -7,11 +7,6 @@ import '../../../../core/debug/app_debug.dart';
 
 import '../widgets/room_ui.dart';
 
-// 🔥 LIVEKIT
-import 'package:livekit_client/livekit_client.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-
 class RoomScreen extends StatefulWidget {
   final String roomId;
 
@@ -39,9 +34,6 @@ class _RoomScreenState extends State<RoomScreen> {
   bool showChat = false;
   bool showGift = false;
 
-  /// 🔥 LIVEKIT ROOM
-  Room? _livekitRoom;
-
   @override
   void initState() {
     super.initState();
@@ -56,49 +48,6 @@ class _RoomScreenState extends State<RoomScreen> {
 
     if (!status.isGranted) {
       throw Exception("Microphone permission denied");
-    }
-  }
-
-  /// =========================
-  /// 🔥 LIVEKIT CONNECT
-  /// =========================
-  Future<void> _connectLiveKit() async {
-    try {
-      final userId = UserSession.getUserId();
-      if (userId == null) return;
-
-      final res = await http.post(
-        Uri.parse("https://momo-1etm.onrender.com/livekit/token"),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "roomId": widget.roomId,
-          "userId": userId
-        }),
-      );
-
-      final data = jsonDecode(res.body);
-
-      if (data["success"] != true) {
-        throw Exception("Token failed");
-      }
-
-      final token = data["token"];
-
-      final room = Room();
-
-      await room.connect(
-        "wss://acceptable-marleen-amitsaka12345-ddc0c198.koyeb.app",
-        token,
-      );
-
-      await room.localParticipant?.setMicrophoneEnabled(true);
-
-      _livekitRoom = room;
-
-      AppDebug.log("✅ LiveKit connected");
-
-    } catch (e) {
-      AppDebug.log("❌ LiveKit error: $e");
     }
   }
 
@@ -157,9 +106,6 @@ class _RoomScreenState extends State<RoomScreen> {
       roomId: widget.roomId,
     );
 
-    /// 🔥 LIVEKIT CONNECT
-    await _connectLiveKit();
-
     /// 🔥 SOCKET JOIN
     GlobalSocketManager.instance.joinRoom(widget.roomId);
 
@@ -206,7 +152,7 @@ class _RoomScreenState extends State<RoomScreen> {
   }
 
   /// =========================
-  /// 🔥 LEAVE ROOM (FIXED)
+  /// 🔥 LEAVE ROOM
   /// =========================
   Future<void> _leaveRoom() async {
     leavingRoom = true;
@@ -222,18 +168,14 @@ class _RoomScreenState extends State<RoomScreen> {
 
     /// 🔥 SOCKET LEAVE
     GlobalSocketManager.instance.leaveRoom(widget.roomId);
-
-    /// 🔥 LIVEKIT DISCONNECT (VERY IMPORTANT)
-    await _livekitRoom?.disconnect();
-    _livekitRoom = null;
   }
 
   /// =========================
-  /// 🔥 BACK FIX (BLACK SCREEN FIX)
+  /// 🔥 BACK FIX
   /// =========================
   Future<bool> _onBackPressed() async {
     await _leaveRoom();
-    return true; // 🔥 important (black screen fix)
+    return true;
   }
 
   /// =========================
@@ -296,7 +238,6 @@ class _RoomScreenState extends State<RoomScreen> {
 
   @override
   void dispose() {
-    _livekitRoom?.disconnect(); // 🔥 safety
     chatController.dispose();
     super.dispose();
   }
