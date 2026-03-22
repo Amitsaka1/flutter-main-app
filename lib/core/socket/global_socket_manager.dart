@@ -18,7 +18,6 @@ class GlobalSocketManager with WidgetsBindingObserver {
 
   String? _userId;
   bool _initialized = false;
-  bool _foreground = true;
   bool _observerAdded = false;
 
   bool _incomingScreenOpen = false;
@@ -52,8 +51,7 @@ class GlobalSocketManager with WidgetsBindingObserver {
     _socketService = WebSocketService(userId: userId);
 
     _socketSubscription =
-    _socketService!.messages.listen((event) {
-
+        _socketService!.messages.listen((event) {
       final type = event["type"];
 
       // 🔥 Incoming Call
@@ -62,47 +60,40 @@ class GlobalSocketManager with WidgetsBindingObserver {
       }
 
       // 🔥 Seat map update
-      if (type == "SEAT_MAP_UPDATE") {
+      else if (type == "SEAT_MAP_UPDATE") {
         _seatMapController.add(event);
       }
 
-      // 🔥 Room closed
-      if (type == "ROOM_CLOSED") {
-        _roomClosedController.add(null);
-      }
-
-      // 🔥 User kicked from room
-      if (type == "ROOM_KICKED") {
+      // 🔥 Room closed / kicked
+      else if (type == "ROOM_CLOSED" ||
+          type == "ROOM_KICKED") {
         _roomClosedController.add(null);
       }
 
       // 🔥 Speaker demoted
-      if (type == "DEMOTED_TO_LISTENER") {
+      else if (type == "DEMOTED_TO_LISTENER") {
         _messageController.add(event);
       }
 
       // 🔥 NEW MESSAGE
-      if (type == "NEW_MESSAGE") {
-
+      else if (type == "NEW_MESSAGE") {
         final senderId = event["data"]["senderId"];
 
         if (senderId != _userId) {
           UnreadCounterService.increment(senderId);
         }
 
-        ChatController.instance.handleNewMessage(event["data"]);
+        ChatController.instance
+            .handleNewMessage(event["data"]);
 
+        _messageController.add(event);
       }
-
-
-      _messageController.add(event);
     });
 
     if (!_observerAdded) {
       WidgetsBinding.instance.addObserver(this);
       _observerAdded = true;
     }
-
 
     await _socketService!.connect();
 
@@ -125,16 +116,17 @@ class GlobalSocketManager with WidgetsBindingObserver {
     });
   }
 
-  void onSeatMapUpdate(
+  // ✅ FIXED: return subscription
+  StreamSubscription onSeatMapUpdate(
     Function(Map<String, dynamic>) callback,
   ) {
-    _seatMapController.stream.listen(callback);
+    return _seatMapController.stream.listen(callback);
   }
 
-  void onRoomClosed(
+  StreamSubscription onRoomClosed(
     VoidCallback callback,
   ) {
-    _roomClosedController.stream.listen((_) {
+    return _roomClosedController.stream.listen((_) {
       callback();
     });
   }
@@ -149,7 +141,8 @@ class GlobalSocketManager with WidgetsBindingObserver {
 
     _incomingScreenOpen = true;
 
-    Navigator.of(context).push(
+    Navigator.of(context)
+        .push(
       MaterialPageRoute(
         builder: (_) => IncomingCallScreen(
           sessionId: data["sessionId"],
@@ -157,7 +150,8 @@ class GlobalSocketManager with WidgetsBindingObserver {
           callType: data["callType"],
         ),
       ),
-    ).then((_) {
+    )
+        .then((_) {
       _incomingScreenOpen = false;
     });
   }
@@ -172,12 +166,9 @@ class GlobalSocketManager with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // 🔥 Do NOT disconnect socket on background
-    // Keep persistent connection for real-time features
-
     if (state == AppLifecycleState.resumed) {
-      if (!_socketService!.isConnected) {
-        _socketService!.connect();
+      if (_socketService?.isConnected != true) {
+        _socketService?.connect();
       }
     }
   }
