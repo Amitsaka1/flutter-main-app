@@ -160,7 +160,10 @@ class _RoomScreenState extends State<RoomScreen> {
       if (!mounted) return;
 
       await _leaveRoom();
-      Navigator.of(context).pop();
+      
+      if (mounted) {
+        Navigator.pop(context);
+      }
     });
   }
 
@@ -215,14 +218,46 @@ class _RoomScreenState extends State<RoomScreen> {
 
     /// 🔥 LIVEKIT DISCONNECT
     await _livekit.disconnect();
+
+    await Future.delayed(const Duration(milliseconds: 100));
   }
 
   /// =========================
   /// 🔥 BACK FIX
   /// =========================
   Future<bool> _onBackPressed() async {
+  if (leavingRoom) return false;
+
+  final result = await showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text("Leave Room"),
+        content: const Text("Keep room running or exit completely?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, "KEEP"),
+            child: const Text("Keep"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, "EXIT"),
+            child: const Text("Exit"),
+          ),
+        ],
+      );
+    },
+  );
+
+  if (result == "KEEP") {
+    return false;
+  }
+
+  if (result == "EXIT") {
     await _leaveRoom();
     return true;
+  }
+
+  return false;
   }
 
   /// =========================
