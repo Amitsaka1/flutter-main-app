@@ -4,6 +4,7 @@ import '../../../../core/session/user_session.dart';
 import '../../../../core/socket/global_socket_manager.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../../../core/debug/app_debug.dart';
+import '../../../../core/livekit/livekit_service.dart';
 
 import '../widgets/room_ui.dart';
 
@@ -33,6 +34,11 @@ class _RoomScreenState extends State<RoomScreen> {
 
   bool showChat = false;
   bool showGift = false;
+
+  /// 🔥 LIVEKIT SERVICE
+  final LiveKitService _livekit = LiveKitService();
+
+  bool _livekitConnected = false;
 
   @override
   void initState() {
@@ -75,21 +81,55 @@ class _RoomScreenState extends State<RoomScreen> {
     if (userId == null) return;
 
     /// 🔥 SEAT MAP LISTENER
-    GlobalSocketManager.instance.onSeatMapUpdate((data) {
+    GlobalSocketManager.instance.onSeatMapUpdate((data) async {
       if (!mounted) return;
 
       final seatData = data["seats"];
       if (seatData == null || seatData is! List) return;
 
       final updatedSeats = List<Map<String, dynamic>>.from(seatData);
+
       final currentUserId = UserSession.getUserId();
 
       bool hostFlag = false;
+      bool amISpeaker = false;
 
       for (final seat in updatedSeats) {
-        if (seat["userId"] == currentUserId &&
-            seat["role"] == "HOST") {
-          hostFlag = true;
+        if (seat["userId"] == currentUserId) {
+          if (seat["role"] == "HOST") hostFlag = true;
+          if (seat["role"] == "HOST" ||
+              seat["role"] == "SPEAKER") {
+            amISpeaker = true;
+          }
+        }
+      }
+
+      /// 🔥 LIVEKIT CONNECT ONLY ONCE
+      if (!_livekitConnected) {
+        _livekitConnected = true;
+
+        try {
+          await _livekit.connect(
+            userId: currentUserId!,
+            roomId: widget.roomId,
+          );
+
+          /// 🔥 mic control based on role
+          if (amISpeaker) {
+            await _livekit.enableMic();
+          } else {
+            await _livekit.disableMic();
+          }
+
+        } catch (e) {
+          AppDebug.log("LiveKit connect failed: $e");
+        }
+      } else {
+        /// 🔥 role change → mic update
+        if (amISpeaker) {
+          await _livekit.enableMic();
+        } else {
+          await _livekit.disableMic();
         }
       }
 
@@ -116,9 +156,10 @@ class _RoomScreenState extends State<RoomScreen> {
     });
 
     /// 🔥 ROOM CLOSED
-    GlobalSocketManager.instance.onRoomClosed(() {
+    GlobalSocketManager.instance.onRoomClosed(() async {
       if (!mounted) return;
 
+      await _leaveRoom();
       Navigator.of(context).pop();
     });
   }
@@ -155,19 +196,25 @@ class _RoomScreenState extends State<RoomScreen> {
   /// 🔥 LEAVE ROOM
   /// =========================
   Future<void> _leaveRoom() async {
+    if (leavingRoom) return;
     leavingRoom = true;
 
     final userId = UserSession.getUserId();
     if (userId == null) return;
 
-    /// 🔥 BACKEND LEAVE
-    await RoomApi.leaveRoom(
-      userId: userId,
-      roomId: widget.roomId,
-    );
+    try {
+      /// 🔥 BACKEND LEAVE
+      await RoomApi.leaveRoom(
+        userId: userId,
+        roomId: widget.roomId,
+      );
+    } catch (_) {}
 
     /// 🔥 SOCKET LEAVE
     GlobalSocketManager.instance.leaveRoom(widget.roomId);
+
+    /// 🔥 LIVEKIT DISCONNECT
+    await _livekit.disconnect();
   }
 
   /// =========================
@@ -238,6 +285,7 @@ class _RoomScreenState extends State<RoomScreen> {
 
   @override
   void dispose() {
+    _livekit.disconnect(); // 🔥 safety
     chatController.dispose();
     super.dispose();
   }
