@@ -2,14 +2,12 @@ import 'package:flutter/material.dart';
 import '../../data/room_api.dart';
 import '../../../../core/session/user_session.dart';
 import '../../../../core/socket/global_socket_manager.dart';
-import '../../../../controllers/voice_room_controller.dart';
 import 'package:permission_handler/permission_handler.dart';
-import '../../../../core/debug/app_debug.dart'; // 🔥 FIX: missing import
+import '../../../../core/debug/app_debug.dart';
 
 import '../widgets/room_ui.dart';
 
 class RoomScreen extends StatefulWidget {
-
   final String roomId;
 
   const RoomScreen({
@@ -19,26 +17,19 @@ class RoomScreen extends StatefulWidget {
 
   @override
   State<RoomScreen> createState() => _RoomScreenState();
-
 }
 
 class _RoomScreenState extends State<RoomScreen> {
-
   List<Map<String, dynamic>> seats = [];
 
   bool loading = true;
   bool isHost = false;
   bool leavingRoom = false;
   bool _roomJoined = false;
-  
-
-  final VoiceRoomController voiceController = VoiceRoomController();
 
   final TextEditingController chatController = TextEditingController();
 
   List<String> messages = [];
-
-  bool micStarted = false;
 
   bool showChat = false;
   bool showGift = false;
@@ -58,14 +49,12 @@ class _RoomScreenState extends State<RoomScreen> {
   }
 
   Future<void> _initRoom() async {
-
     if (_roomJoined) return;
     _roomJoined = true;
 
     try {
       await requestMicPermission();
     } catch (e) {
-
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -81,7 +70,6 @@ class _RoomScreenState extends State<RoomScreen> {
 
     /// 🔥 SEAT MAP LISTENER
     GlobalSocketManager.instance.onSeatMapUpdate((data) {
-
       if (!mounted) return;
 
       final seatData = data["seats"];
@@ -91,30 +79,12 @@ class _RoomScreenState extends State<RoomScreen> {
       final currentUserId = UserSession.getUserId();
 
       bool hostFlag = false;
-      bool userOnSeat = false;
 
       for (final seat in updatedSeats) {
-
-        if (seat["userId"] == currentUserId) {
-          userOnSeat = true;
-        }
-
-        if (seat["userId"] == currentUserId && seat["role"] == "HOST") {
+        if (seat["userId"] == currentUserId &&
+            seat["role"] == "HOST") {
           hostFlag = true;
         }
-      }
-
-
-      /// 🔥 USER LEFT SEAT → MIC OFF
-      if (!userOnSeat && micStarted) {
-
-        voiceController.webrtc.localStream?.getTracks().forEach((track) {
-          track.stop();
-        });
-
-        voiceController.webrtc.localStream?.dispose();
-
-        micStarted = false;
       }
 
       setState(() {
@@ -122,7 +92,6 @@ class _RoomScreenState extends State<RoomScreen> {
         isHost = hostFlag;
         loading = false;
       });
-
     });
 
     /// 🔥 JOIN ROOM
@@ -141,26 +110,15 @@ class _RoomScreenState extends State<RoomScreen> {
 
     /// 🔥 ROOM CLOSED LISTENER
     GlobalSocketManager.instance.onRoomClosed(() {
-
       AppDebug.log("[ROOM] ROOM CLOSED EVENT RECEIVED");
 
       if (!mounted) return;
 
       Future.microtask(() {
         if (!mounted) return;
-
-        Navigator.of(context).pop(); // 🔥 force pop
+        Navigator.of(context).pop();
       });
-
     });
-
-    /// 🔥 VOICE JOIN
-    await voiceController.joinRoom(
-      widget.roomId,
-      userId,
-      GlobalSocketManager.instance.wsUrl,
-    );
-
   }
 
   /// CHAT SEND
@@ -191,7 +149,6 @@ class _RoomScreenState extends State<RoomScreen> {
 
   /// 🔥 LEAVE ROOM
   Future<void> _leaveRoom() async {
-
     leavingRoom = true;
 
     final userId = UserSession.getUserId();
@@ -203,26 +160,10 @@ class _RoomScreenState extends State<RoomScreen> {
     );
 
     GlobalSocketManager.instance.leaveRoom(widget.roomId);
-
-    // 🔥 ADD THIS (VERY IMPORTANT)
-    voiceController.webrtc.socket?.sink.close();
-    voiceController.webrtc.socket = null;
-
-    voiceController.webrtc.peerConnection?.close();
-
-    voiceController.webrtc.localStream?.getTracks().forEach((track) {
-      track.stop();
-    });
-
-    voiceController.webrtc.localStream?.dispose();
-
-    voiceController.reset(); // 🔥 FIX
-
   }
 
   /// 🔥 BACK PRESS
   Future<bool> _onBackPressed() async {
-
     final result = await showDialog(
       context: context,
       builder: (context) {
@@ -230,21 +171,18 @@ class _RoomScreenState extends State<RoomScreen> {
           title: const Text("Leave Room"),
           content: const Text("Keep room running or exit completely?"),
           actions: [
-
             TextButton(
               onPressed: () {
                 Navigator.pop(context, "KEEP");
               },
               child: const Text("Keep"),
             ),
-
             TextButton(
               onPressed: () {
                 Navigator.pop(context, "EXIT");
               },
               child: const Text("Exit"),
             ),
-
           ],
         );
       },
@@ -264,7 +202,6 @@ class _RoomScreenState extends State<RoomScreen> {
 
   /// SEAT TAP
   void _onSeatTap(Map<String, dynamic> seat) async {
-
     final userId = UserSession.getUserId();
     if (userId == null) return;
 
@@ -275,15 +212,12 @@ class _RoomScreenState extends State<RoomScreen> {
     if (seatUserId != null) return;
 
     try {
-
       await RoomApi.requestSpeaker(
         userId: userId,
         roomId: widget.roomId,
         seatIndex: seatIndex,
       );
-
     } catch (e) {
-
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -298,7 +232,6 @@ class _RoomScreenState extends State<RoomScreen> {
 
   @override
   Widget build(BuildContext context) {
-
     if (loading) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
@@ -323,23 +256,9 @@ class _RoomScreenState extends State<RoomScreen> {
     );
   }
 
-  /// 🔥 DISPOSE FIXED POSITION
   @override
   void dispose() {
-
-    voiceController.webrtc.peerConnection?.close();
-
-    voiceController.webrtc.localStream?.getTracks().forEach((track) {
-      track.stop();
-    });
-
-    voiceController.webrtc.localStream?.dispose();
-
-    voiceController.reset(); // 🔥 IMPORTANT
-
     chatController.dispose();
-
     super.dispose();
   }
-
 }
