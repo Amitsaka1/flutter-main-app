@@ -7,6 +7,11 @@ import '../../../../core/debug/app_debug.dart';
 
 import '../widgets/room_ui.dart';
 
+// 🔥 LIVEKIT
+import 'package:livekit_client/livekit_client.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
 class RoomScreen extends StatefulWidget {
   final String roomId;
 
@@ -34,12 +39,18 @@ class _RoomScreenState extends State<RoomScreen> {
   bool showChat = false;
   bool showGift = false;
 
+  /// 🔥 LIVEKIT ROOM
+  Room? _livekitRoom;
+
   @override
   void initState() {
     super.initState();
     _initRoom();
   }
 
+  /// =========================
+  /// 🔥 MIC PERMISSION
+  /// =========================
   Future<void> requestMicPermission() async {
     final status = await Permission.microphone.request();
 
@@ -48,6 +59,52 @@ class _RoomScreenState extends State<RoomScreen> {
     }
   }
 
+  /// =========================
+  /// 🔥 LIVEKIT CONNECT
+  /// =========================
+  Future<void> _connectLiveKit() async {
+    try {
+      final userId = UserSession.getUserId();
+      if (userId == null) return;
+
+      final res = await http.post(
+        Uri.parse("https://momo-1etm.onrender.com/livekit/token"),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "roomId": widget.roomId,
+          "userId": userId
+        }),
+      );
+
+      final data = jsonDecode(res.body);
+
+      if (data["success"] != true) {
+        throw Exception("Token failed");
+      }
+
+      final token = data["token"];
+
+      final room = Room();
+
+      await room.connect(
+        "wss://acceptable-marleen-amitsaka12345-ddc0c198.koyeb.app",
+        token,
+      );
+
+      await room.localParticipant?.setMicrophoneEnabled(true);
+
+      _livekitRoom = room;
+
+      AppDebug.log("✅ LiveKit connected");
+
+    } catch (e) {
+      AppDebug.log("❌ LiveKit error: $e");
+    }
+  }
+
+  /// =========================
+  /// 🔥 INIT ROOM
+  /// =========================
   Future<void> _initRoom() async {
     if (_roomJoined) return;
     _roomJoined = true;
@@ -94,34 +151,35 @@ class _RoomScreenState extends State<RoomScreen> {
       });
     });
 
-    /// 🔥 JOIN ROOM
+    /// 🔥 JOIN ROOM (Backend)
     await RoomApi.joinRoom(
       userId: userId,
       roomId: widget.roomId,
     );
 
+    /// 🔥 LIVEKIT CONNECT
+    await _connectLiveKit();
+
+    /// 🔥 SOCKET JOIN
     GlobalSocketManager.instance.joinRoom(widget.roomId);
 
-    /// 🔥 FORCE SEAT MAP FETCH
+    /// 🔥 FORCE SEAT MAP
     GlobalSocketManager.instance.send({
       "type": "GET_SEAT_MAP",
       "roomId": widget.roomId,
     });
 
-    /// 🔥 ROOM CLOSED LISTENER
+    /// 🔥 ROOM CLOSED
     GlobalSocketManager.instance.onRoomClosed(() {
-      AppDebug.log("[ROOM] ROOM CLOSED EVENT RECEIVED");
-
       if (!mounted) return;
 
-      Future.microtask(() {
-        if (!mounted) return;
-        Navigator.of(context).pop();
-      });
+      Navigator.of(context).pop();
     });
   }
 
-  /// CHAT SEND
+  /// =========================
+  /// CHAT
+  /// =========================
   void sendMessage() {
     final text = chatController.text.trim();
     if (text.isEmpty) return;
@@ -147,60 +205,40 @@ class _RoomScreenState extends State<RoomScreen> {
     });
   }
 
-  /// 🔥 LEAVE ROOM
+  /// =========================
+  /// 🔥 LEAVE ROOM (FIXED)
+  /// =========================
   Future<void> _leaveRoom() async {
     leavingRoom = true;
 
     final userId = UserSession.getUserId();
     if (userId == null) return;
 
+    /// 🔥 BACKEND LEAVE
     await RoomApi.leaveRoom(
       userId: userId,
       roomId: widget.roomId,
     );
 
+    /// 🔥 SOCKET LEAVE
     GlobalSocketManager.instance.leaveRoom(widget.roomId);
+
+    /// 🔥 LIVEKIT DISCONNECT (VERY IMPORTANT)
+    await _livekitRoom?.disconnect();
+    _livekitRoom = null;
   }
 
-  /// 🔥 BACK PRESS
+  /// =========================
+  /// 🔥 BACK FIX (BLACK SCREEN FIX)
+  /// =========================
   Future<bool> _onBackPressed() async {
-    final result = await showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("Leave Room"),
-          content: const Text("Keep room running or exit completely?"),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context, "KEEP");
-              },
-              child: const Text("Keep"),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context, "EXIT");
-              },
-              child: const Text("Exit"),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (result == "KEEP") {
-      return false;
-    }
-
-    if (result == "EXIT") {
-      await _leaveRoom();
-      return true;
-    }
-
-    return false;
+    await _leaveRoom();
+    return true; // 🔥 important (black screen fix)
   }
 
+  /// =========================
   /// SEAT TAP
+  /// =========================
   void _onSeatTap(Map<String, dynamic> seat) async {
     final userId = UserSession.getUserId();
     if (userId == null) return;
@@ -258,6 +296,7 @@ class _RoomScreenState extends State<RoomScreen> {
 
   @override
   void dispose() {
+    _livekitRoom?.disconnect(); // 🔥 safety
     chatController.dispose();
     super.dispose();
   }
