@@ -156,12 +156,15 @@ class _RoomScreenState extends State<RoomScreen> {
     });
 
     /// 🔥 ROOM CLOSED
-    GlobalSocketManager.instance.onRoomClosed(() async {
+    GlobalSocketManager.instance.onRoomClosed(() {
       if (!mounted) return;
 
-      await _leaveRoom();
-      
-      if (mounted) {
+      if (!leavingRoom) {
+        leavingRoom = true;
+        _leaveRoom(); // बिना await
+      }
+
+      if (mounted && Navigator.canPop(context)) {
         Navigator.pop(context);
       }
     });
@@ -217,7 +220,7 @@ class _RoomScreenState extends State<RoomScreen> {
     GlobalSocketManager.instance.leaveRoom(widget.roomId);
 
     /// 🔥 LIVEKIT DISCONNECT
-    await _livekit.disconnect();
+    _livekit.disconnect();
 
     await Future.delayed(const Duration(milliseconds: 100));
   }
@@ -253,8 +256,8 @@ class _RoomScreenState extends State<RoomScreen> {
   }
 
   if (result == "EXIT") {
-    await _leaveRoom();
-    return true;
+    _leaveRoom(); // ❌ await हटाया
+    return true;  // pop instantly
   }
 
   return false;
