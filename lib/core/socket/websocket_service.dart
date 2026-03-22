@@ -15,7 +15,9 @@ class WebSocketService {
   bool _manualDisconnect = false;
 
   int _reconnectAttempt = 0;
+
   Timer? _reconnectTimer;
+  Timer? _pingTimer; // 🔥 FIXED
 
   final StreamController<Map<String, dynamic>> _messageController =
       StreamController.broadcast();
@@ -45,9 +47,7 @@ class WebSocketService {
       final token = await ApiClient.getToken();
 
       _channel = WebSocketChannel.connect(
-        Uri.parse(
-         "$wsUrl?token=$token",
-        )
+        Uri.parse("$wsUrl?token=$token"),
       );
 
       _connected = true;
@@ -56,11 +56,16 @@ class WebSocketService {
 
       print("🔥 SOCKET CONNECTED for user: $userId");
 
-      Timer.periodic(
+      // 🔥 FIX: clear old timers
+      _pingTimer?.cancel();
+
+      _pingTimer = Timer.periodic(
         const Duration(seconds: 20),
         (_) {
           if (_connected && _channel != null) {
-            _channel!.sink.add('ping');
+            try {
+              _channel!.sink.add('ping');
+            } catch (_) {}
           }
         },
       );
@@ -100,9 +105,13 @@ class WebSocketService {
     print("🔴 Manual disconnect for user: $userId");
 
     _manualDisconnect = true;
+
     _reconnectTimer?.cancel();
+    _pingTimer?.cancel(); // 🔥 FIX
+
     _channel?.sink.close();
     _channel = null;
+
     _connected = false;
   }
 
@@ -113,6 +122,8 @@ class WebSocketService {
 
     _channel = null;
     _connected = false;
+
+    _pingTimer?.cancel(); // 🔥 FIX
 
     if (!_manualDisconnect) {
       _scheduleReconnect();
@@ -146,7 +157,11 @@ class WebSocketService {
 
   void send(Map<String, dynamic> data) {
     if (_connected && _channel != null) {
-      _channel!.sink.add(jsonEncode(data));
+      try {
+        _channel!.sink.add(jsonEncode(data));
+      } catch (e) {
+        print("Send error: $e");
+      }
     } else {
       print("⚠ Cannot send. Socket not connected.");
     }
@@ -162,9 +177,13 @@ class WebSocketService {
     print("🧹 Disposing WebSocket for user: $userId");
 
     _manualDisconnect = true;
+
     _reconnectTimer?.cancel();
+    _pingTimer?.cancel(); // 🔥 FIX
+
     _channel?.sink.close();
     _channel = null;
+
     _connected = false;
 
     _messageController.close();
