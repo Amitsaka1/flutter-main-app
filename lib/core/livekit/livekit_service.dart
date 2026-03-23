@@ -8,7 +8,7 @@ class LiveKitService {
   Room? get room => _room;
 
   /// =========================
-  /// 🔥 CONNECT
+  /// 🔥 CONNECT (ULTRA AUDIO)
   /// =========================
   Future<void> connect({
     required String userId,
@@ -34,12 +34,21 @@ class LiveKitService {
 
       final room = Room();
 
+      /// 🔥 ULTRA QUALITY CONNECT
       await room.connect(
         "wss://acceptable-marleen-amitsaka12345-ddc0c198.koyeb.app",
         token,
+        roomOptions: const RoomOptions(
+          adaptiveStream: true,
+          dynacast: true,
+          defaultAudioPublishOptions: AudioPublishOptions(
+            name: 'microphone',
+            bitrate: 64000, // 🔥 HIGH QUALITY AUDIO
+          ),
+        ),
       );
 
-      /// 🔥 AUDIO RECEIVE FIX
+      /// 🔥 AUDIO RECEIVE FIX (IMPORTANT)
       room.events.listen((event) {
         if (event is TrackSubscribedEvent) {
           final track = event.track;
@@ -50,9 +59,19 @@ class LiveKitService {
         }
       });
 
+      /// 🔥 MIC ENABLE WITH FULL PROCESSING
+      await room.localParticipant?.setMicrophoneEnabled(
+        true,
+        captureOptions: const AudioCaptureOptions(
+          echoCancellation: true,   // 🔥 echo remove
+          noiseSuppression: true,   // 🔥 noise remove
+          autoGainControl: true,    // 🔥 auto volume balance
+        ),
+      );
+
       _room = room;
 
-      print("✅ LiveKit Connected");
+      print("✅ LiveKit Connected (ULTRA AUDIO)");
 
     } catch (e) {
       print("❌ LiveKit Connect Error: $e");
@@ -64,7 +83,14 @@ class LiveKitService {
   /// 🔥 MIC CONTROL
   /// =========================
   Future<void> enableMic() async {
-    await _room?.localParticipant?.setMicrophoneEnabled(true);
+    await _room?.localParticipant?.setMicrophoneEnabled(
+      true,
+      captureOptions: const AudioCaptureOptions(
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      ),
+    );
   }
 
   Future<void> disableMic() async {
