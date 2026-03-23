@@ -8,7 +8,7 @@ class LiveKitService {
   Room? get room => _room;
 
   /// =========================
-  /// 🔥 CONNECT (ULTRA AUDIO)
+  /// 🔥 CONNECT (ULTRA PRO AUDIO)
   /// =========================
   Future<void> connect({
     required String userId,
@@ -43,12 +43,12 @@ class LiveKitService {
           dynacast: true,
           defaultAudioPublishOptions: AudioPublishOptions(
             name: 'microphone',
-            bitrate: 64000, // 🔥 HIGH QUALITY AUDIO
+            bitrate: 96000, // 🔥 ULTRA bitrate (high clarity)
           ),
         ),
       );
 
-      /// 🔥 AUDIO RECEIVE FIX (IMPORTANT)
+      /// 🔥 AUDIO RECEIVE FIX
       room.events.listen((event) {
         if (event is TrackSubscribedEvent) {
           final track = event.track;
@@ -59,19 +59,20 @@ class LiveKitService {
         }
       });
 
-      /// 🔥 MIC ENABLE WITH FULL PROCESSING
+      /// 🔥 MIC ENABLE (ULTRA PROCESSING)
       await room.localParticipant?.setMicrophoneEnabled(
         true,
         captureOptions: const AudioCaptureOptions(
-          echoCancellation: true,   // 🔥 echo remove
-          noiseSuppression: true,   // 🔥 noise remove
-          autoGainControl: true,    // 🔥 auto volume balance
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          typingNoiseDetection: true, // 🔥 extra noise killer
         ),
       );
 
       _room = room;
 
-      print("✅ LiveKit Connected (ULTRA AUDIO)");
+      print("✅ LiveKit Connected (ULTRA PRO AUDIO)");
 
     } catch (e) {
       print("❌ LiveKit Connect Error: $e");
@@ -80,7 +81,7 @@ class LiveKitService {
   }
 
   /// =========================
-  /// 🔥 MIC CONTROL
+  /// 🔥 MIC CONTROL (ULTRA)
   /// =========================
   Future<void> enableMic() async {
     await _room?.localParticipant?.setMicrophoneEnabled(
@@ -89,6 +90,7 @@ class LiveKitService {
         echoCancellation: true,
         noiseSuppression: true,
         autoGainControl: true,
+        typingNoiseDetection: true,
       ),
     );
   }
