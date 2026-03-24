@@ -100,7 +100,7 @@ class _RoomScreenState extends State<RoomScreen>
         );
 
         _livekit.room?.events.listen((event) {
-          if (event is RoomDisconnectedEvent) {
+          if (event is DisconnectedEvent) {
             AppDebug.log("LiveKit disconnected → reconnecting...");
             _handleReconnect();
           }
