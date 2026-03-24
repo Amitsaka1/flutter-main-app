@@ -127,6 +127,41 @@ class LiveKitService {
     );
   }
 
+  /// =========================
+  /// 🔥 REAL-TIME BITRATE SWITCH
+  /// =========================
+  Future<void> switchBitrate(int newBitrate) async {
+    if (_room == null) return;
+
+    try {
+      final participant = _room!.localParticipant;
+      if (participant == null) return;
+
+      // 🔥 mic off (old track remove)
+      await participant.setMicrophoneEnabled(false);
+
+      // 🔥 mic on with new bitrate
+      await participant.setMicrophoneEnabled(
+        true,
+        captureOptions: const AudioCaptureOptions(
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          typingNoiseDetection: true,
+        ),
+        publishOptions: AudioPublishOptions(
+          bitrate: newBitrate,
+          name: 'microphone',
+        ),
+      );
+
+      print("🎯 Bitrate switched to $newBitrate");
+
+    } catch (e) {
+      print("❌ Bitrate switch error: $e");
+    }
+  }
+
   Future<void> disableMic() async {
     await _room?.localParticipant?.setMicrophoneEnabled(false);
   }
