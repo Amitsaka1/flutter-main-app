@@ -246,6 +246,13 @@ class _RoomScreenState extends State<RoomScreen>
     _isReconnecting = false;
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _handleReconnect();
+    }
+  }
+
   /// =========================
   /// 🔥 LEAVE ROOM
   /// =========================
