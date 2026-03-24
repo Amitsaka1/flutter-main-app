@@ -23,9 +23,6 @@ Future<void> _setupAudio() async {
     // 🔥 Force speaker (avoid wrong routing)
     await Hardware.instance.setSpeakerphoneOn(true);
 
-    // 🔥 Prefer bluetooth/headphones if available
-    await Hardware.instance.setBluetoothPreferred(true);
-
     debugPrint("✅ Audio hardware configured (ULTRA)");
   } catch (e) {
     debugPrint("❌ Audio setup error: $e");
