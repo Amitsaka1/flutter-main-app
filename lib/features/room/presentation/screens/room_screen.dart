@@ -36,7 +36,6 @@ class _RoomScreenState extends State<RoomScreen>
   bool showChat = false;
   bool showGift = false;
 
-  /// 🔥 LIVEKIT SERVICE
   final LiveKitService _livekit = LiveKitService();
 
   bool _livekitConnected = false;
@@ -51,9 +50,6 @@ class _RoomScreenState extends State<RoomScreen>
     _initRoom();
   }
 
-  /// =========================
-  /// 🔥 MIC PERMISSION
-  /// =========================
   Future<void> requestMicPermission() async {
     final status = await Permission.microphone.request();
 
@@ -62,9 +58,6 @@ class _RoomScreenState extends State<RoomScreen>
     }
   }
 
-  /// =========================
-  /// 🔥 INIT ROOM
-  /// =========================
   Future<void> _initRoom() async {
     if (_roomJoined) return;
     _roomJoined = true;
@@ -84,6 +77,39 @@ class _RoomScreenState extends State<RoomScreen>
 
     final userId = UserSession.getUserId();
     if (userId == null) return;
+
+    /// 🔥 JOIN ROOM (Backend)
+    await RoomApi.joinRoom(
+      userId: userId,
+      roomId: widget.roomId,
+    );
+
+    _wasInRoom = true;
+
+    /// 🔥 SOCKET JOIN
+    GlobalSocketManager.instance.joinRoom(widget.roomId);
+
+    /// 🔥 LIVEKIT CONNECT (FIXED POSITION)
+    if (!_livekitConnected) {
+      _livekitConnected = true;
+
+      try {
+        await _livekit.connect(
+          userId: userId,
+          roomId: widget.roomId,
+        );
+
+        _livekit.room?.events.listen((event) {
+          if (event is RoomDisconnectedEvent) {
+            AppDebug.log("LiveKit disconnected → reconnecting...");
+            _handleReconnect();
+          }
+        });
+
+      } catch (e) {
+        AppDebug.log("LiveKit connect failed: $e");
+      }
+    }
 
     /// 🔥 SEAT MAP LISTENER
     GlobalSocketManager.instance.onSeatMapUpdate((data) async {
@@ -109,41 +135,11 @@ class _RoomScreenState extends State<RoomScreen>
         }
       }
 
-      /// 🔥 LIVEKIT CONNECT ONLY ONCE
-      if (!_livekitConnected) {
-        _livekitConnected = true;
-
-        try {
-          await _livekit.connect(
-            userId: currentUserId!,
-            roomId: widget.roomId,
-          );
-
-          // 🔥 AUTO RECONNECT
-          _livekit.room?.events.listen((event) {
-            if (event is RoomDisconnectedEvent) {
-              AppDebug.log("LiveKit disconnected → reconnecting...");
-              _handleReconnect();
-            }
-          });
-
-          /// 🔥 mic control
-          if (amISpeaker) {
-            await _livekit.enableMic();
-          } else {
-            await _livekit.disableMic();
-          }
-
-        } catch (e) {
-          AppDebug.log("LiveKit connect failed: $e");
-        }
+      /// 🔥 MIC CONTROL ONLY
+      if (amISpeaker) {
+        await _livekit.enableMic();
       } else {
-        /// 🔥 role change → mic update
-        if (amISpeaker) {
-          await _livekit.enableMic();
-        } else {
-          await _livekit.disableMic();
-        }
+        await _livekit.disableMic();
       }
 
       setState(() {
@@ -152,17 +148,6 @@ class _RoomScreenState extends State<RoomScreen>
         loading = false;
       });
     });
-
-    /// 🔥 JOIN ROOM (Backend)
-    await RoomApi.joinRoom(
-      userId: userId,
-      roomId: widget.roomId,
-    );
-
-    _wasInRoom = true;
-
-    /// 🔥 SOCKET JOIN
-    GlobalSocketManager.instance.joinRoom(widget.roomId);
 
     /// 🔥 FORCE SEAT MAP
     GlobalSocketManager.instance.send({
@@ -185,9 +170,6 @@ class _RoomScreenState extends State<RoomScreen>
     });
   }
 
-  /// =========================
-  /// CHAT
-  /// =========================
   void sendMessage() {
     final text = chatController.text.trim();
     if (text.isEmpty) return;
@@ -213,17 +195,12 @@ class _RoomScreenState extends State<RoomScreen>
     });
   }
 
-  /// =========================
-  /// 🔥 AUTO RECONNECT
-  /// =========================
   Future<void> _handleReconnect() async {
-
     if (_isReconnecting || !_wasInRoom) return;
 
     _isReconnecting = true;
 
     try {
-
       final userId = UserSession.getUserId();
       if (userId == null) return;
 
@@ -260,9 +237,6 @@ class _RoomScreenState extends State<RoomScreen>
     }
   }
 
-  /// =========================
-  /// 🔥 LEAVE ROOM
-  /// =========================
   Future<void> _leaveRoom() async {
     if (leavingRoom) return;
     leavingRoom = true;
@@ -284,9 +258,6 @@ class _RoomScreenState extends State<RoomScreen>
     await Future.delayed(const Duration(milliseconds: 100));
   }
 
-  /// =========================
-  /// 🔥 BACK FIX
-  /// =========================
   Future<bool> _onBackPressed() async {
     if (leavingRoom) return false;
 
@@ -320,9 +291,6 @@ class _RoomScreenState extends State<RoomScreen>
     return false;
   }
 
-  /// =========================
-  /// SEAT TAP
-  /// =========================
   void _onSeatTap(Map<String, dynamic> seat) async {
     final userId = UserSession.getUserId();
     if (userId == null) return;
