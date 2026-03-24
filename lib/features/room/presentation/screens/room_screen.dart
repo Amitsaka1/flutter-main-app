@@ -242,6 +242,8 @@ class _RoomScreenState extends State<RoomScreen>
         "roomId": widget.roomId,
       });
 
+      await _livekit.disconnect();
+
       // 🔥 LiveKit reconnect
       await _livekit.connect(
         userId: userId,
