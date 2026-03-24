@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/session/user_session.dart';
 import '../data/room_api.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/socket/global_socket_manager.dart'; // 🔥 ADD THIS
 
 class RoomListScreen extends StatefulWidget {
   const RoomListScreen({super.key});
@@ -21,6 +22,23 @@ class _RoomListScreenState
   void initState() {
     super.initState();
     _loadRooms();
+    _listenRoomUpdates(); // 🔥 ADD THIS
+  }
+
+  // 🔥 NEW FUNCTION (IMPORTANT)
+  void _listenRoomUpdates() {
+    GlobalSocketManager.instance.messages.listen((event) {
+
+      if (event["type"] == "ROOM_REMOVED") {
+        final roomId = event["roomId"];
+
+        if (!mounted) return;
+
+        setState(() {
+          _rooms.removeWhere((room) => room["id"] == roomId);
+        });
+      }
+    });
   }
 
   Future<void> _loadRooms() async {
@@ -121,7 +139,7 @@ class _RoomListScreenState
                 ),
               ),
             ],
-          ),
+          ],
           actions: [
             TextButton(
               onPressed: () =>
@@ -138,7 +156,6 @@ class _RoomListScreenState
 
                 try {
 
-                  // 🔥 Create room
                   final roomId = await RoomApi.createRoom(
                     userId: userId,
                     name: nameController.text.trim(),
@@ -146,7 +163,6 @@ class _RoomListScreenState
                         descController.text.trim(),
                   );
 
-                  // 🔥 Activate room
                   await RoomApi.activateRoom(
                     userId: userId,
                     roomId: roomId,
@@ -156,7 +172,6 @@ class _RoomListScreenState
 
                   Navigator.pop(context);
 
-                  // 🔥 Host direct room enter
                   context.push(
                     "/room",
                     extra: {
@@ -233,4 +248,4 @@ class _RoomListScreenState
                 ),
     );
   }
-}
+      }
