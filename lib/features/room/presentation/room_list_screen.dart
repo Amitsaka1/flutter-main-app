@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../core/session/user_session.dart';
 import '../data/room_api.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/socket/global_socket_manager.dart'; // 🔥 ADD THIS
+import '../../../core/socket/global_socket_manager.dart';
+import 'dart:async';
 
 class RoomListScreen extends StatefulWidget {
   const RoomListScreen({super.key});
@@ -12,22 +13,25 @@ class RoomListScreen extends StatefulWidget {
       _RoomListScreenState();
 }
 
-class _RoomListScreenState
-    extends State<RoomListScreen> {
+class _RoomListScreenState extends State<RoomListScreen> {
 
   bool _loading = true;
   List<dynamic> _rooms = [];
+
+  StreamSubscription? _socketSub; // 🔥 FIX
 
   @override
   void initState() {
     super.initState();
     _loadRooms();
-    _listenRoomUpdates(); // 🔥 ADD THIS
+    _listenRoomUpdates();
   }
 
-  // 🔥 NEW FUNCTION (IMPORTANT)
+  // =========================
+  // 🔥 SOCKET LISTENER (SAFE)
+  // =========================
   void _listenRoomUpdates() {
-    GlobalSocketManager.instance.messages.listen((event) {
+    _socketSub = GlobalSocketManager.instance.messages.listen((event) {
 
       if (event["type"] == "ROOM_REMOVED") {
         final roomId = event["roomId"];
@@ -41,9 +45,18 @@ class _RoomListScreenState
     });
   }
 
+  // =========================
+  // 🔥 LOAD MY ROOMS
+  // =========================
   Future<void> _loadRooms() async {
     try {
-      final rooms = await RoomApi.getRooms();
+
+      final userId = UserSession.getUserId();
+
+      final rooms = await RoomApi.getRooms(
+        userId: userId,
+        type: "MY",
+      );
 
       if (!mounted) return;
 
@@ -58,33 +71,30 @@ class _RoomListScreenState
     }
   }
 
-  Future<void> _joinRoom(String roomId) async {
+  // =========================
+  // 🔥 ENTER ROOM (FINAL FIX)
+  // =========================
+  Future<void> _enterRoom(Map<String, dynamic> room) async {
 
     final userId = UserSession.getUserId();
+    if (userId == null) return;
 
-    if (userId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("User not logged in"),
-        ),
-      );
-      return;
-    }
+    final roomId = room["id"];
 
     try {
 
-      await RoomApi.joinRoom(
-        userId: userId,
-        roomId: roomId,
-      );
+      // 🔥 अगर inactive है → activate (auto join backend)
+      if (room["status"] == "INACTIVE") {
+        await RoomApi.activateRoom(
+          userId: userId,
+          roomId: roomId,
+        );
+      }
+
+      // ❌ JOIN REMOVED (important)
+      // अब backend खुद join कर रहा है
 
       if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Joined room successfully"),
-        ),
-      );
 
       context.push(
         "/room",
@@ -107,6 +117,9 @@ class _RoomListScreenState
     }
   }
 
+  // =========================
+  // 🔥 CREATE ROOM
+  // =========================
   void _openCreateRoomDialog() {
 
     final TextEditingController nameController =
@@ -119,39 +132,34 @@ class _RoomListScreenState
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text("Create Room"),
+          title: const Text("Start Room"),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameController,
-                decoration:
-                    const InputDecoration(
+                decoration: const InputDecoration(
                   hintText: "Room name",
                 ),
               ),
               const SizedBox(height: 10),
               TextField(
                 controller: descController,
-                decoration:
-                    const InputDecoration(
+                decoration: const InputDecoration(
                   hintText: "Description (optional)",
                 ),
               ),
             ],
-          ],
+          ),
           actions: [
             TextButton(
-              onPressed: () =>
-                  Navigator.pop(context),
+              onPressed: () => Navigator.pop(context),
               child: const Text("Cancel"),
             ),
             ElevatedButton(
               onPressed: () async {
 
-                final userId =
-                    UserSession.getUserId();
-
+                final userId = UserSession.getUserId();
                 if (userId == null) return;
 
                 try {
@@ -159,10 +167,10 @@ class _RoomListScreenState
                   final roomId = await RoomApi.createRoom(
                     userId: userId,
                     name: nameController.text.trim(),
-                    description:
-                        descController.text.trim(),
+                    description: descController.text.trim(),
                   );
 
+                  // 🔥 activate = auto join
                   await RoomApi.activateRoom(
                     userId: userId,
                     roomId: roomId,
@@ -187,14 +195,13 @@ class _RoomListScreenState
                       .showSnackBar(
                     SnackBar(
                       content: Text(
-                        e.toString().replaceAll(
-                            "Exception: ", ""),
+                        e.toString().replaceAll("Exception: ", ""),
                       ),
                     ),
                   );
                 }
               },
-              child: const Text("Create"),
+              child: const Text("Start"),
             ),
           ],
         );
@@ -202,12 +209,24 @@ class _RoomListScreenState
     );
   }
 
+  // =========================
+  // 🔥 CLEANUP (IMPORTANT)
+  // =========================
+  @override
+  void dispose() {
+    _socketSub?.cancel(); // 🔥 FIX memory leak
+    super.dispose();
+  }
+
+  // =========================
+  // 🔥 UI
+  // =========================
   @override
   Widget build(BuildContext context) {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Rooms"),
+        title: const Text("My Room"),
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
@@ -216,13 +235,9 @@ class _RoomListScreenState
         ],
       ),
       body: _loading
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
+          ? const Center(child: CircularProgressIndicator())
           : _rooms.isEmpty
-              ? const Center(
-                  child: Text("No active rooms"),
-                )
+              ? const Center(child: Text("No room found"))
               : RefreshIndicator(
                   onRefresh: _loadRooms,
                   child: ListView.builder(
@@ -231,21 +246,26 @@ class _RoomListScreenState
 
                       final room = _rooms[index];
 
+                      final isInactive =
+                          room["status"] == "INACTIVE";
+
                       return ListTile(
                         title: Text(room["name"] ?? ""),
                         subtitle: Text(
-                          "Members: ${room["currentMembers"] ?? 0}",
+                          isInactive
+                              ? "Inactive • Tap to Start"
+                              : "Live • Members: ${room["currentMembers"] ?? 0}",
                         ),
-                        trailing: const Icon(
-                          Icons.arrow_forward_ios,
-                          size: 16,
+                        trailing: Icon(
+                          isInactive
+                              ? Icons.play_arrow
+                              : Icons.mic,
                         ),
-                        onTap: () =>
-                            _joinRoom(room["id"]),
+                        onTap: () => _enterRoom(room),
                       );
                     },
                   ),
                 ),
     );
   }
-      }
+}
