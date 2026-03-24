@@ -378,6 +378,7 @@ class _RoomScreenState extends State<RoomScreen>
 
   @override
   void dispose() {
+  WidgetsBinding.instance.removeObserver(this);
     _livekit.disconnect(); // 🔥 safety
     chatController.dispose();
     super.dispose();
