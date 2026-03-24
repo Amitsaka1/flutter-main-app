@@ -47,6 +47,7 @@ class _RoomScreenState extends State<RoomScreen>
   @override
   void initState() {
     super.initState();
+  WidgetsBinding.instance.addObserver(this);
     _initRoom();
   }
 
