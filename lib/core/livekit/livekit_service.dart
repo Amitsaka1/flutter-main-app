@@ -32,9 +32,14 @@ class LiveKitService {
 
       final token = data["token"];
 
-      final room = Room();
+      // 🔥 prevent duplicate reconnect
+      if (_room != null && _room!.connectionState == ConnectionState.connected) {
+        print("⚠️ Already connected, skipping reconnect");
+        return;
+      }
 
-      /// 🔥 ULTRA QUALITY CONNECT
+      final room = _room ?? Room();
+
       await room.connect(
         "wss://acceptable-marleen-amitsaka12345-ddc0c198.koyeb.app",
         token,
@@ -43,7 +48,7 @@ class LiveKitService {
           dynacast: true,
           defaultAudioPublishOptions: AudioPublishOptions(
             name: 'microphone',
-            bitrate: 96000, // 🔥 ULTRA bitrate (high clarity)
+            bitrate: 96000,
           ),
         ),
       );
