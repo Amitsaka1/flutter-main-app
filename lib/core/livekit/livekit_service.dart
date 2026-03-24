@@ -1,6 +1,7 @@
 import 'package:livekit_client/livekit_client.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 class LiveKitService {
   Room? _room;
@@ -8,7 +9,28 @@ class LiveKitService {
   Room? get room => _room;
 
   /// =========================
-  /// 🔥 CONNECT (ULTRA PRO AUDIO)
+  /// 🔥 AUTO BITRATE SYSTEM
+  /// =========================
+  Future<int> _getAdaptiveBitrate() async {
+    final connectivity = await Connectivity().checkConnectivity();
+
+    // 🔥 BEST NETWORK (WiFi / Ethernet)
+    if (connectivity == ConnectivityResult.wifi ||
+        connectivity == ConnectivityResult.ethernet) {
+      return 96000;
+    }
+
+    // 🔥 NORMAL (Mobile Data)
+    if (connectivity == ConnectivityResult.mobile) {
+      return 64000;
+    }
+
+    // 🔥 LOW / UNKNOWN
+    return 32000;
+  }
+
+  /// =========================
+  /// 🔥 CONNECT (ULTRA + ADAPTIVE)
   /// =========================
   Future<void> connect({
     required String userId,
@@ -33,22 +55,27 @@ class LiveKitService {
       final token = data["token"];
 
       // 🔥 prevent duplicate reconnect
-      if (_room != null && _room!.connectionState == ConnectionState.connected) {
+      if (_room != null &&
+          _room!.connectionState == ConnectionState.connected) {
         print("⚠️ Already connected, skipping reconnect");
         return;
       }
+
+      // 🔥 AUTO BITRATE
+      final bitrate = await _getAdaptiveBitrate();
+      print("🎯 Using bitrate: $bitrate");
 
       final room = _room ?? Room();
 
       await room.connect(
         "wss://acceptable-marleen-amitsaka12345-ddc0c198.koyeb.app",
         token,
-        roomOptions: const RoomOptions(
+        roomOptions: RoomOptions(
           adaptiveStream: true,
           dynacast: true,
           defaultAudioPublishOptions: AudioPublishOptions(
             name: 'microphone',
-            bitrate: 96000,
+            bitrate: bitrate, // 🔥 dynamic bitrate
           ),
         ),
       );
@@ -71,13 +98,13 @@ class LiveKitService {
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
-          typingNoiseDetection: true, // 🔥 extra noise killer
+          typingNoiseDetection: true,
         ),
       );
 
       _room = room;
 
-      print("✅ LiveKit Connected (ULTRA PRO AUDIO)");
+      print("✅ LiveKit Connected (ULTRA ADAPTIVE AUDIO)");
 
     } catch (e) {
       print("❌ LiveKit Connect Error: $e");
@@ -86,7 +113,7 @@ class LiveKitService {
   }
 
   /// =========================
-  /// 🔥 MIC CONTROL (ULTRA)
+  /// 🔥 MIC CONTROL
   /// =========================
   Future<void> enableMic() async {
     await _room?.localParticipant?.setMicrophoneEnabled(
