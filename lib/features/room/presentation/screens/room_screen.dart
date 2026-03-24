@@ -205,6 +205,48 @@ class _RoomScreenState extends State<RoomScreen>
   }
 
   /// =========================
+  /// 🔥 AUTO RECONNECT
+  /// =========================
+  Future<void> _handleReconnect() async {
+
+    if (_isReconnecting || !_wasInRoom) return;
+
+    _isReconnecting = true;
+
+    try {
+
+      final userId = UserSession.getUserId();
+      if (userId == null) return;
+
+      // 🔥 backend rejoin (safe)
+      await RoomApi.joinRoom(
+        userId: userId,
+        roomId: widget.roomId,
+      );
+
+      // 🔥 socket rejoin
+      GlobalSocketManager.instance.joinRoom(widget.roomId);
+
+      // 🔥 force seat refresh
+      GlobalSocketManager.instance.send({
+        "type": "GET_SEAT_MAP",
+        "roomId": widget.roomId,
+      });
+
+      // 🔥 LiveKit reconnect
+      await _livekit.connect(
+        userId: userId,
+        roomId: widget.roomId,
+      );
+
+    } catch (e) {
+      AppDebug.log("Reconnect failed: $e");
+    }
+
+    _isReconnecting = false;
+  }
+
+  /// =========================
   /// 🔥 LEAVE ROOM
   /// =========================
   Future<void> _leaveRoom() async {
