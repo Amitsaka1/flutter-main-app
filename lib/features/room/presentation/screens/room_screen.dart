@@ -20,7 +20,8 @@ class RoomScreen extends StatefulWidget {
   State<RoomScreen> createState() => _RoomScreenState();
 }
 
-class _RoomScreenState extends State<RoomScreen> {
+class _RoomScreenState extends State<RoomScreen>
+    with WidgetsBindingObserver {
   List<Map<String, dynamic>> seats = [];
 
   bool loading = true;
@@ -39,6 +40,9 @@ class _RoomScreenState extends State<RoomScreen> {
   final LiveKitService _livekit = LiveKitService();
 
   bool _livekitConnected = false;
+
+  bool _isReconnecting = false;
+  bool _wasInRoom = false;
 
   @override
   void initState() {
@@ -145,6 +149,8 @@ class _RoomScreenState extends State<RoomScreen> {
       userId: userId,
       roomId: widget.roomId,
     );
+
+    _wasInRoom = true;
 
     /// 🔥 SOCKET JOIN
     GlobalSocketManager.instance.joinRoom(widget.roomId);
