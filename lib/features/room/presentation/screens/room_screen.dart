@@ -5,6 +5,7 @@ import '../../../../core/socket/global_socket_manager.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../../../core/debug/app_debug.dart';
 import '../../../../core/livekit/livekit_service.dart';
+import 'package:livekit_client/livekit_client.dart';
 
 import '../widgets/room_ui.dart';
 
