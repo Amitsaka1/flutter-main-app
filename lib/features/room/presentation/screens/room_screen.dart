@@ -119,6 +119,14 @@ class _RoomScreenState extends State<RoomScreen>
             roomId: widget.roomId,
           );
 
+          // 🔥 LIVEKIT AUTO RECONNECT (ULTRA FIX)
+          _livekit.room?.events.listen((event) {
+            if (event is DisconnectedEvent) {
+              AppDebug.log("LiveKit disconnected → reconnecting...");
+              _handleReconnect();
+            }
+         });
+
           /// 🔥 mic control based on role
           if (amISpeaker) {
             await _livekit.enableMic();
