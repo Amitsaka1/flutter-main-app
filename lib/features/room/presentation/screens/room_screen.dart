@@ -250,6 +250,10 @@ class _RoomScreenState extends State<RoomScreen>
         roomId: widget.roomId,
       );
 
+      // 🔥 REAL-TIME BITRATE SWITCH
+      final bitrate = await _livekit._getAdaptiveBitrate();
+      await _livekit.switchBitrate(bitrate);
+   
     } catch (e) {
       AppDebug.log("Reconnect failed: $e");
     }
