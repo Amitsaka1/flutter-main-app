@@ -47,7 +47,7 @@ class _RoomScreenState extends State<RoomScreen>
   @override
   void initState() {
     super.initState();
-  WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addObserver(this);
     _initRoom();
   }
 
@@ -119,15 +119,15 @@ class _RoomScreenState extends State<RoomScreen>
             roomId: widget.roomId,
           );
 
-          // 🔥 LIVEKIT AUTO RECONNECT (ULTRA FIX)
+          // 🔥 AUTO RECONNECT
           _livekit.room?.events.listen((event) {
             if (event is DisconnectedEvent) {
               AppDebug.log("LiveKit disconnected → reconnecting...");
               _handleReconnect();
             }
-         });
+          });
 
-          /// 🔥 mic control based on role
+          /// 🔥 mic control
           if (amISpeaker) {
             await _livekit.enableMic();
           } else {
@@ -176,7 +176,7 @@ class _RoomScreenState extends State<RoomScreen>
 
       if (!leavingRoom) {
         leavingRoom = true;
-        _leaveRoom(); // बिना await
+        _leaveRoom();
       }
 
       if (mounted && Navigator.canPop(context)) {
@@ -227,16 +227,13 @@ class _RoomScreenState extends State<RoomScreen>
       final userId = UserSession.getUserId();
       if (userId == null) return;
 
-      // 🔥 backend rejoin (safe)
       await RoomApi.joinRoom(
         userId: userId,
         roomId: widget.roomId,
       );
 
-      // 🔥 socket rejoin
       GlobalSocketManager.instance.joinRoom(widget.roomId);
 
-      // 🔥 force seat refresh
       GlobalSocketManager.instance.send({
         "type": "GET_SEAT_MAP",
         "roomId": widget.roomId,
@@ -244,16 +241,11 @@ class _RoomScreenState extends State<RoomScreen>
 
       await _livekit.disconnect();
 
-      // 🔥 LiveKit reconnect
       await _livekit.connect(
         userId: userId,
         roomId: widget.roomId,
       );
 
-      // 🔥 REAL-TIME BITRATE SWITCH
-      final bitrate = await _livekit._getAdaptiveBitrate();
-      await _livekit.switchBitrate(bitrate);
-   
     } catch (e) {
       AppDebug.log("Reconnect failed: $e");
     }
@@ -279,17 +271,14 @@ class _RoomScreenState extends State<RoomScreen>
     if (userId == null) return;
 
     try {
-      /// 🔥 BACKEND LEAVE
       await RoomApi.leaveRoom(
         userId: userId,
         roomId: widget.roomId,
       );
     } catch (_) {}
 
-    /// 🔥 SOCKET LEAVE
     GlobalSocketManager.instance.leaveRoom(widget.roomId);
 
-    /// 🔥 LIVEKIT DISCONNECT
     _livekit.disconnect();
 
     await Future.delayed(const Duration(milliseconds: 100));
@@ -299,38 +288,36 @@ class _RoomScreenState extends State<RoomScreen>
   /// 🔥 BACK FIX
   /// =========================
   Future<bool> _onBackPressed() async {
-  if (leavingRoom) return false;
+    if (leavingRoom) return false;
 
-  final result = await showDialog(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        title: const Text("Leave Room"),
-        content: const Text("Keep room running or exit completely?"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, "KEEP"),
-            child: const Text("Keep"),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, "EXIT"),
-            child: const Text("Exit"),
-          ),
-        ],
-      );
-    },
-  );
+    final result = await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Leave Room"),
+          content: const Text("Keep room running or exit completely?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, "KEEP"),
+              child: const Text("Keep"),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, "EXIT"),
+              child: const Text("Exit"),
+            ),
+          ],
+        );
+      },
+    );
 
-  if (result == "KEEP") {
+    if (result == "KEEP") return false;
+
+    if (result == "EXIT") {
+      _leaveRoom();
+      return true;
+    }
+
     return false;
-  }
-
-  if (result == "EXIT") {
-    _leaveRoom(); // ❌ await हटाया
-    return true;  // pop instantly
-  }
-
-  return false;
   }
 
   /// =========================
@@ -393,8 +380,8 @@ class _RoomScreenState extends State<RoomScreen>
 
   @override
   void dispose() {
-  WidgetsBinding.instance.removeObserver(this);
-    _livekit.disconnect(); // 🔥 safety
+    WidgetsBinding.instance.removeObserver(this);
+    _livekit.disconnect();
     chatController.dispose();
     super.dispose();
   }
