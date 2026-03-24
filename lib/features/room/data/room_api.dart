@@ -8,13 +8,13 @@ class RoomApi {
     String? type, // "ALL" | "MY"
   }) async {
 
-    final queryParams = <String, dynamic>{
-      "type": type ?? "ALL",
+    final queryParams = <String, String>{
+      "type": (type ?? "ALL").toString(),
     };
 
     // 🔥 MY rooms के लिए userId जरूरी
     if (userId != null) {
-      queryParams["userId"] = userId;
+      queryParams["userId"] = userId.toString();
     }
 
     final response = await ApiClient.get(
