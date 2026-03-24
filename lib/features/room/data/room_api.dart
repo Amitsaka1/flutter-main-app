@@ -2,13 +2,24 @@ import '../../../core/network/api_client.dart';
 
 class RoomApi {
 
-  /// 🔹 Get Room List
-  static Future<List<dynamic>> getRooms() async {
+  /// 🔹 Get Room List (UPGRADED)
+  static Future<List<dynamic>> getRooms({
+    String? userId,
+    String? type, // "ALL" | "MY"
+  }) async {
+
+    final queryParams = <String, dynamic>{
+      "type": type ?? "ALL",
+    };
+
+    // 🔥 MY rooms के लिए userId जरूरी
+    if (userId != null) {
+      queryParams["userId"] = userId;
+    }
+
     final response = await ApiClient.get(
       "/room/list",
-      queryParams: {
-        "type": "ALL",
-      },
+      queryParams: queryParams,
     );
 
     if (response["success"] == true) {
