@@ -148,9 +148,27 @@ class _RoomScreenState extends State<RoomScreen>
 
       /// 🔥 MIC CONTROL ONLY
       if (amISpeaker) {
-        await _livekit.enableMic();
-      } else {
-        await _livekit.disableMic();
+      // 🔥 SPEAKER MODE (FULL QUALITY)
+      await _livekit.enableMic();
+
+    } else {
+      // 🔥 LISTENER MODE (ULTRA LIGHT)
+      await _livekit.disableMic();
+
+      // 🔥 IMPORTANT: speaker audio only सुनो (low load)
+      try {
+        final room = _livekit.room;
+
+        if (room != null) {
+          for (final participant in room.remoteParticipants.values) {
+            for (final pub in participant.audioTracks) {
+              pub.setSubscribed(true); // ensure audio receive
+            }
+          }
+        }
+      } catch (e) {
+        AppDebug.log("Listener optimize error: $e");
+      }
       }
 
       setState(() {
