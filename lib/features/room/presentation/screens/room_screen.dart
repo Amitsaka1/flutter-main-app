@@ -91,17 +91,23 @@ class _RoomScreenState extends State<RoomScreen>
     GlobalSocketManager.instance.joinRoom(widget.roomId);
 
     /// 🔥 LIVEKIT CONNECT (FIXED POSITION)
+    /// 🔥 LIVEKIT CONNECT (SAFE FIX)
     if (!_livekitConnected) {
       _livekitConnected = true;
 
       try {
+        final currentUserId = UserSession.getUserId();
+        if (currentUserId == null) return;
+
         await _livekit.connect(
           userId: currentUserId,
           roomId: widget.roomId,
         );
 
+        // 🔥 ALWAYS START AS LISTENER
         await _livekit.disableMic();
 
+         // 🔥 RECONNECT LISTENER
         _livekit.room?.events.listen((event) {
           if (event.runtimeType.toString() == "RoomDisconnectedEvent") {
             AppDebug.log("LiveKit disconnected → reconnecting...");
@@ -109,19 +115,10 @@ class _RoomScreenState extends State<RoomScreen>
           }
         });
 
-        // 🔥 IMPORTANT: always start with mic OFF
-        await _livekit.disableMic();
-
-        // 🔥 ONLY speaker gets mic
-         if (amISpeaker) {
-          await _livekit.enableMic();
-        }
-
       } catch (e) {
         AppDebug.log("LiveKit connect failed: $e");
       }
     }
-
     /// 🔥 SEAT MAP LISTENER
     GlobalSocketManager.instance.onSeatMapUpdate((data) async {
       if (!mounted) return;
