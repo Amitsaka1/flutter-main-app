@@ -49,9 +49,15 @@ class LiveKitService {
           dynacast: true,
           defaultAudioPublishOptions: AudioPublishOptions(
             name: 'microphone',
+            bitrate: bitrate,
+            dtx: true,
           ),
         ),
       );
+
+      // 🔥 ADD THIS
+      await room.setSpeakerphoneOn(true);
+      room.setAdaptiveStream(true);
 
       /// 🔥 AUDIO RECEIVE FIX
       room.events.listen((event) {
