@@ -8,7 +8,7 @@ class LiveKitService {
   Room? get room => _room;
 
   /// =========================
-  /// 🔥 CONNECT (STABLE VERSION)
+  /// 🔥 CONNECT (FINAL STABLE + ADAPTIVE)
   /// =========================
   Future<void> connect({
     required String userId,
@@ -41,6 +41,9 @@ class LiveKitService {
 
       final room = _room ?? Room();
 
+      /// 🔥 DEFAULT SAFE BITRATE (balanced for scale)
+      const int bitrate = 64000;
+
       await room.connect(
         "wss://acceptable-marleen-amitsaka12345-ddc0c198.koyeb.app",
         token,
@@ -49,14 +52,16 @@ class LiveKitService {
           dynacast: true,
           defaultAudioPublishOptions: AudioPublishOptions(
             name: 'microphone',
-            bitrate: bitrate,
-            dtx: true,
+            bitrate: 64000, // 🔥 fixed safe bitrate
+            dtx: true, // 🔥 silence bandwidth save
           ),
         ),
       );
 
-      // 🔥 ADD THIS
+      /// 🔥 SPEAKER OUTPUT
       await room.setSpeakerphoneOn(true);
+
+      /// 🔥 ADAPTIVE RECEIVE
       room.setAdaptiveStream(true);
 
       /// 🔥 AUDIO RECEIVE FIX
@@ -70,8 +75,8 @@ class LiveKitService {
         }
       });
 
-      /// 🔥 ENABLE MIC (SAFE)
-      await room.localParticipant?.setMicrophoneEnabled(true);
+      /// 🔥 DEFAULT: MIC OFF (listener safe)
+      await room.localParticipant?.setMicrophoneEnabled(false);
 
       _room = room;
 
@@ -84,10 +89,17 @@ class LiveKitService {
   }
 
   /// =========================
-  /// 🔥 MIC CONTROL
+  /// 🔥 MIC CONTROL (ROLE BASED)
   /// =========================
   Future<void> enableMic() async {
-    await _room?.localParticipant?.setMicrophoneEnabled(true);
+    await _room?.localParticipant?.setMicrophoneEnabled(
+      true,
+      captureOptions: const AudioCaptureOptions(
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      ),
+    );
   }
 
   Future<void> disableMic() async {
