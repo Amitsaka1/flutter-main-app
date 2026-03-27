@@ -100,6 +100,8 @@ class _RoomScreenState extends State<RoomScreen>
           roomId: widget.roomId,
         );
 
+        await _livekit.disableMic();
+
         _livekit.room?.events.listen((event) {
           if (event.runtimeType.toString() == "RoomDisconnectedEvent") {
             AppDebug.log("LiveKit disconnected → reconnecting...");
