@@ -96,7 +96,7 @@ class _RoomScreenState extends State<RoomScreen>
 
       try {
         await _livekit.connect(
-          userId: userId,
+          userId: currentUserId,
           roomId: widget.roomId,
         );
 
@@ -109,7 +109,13 @@ class _RoomScreenState extends State<RoomScreen>
           }
         });
 
-        
+        // 🔥 IMPORTANT: always start with mic OFF
+        await _livekit.disableMic();
+
+        // 🔥 ONLY speaker gets mic
+         if (amISpeaker) {
+          await _livekit.enableMic();
+        }
 
       } catch (e) {
         AppDebug.log("LiveKit connect failed: $e");
