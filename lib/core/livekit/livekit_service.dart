@@ -13,6 +13,7 @@ class LiveKitService {
   Future<void> connect({
     required String userId,
     required String roomId,
+    required String role,
   }) async {
     try {
       final res = await http.post(
@@ -21,6 +22,7 @@ class LiveKitService {
         body: jsonEncode({
           "userId": userId,
           "roomId": roomId,
+          "role": role,
         }),
       );
 
@@ -76,7 +78,11 @@ class LiveKitService {
       });
 
       /// 🔥 DEFAULT: MIC OFF (listener safe)
-      await room.localParticipant?.setMicrophoneEnabled(false);
+      if (role == "speaker") {
+        await room.localParticipant?.setMicrophoneEnabled(true);
+      } else {
+        await room.localParticipant?.setMicrophoneEnabled(false);
+      }
 
       _room = room;
 
