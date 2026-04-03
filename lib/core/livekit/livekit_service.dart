@@ -68,14 +68,32 @@ class LiveKitService {
 
       /// 🔥 AUDIO RECEIVE FIX
       room.events.listen((event) {
-        if (event is TrackSubscribedEvent) {
-          final track = event.track;
 
-          if (track is RemoteAudioTrack) {
-            track.start();
-          }
+      // 🎧 AUDIO RECEIVE FIX
+      if (event is TrackSubscribedEvent) {
+        final track = event.track;
+
+        if (track is RemoteAudioTrack) {
+          track.start();
         }
-      });
+      }
+
+      // 🔌 DISCONNECTED
+      if (event is RoomDisconnectedEvent) {
+        print("❌ Disconnected from room");
+      }
+
+      // 🔄 RECONNECTING
+      if (event is RoomReconnectingEvent) {
+        print("🔄 Reconnecting...");
+      }
+
+      // ✅ RECONNECTED
+      if (event is RoomReconnectedEvent) {
+        print("✅ Reconnected successfully");
+      }
+
+    });
 
       /// 🔥 DEFAULT: MIC OFF (listener safe)
       if (role == "speaker") {
