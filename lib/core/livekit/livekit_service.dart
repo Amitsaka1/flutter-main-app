@@ -1,6 +1,7 @@
 import 'package:livekit_client/livekit_client.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../socket/global_socket_manager.dart';
 
 class LiveKitService {
   Room? _room;
@@ -103,6 +104,9 @@ class LiveKitService {
       }
 
       _room = room;
+
+      // 🔥 WS ko batao user room join kar gaya
+      GlobalSocketManager.instance.joinRoom(roomId);
 
       print("✅ LiveKit Connected (FINAL STABLE)");
 
