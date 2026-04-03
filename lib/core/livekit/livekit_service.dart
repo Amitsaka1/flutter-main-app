@@ -137,8 +137,13 @@ class LiveKitService {
   /// =========================
   /// 🔥 DISCONNECT
   /// =========================
-  Future<void> disconnect() async {
-    await _room?.disconnect();
-    _room = null;
+  Future<void> disconnect({String? roomId}) async {
+
+  if (roomId != null) {
+    GlobalSocketManager.instance.leaveRoom(roomId);
+  }
+
+  await _room?.disconnect();
+  _room = null;
   }
 }
