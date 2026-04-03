@@ -28,6 +28,9 @@ class GlobalSocketManager with WidgetsBindingObserver {
   Stream<Map<String, dynamic>> get messages =>
       _messageController.stream;
 
+  Stream<Map<String, dynamic>> get seatStream =>
+    _seatMapController.stream;
+
   // ================= ROOM STREAMS =================
 
   final StreamController<Map<String, dynamic>>
