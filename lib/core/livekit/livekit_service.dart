@@ -41,7 +41,7 @@ class LiveKitService {
         return;
       }
 
-      final room = _room ?? Room();
+      final room = Room();
 
       /// 🔥 DEFAULT SAFE BITRATE (balanced for scale)
       const int bitrate = 64000;
