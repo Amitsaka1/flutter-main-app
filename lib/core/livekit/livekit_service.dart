@@ -9,7 +9,7 @@ class LiveKitService {
   Room? get room => _room;
 
   /// =========================
-  /// 🔥 CONNECT (FINAL STABLE + ADAPTIVE)
+  /// 🔥 CONNECT (FINAL STABLE)
   /// =========================
   Future<void> connect({
     required String userId,
@@ -44,59 +44,45 @@ class LiveKitService {
 
       final room = Room();
 
-      /// 🔥 DEFAULT SAFE BITRATE (balanced for scale)
-      const int bitrate = 64000;
-
+      /// 🔥 CONNECT
       await room.connect(
         "wss://acceptable-marleen-amitsaka12345-ddc0c198.koyeb.app",
         token,
         roomOptions: const RoomOptions(
           adaptiveStream: true,
           dynacast: true,
-          defaultAudioPublishOptions: AudioPublishOptions(
-            name: 'microphone',
-            bitrate: 64000, // 🔥 fixed safe bitrate
-            dtx: true, // 🔥 silence bandwidth save
-          ),
         ),
       );
 
-      /// 🔥 SPEAKER OUTPUT
-      await room.setSpeakerphoneOn(true);
-
-      /// 🔥 ADAPTIVE RECEIVE
-      room.setAdaptiveStream(true);
-
-      /// 🔥 AUDIO RECEIVE FIX
+      /// 🔥 AUDIO RECEIVE + CONNECTION EVENTS
       room.events.listen((event) {
 
-      // 🎧 AUDIO RECEIVE FIX
-      if (event is TrackSubscribedEvent) {
-        final track = event.track;
+        // 🎧 AUDIO RECEIVE FIX
+        if (event is TrackSubscribedEvent) {
+          final track = event.track;
 
-        if (track is RemoteAudioTrack) {
-          track.start();
+          if (track is RemoteAudioTrack) {
+            track.start();
+          }
         }
-      }
 
-      // 🔌 DISCONNECTED
-      if (event is RoomDisconnectedEvent) {
-        print("❌ Disconnected from room");
-      }
+        // 🔌 DISCONNECTED
+        if (event is RoomDisconnectedEvent) {
+          print("❌ Disconnected from room");
+        }
 
-      // 🔄 RECONNECTING
-      if (event is RoomReconnectingEvent) {
-        print("🔄 Reconnecting...");
-      }
+        // 🔄 RECONNECTING
+        if (event is RoomReconnectingEvent) {
+          print("🔄 Reconnecting...");
+        }
 
-      // ✅ RECONNECTED
-      if (event is RoomReconnectedEvent) {
-        print("✅ Reconnected successfully");
-      }
+        // ✅ RECONNECTED
+        if (event is RoomReconnectedEvent) {
+          print("✅ Reconnected successfully");
+        }
+      });
 
-    });
-
-      /// 🔥 DEFAULT: MIC OFF (listener safe)
+      /// 🔥 ROLE BASED MIC CONTROL
       if (role == "speaker") {
         await room.localParticipant?.setMicrophoneEnabled(true);
       } else {
@@ -105,7 +91,7 @@ class LiveKitService {
 
       _room = room;
 
-      // 🔥 WS ko batao user room join kar gaya
+      /// 🔥 WS SYNC
       GlobalSocketManager.instance.joinRoom(roomId);
 
       print("✅ LiveKit Connected (FINAL STABLE)");
@@ -117,17 +103,10 @@ class LiveKitService {
   }
 
   /// =========================
-  /// 🔥 MIC CONTROL (ROLE BASED)
+  /// 🔥 MIC CONTROL
   /// =========================
   Future<void> enableMic() async {
-    await _room?.localParticipant?.setMicrophoneEnabled(
-      true,
-      captureOptions: const AudioCaptureOptions(
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true,
-      ),
-    );
+    await _room?.localParticipant?.setMicrophoneEnabled(true);
   }
 
   Future<void> disableMic() async {
@@ -138,12 +117,11 @@ class LiveKitService {
   /// 🔥 DISCONNECT
   /// =========================
   Future<void> disconnect({String? roomId}) async {
+    if (roomId != null) {
+      GlobalSocketManager.instance.leaveRoom(roomId);
+    }
 
-  if (roomId != null) {
-    GlobalSocketManager.instance.leaveRoom(roomId);
-  }
-
-  await _room?.disconnect();
-  _room = null;
+    await _room?.disconnect();
+    _room = null;
   }
 }
