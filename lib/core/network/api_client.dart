@@ -101,13 +101,53 @@ class ApiClient {
     }
   }
 
+  // ================= MULTIPART (🔥 ADDED) =================
+
+  static Future<Map<String, dynamic>> multipart(
+    String endpoint,
+    File file, {
+    String fieldName = "file",
+  }) async {
+    final uri = Uri.parse("$baseUrl$endpoint");
+
+    try {
+      final request = http.MultipartRequest("POST", uri);
+
+      // 🔐 token
+      if (_token != null) {
+        request.headers["Authorization"] = "Bearer $_token";
+      }
+
+      // 📦 file attach
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          fieldName,
+          file.path,
+        ),
+      );
+
+      final streamedResponse =
+          await request.send().timeout(_timeout);
+
+      final response =
+          await http.Response.fromStream(streamedResponse);
+
+      return _handleResponse(response);
+
+    } on TimeoutException {
+      throw Exception("Upload timeout");
+    } on SocketException {
+      throw Exception("No internet connection");
+    }
+  }
+
   // ================= RESPONSE HANDLER =================
 
   static Map<String, dynamic> _handleResponse(
       http.Response response) {
 
     if (response.body.isEmpty) {
-    throw Exception("Empty server response");
+      throw Exception("Empty server response");
     }
 
     final decoded = jsonDecode(response.body);
@@ -134,46 +174,5 @@ class ApiClient {
       if (_token != null)
         "Authorization": "Bearer $_token",
     };
-  }
-}
-
-
-// ================= MULTIPART UPLOAD =================
-
-static Future<Map<String, dynamic>> multipart(
-  String endpoint,
-  File file, {
-  String fieldName = "file",
-}) async {
-  final uri = Uri.parse("$baseUrl$endpoint");
-
-  try {
-    final request = http.MultipartRequest("POST", uri);
-
-    // 🔐 token
-    if (_token != null) {
-      request.headers["Authorization"] = "Bearer $_token";
-    }
-
-    // 📦 file attach
-    request.files.add(
-      await http.MultipartFile.fromPath(
-        fieldName,
-        file.path,
-      ),
-    );
-
-    final streamedResponse =
-        await request.send().timeout(_timeout);
-
-    final response =
-        await http.Response.fromStream(streamedResponse);
-
-    return _handleResponse(response);
-
-  } on TimeoutException {
-    throw Exception("Upload timeout");
-  } on SocketException {
-    throw Exception("No internet connection");
   }
 }
