@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/socket/global_socket_manager.dart';
+import 'package:image_picker/image_picker.dart';
 import 'dart:async';
 
 class MyProfileScreen extends StatefulWidget {
@@ -112,6 +113,8 @@ void initState() {
                 Positioned(
                   bottom: 0,
                   right: 0,
+                child: GestureDetector(
+                  onTap: _pickImage,
                   child: Container(
                     padding: const EdgeInsets.all(6),
                     decoration: const BoxDecoration(
