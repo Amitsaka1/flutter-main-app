@@ -18,7 +18,7 @@ class LiveKitService {
   }) async {
     try {
       final res = await http.post(
-        Uri.parse("https://momo-1etm.onrender.com/livekit/token"),
+        Uri.parse("https://momo-qd13.onrender.com/livekit/token"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "userId": userId,
