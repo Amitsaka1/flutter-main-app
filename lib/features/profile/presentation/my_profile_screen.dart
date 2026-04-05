@@ -39,14 +39,16 @@ class _MyProfileScreenState extends State<MyProfileScreen>
     );
 
     if (response["success"] == true) {
-      final imageUrl = response["url"];
-
-      print("Uploaded URL: $imageUrl");
+      final imageUrl = response["avatarUrl"];
 
       // 🔥 UI update
       setState(() {
         profile!["avatarUrl"] = imageUrl;
       });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Profile updated ✅")),
+      );
     }
 
   } catch (e) {
