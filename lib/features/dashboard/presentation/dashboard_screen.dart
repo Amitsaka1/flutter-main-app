@@ -376,15 +376,31 @@ class _ProfileCard extends StatelessWidget {
                 ),
               ),
             Column(
-              mainAxisAlignment:
-                  MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
+
+                // 🔥 AVATAR (NEW ADD - SAFE)
+                CircleAvatar(
+                  radius: 28,
+                  backgroundImage: profile["avatarUrl"] != null
+                       ? NetworkImage(profile["avatarUrl"])
+                      : const AssetImage("assets/profile_placeholder.png")
+                           as ImageProvider,
+                ),
+
+                  const SizedBox(height: 10),
+
+                // 🔥 OLD UI (UNCHANGED)
                 Text(profile["name"] ?? "",
                     style: const TextStyle(
                         fontWeight: FontWeight.bold)),
-                const SizedBox(height: 5),
+
+                 const SizedBox(height: 5),
+
                 Text("${profile["gender"] ?? ""} • ${profile["age"] ?? ""}"),
+
                 Text(profile["roleType"] ?? ""),
+
                 Text(profile["havePlace"] == true
                     ? "Has Place"
                     : "No Place"),
