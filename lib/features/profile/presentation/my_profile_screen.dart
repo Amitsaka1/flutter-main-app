@@ -4,6 +4,7 @@ import '../../../core/network/api_client.dart';
 import '../../../core/socket/global_socket_manager.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:async';
+import 'dart:io';
 
 class MyProfileScreen extends StatefulWidget {
   const MyProfileScreen({super.key});
@@ -22,13 +23,35 @@ class _MyProfileScreenState extends State<MyProfileScreen>
   final ImagePicker _picker = ImagePicker();
 
   Future<void> _pickImage() async {
-    final XFile? image = await _picker.pickImage(
-      source: ImageSource.gallery,
+  final XFile? image = await _picker.pickImage(
+    source: ImageSource.gallery,
+  );
+
+  if (image == null) return;
+
+  try {
+    final file = File(image.path);
+
+    final response = await ApiClient.multipart(
+      "/profile/upload-avatar",
+      file,
+      fieldName: "file",
     );
 
-    if (image == null) return;
+    if (response["success"] == true) {
+      final imageUrl = response["url"];
 
-    print("Selected image: ${image.path}");
+      print("Uploaded URL: $imageUrl");
+
+      // 🔥 UI update
+      setState(() {
+        profile!["avatarUrl"] = imageUrl;
+      });
+    }
+
+  } catch (e) {
+    print("Upload error: $e");
+  }
   }
   
   @override
