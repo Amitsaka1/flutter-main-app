@@ -141,6 +141,38 @@ class ApiClient {
     }
   }
 
+  // upload avatar
+
+  static Future<String> uploadProfileImage(String filePath) async {
+  final uri = Uri.parse("$baseUrl/profile/upload-avatar");
+
+  final request = http.MultipartRequest("POST", uri);
+
+  final token = await getToken();
+
+  if (token != null) {
+    request.headers["Authorization"] = "Bearer $token";
+  }
+
+  request.files.add(
+    await http.MultipartFile.fromPath(
+      "file",
+      filePath,
+    ),
+  );
+
+  final response = await request.send();
+
+  final resBody = await response.stream.bytesToString();
+  final decoded = jsonDecode(resBody);
+
+  if (response.statusCode >= 200 && response.statusCode < 300) {
+    return decoded["avatarUrl"];
+  } else {
+    throw Exception(decoded["message"] ?? "Upload failed");
+  }
+  }
+
   // ================= RESPONSE HANDLER =================
 
   static Map<String, dynamic> _handleResponse(
