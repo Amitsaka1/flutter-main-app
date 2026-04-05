@@ -366,6 +366,8 @@ class _ProfileCard extends StatelessWidget {
         ),
         child: Stack(
           children: [
+
+            // 🔥 ONLINE DOT
             if (online)
               const Positioned(
                 top: 0,
@@ -375,35 +377,44 @@ class _ProfileCard extends StatelessWidget {
                   backgroundColor: Colors.green,
                 ),
               ),
+
+            // 🔥 CONTENT
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
 
-                // 🔥 AVATAR (NEW ADD - SAFE)
+                // 🔥 AVATAR
                 CircleAvatar(
                   radius: 28,
-                  backgroundImage: profile["avatarUrl"] != null
-                       ? NetworkImage(profile["avatarUrl"])
+                  backgroundImage: profile["avatarUrl"] != null &&
+                          profile["avatarUrl"].toString().isNotEmpty
+                      ? NetworkImage(profile["avatarUrl"])
                       : const AssetImage("assets/profile_placeholder.png")
-                           as ImageProvider,
+                          as ImageProvider,
                 ),
 
-                  const SizedBox(height: 10),
+                const SizedBox(height: 10),
 
-                // 🔥 OLD UI (UNCHANGED)
-                Text(profile["name"] ?? "",
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold)),
+                Text(
+                  profile["name"] ?? "",
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
 
-                 const SizedBox(height: 5),
+                const SizedBox(height: 5),
 
-                Text("${profile["gender"] ?? ""} • ${profile["age"] ?? ""}"),
+                Text(
+                  "${profile["gender"] ?? ""} • ${profile["age"] ?? ""}",
+                ),
 
                 Text(profile["roleType"] ?? ""),
 
-                Text(profile["havePlace"] == true
-                    ? "Has Place"
-                    : "No Place"),
+                Text(
+                  profile["havePlace"] == true
+                      ? "Has Place"
+                      : "No Place",
+                ),
               ],
             ),
           ],
