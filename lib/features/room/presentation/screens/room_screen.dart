@@ -102,6 +102,7 @@ class _RoomScreenState extends State<RoomScreen>
         await _livekit.connect(
           userId: currentUserId,
           roomId: widget.roomId,
+          role: "listener",
         );
 
         // 🔥 ALWAYS START AS LISTENER
@@ -231,6 +232,7 @@ class _RoomScreenState extends State<RoomScreen>
       await _livekit.connect(
         userId: userId,
         roomId: widget.roomId,
+        role: "listener",
       );
 
     } catch (e) {
