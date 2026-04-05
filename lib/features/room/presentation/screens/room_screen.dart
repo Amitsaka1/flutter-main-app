@@ -151,7 +151,8 @@ class _RoomScreenState extends State<RoomScreen>
 
     } else {
       // 🔥 LISTENER MODE (ULTRA LIGHT)
-      await _livekit.disableMic(); 
+      await _livekit.disableMic();
+    }
 
       setState(() {
         seats = updatedSeats;
