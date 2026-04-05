@@ -6,7 +6,7 @@ import 'package:app_project/core/network/api_client.dart';
 class WebSocketService {
   final String userId;
 
-  final String wsUrl = "wss://momo-1etm.onrender.com/ws";
+  final String wsUrl = "wss://momo-qd13.onrender.com/ws";
 
   WebSocketChannel? _channel;
 
