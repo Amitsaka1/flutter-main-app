@@ -18,6 +18,19 @@ class _MyProfileScreenState extends State<MyProfileScreen>
   Map<String, dynamic>? profile;
   bool loading = true;
   StreamSubscription? _socketSub;
+
+  final ImagePicker _picker = ImagePicker();
+
+  Future<void> _pickImage() async {
+    final XFile? image = await _picker.pickImage(
+      source: ImageSource.gallery,
+    );
+
+    if (image == null) return;
+
+    print("Selected image: ${image.path}");
+  }
+  
   @override
   bool get wantKeepAlive => true;
 
