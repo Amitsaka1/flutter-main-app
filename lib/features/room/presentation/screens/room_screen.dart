@@ -161,12 +161,6 @@ class _RoomScreenState extends State<RoomScreen>
       });
     });
 
-    /// 🔥 FORCE SEAT MAP
-    GlobalSocketManager.instance.send({
-      "type": "GET_SEAT_MAP",
-      "roomId": widget.roomId,
-    });
-
     /// 🔥 ROOM CLOSED
     GlobalSocketManager.instance.onRoomClosed(() {
       if (!mounted) return;
