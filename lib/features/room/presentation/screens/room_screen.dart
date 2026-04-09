@@ -59,6 +59,15 @@ class _RoomScreenState extends State<RoomScreen>
     }
   }
 
+  Future<void> _waitForSocket() async {
+    int retry = 0;
+
+    while (!GlobalSocketManager.instance.isConnected && retry < 10) {
+      await Future.delayed(const Duration(milliseconds: 300));
+      retry++;
+    }
+  }
+
   Future<void> _initRoom() async {
     if (_roomJoined) return;
     _roomJoined = true;
@@ -79,8 +88,8 @@ class _RoomScreenState extends State<RoomScreen>
     final userId = UserSession.getUserId();
     if (userId == null) return;
 
-    /// 🔥 JOIN ROOM (Backend)
-    await RoomApi.joinRoom(
+    /// 🔥 JOIN ROOM (NO WAIT → FAST OPEN)
+    RoomApi.joinRoom(
       userId: userId,
       roomId: widget.roomId,
     );
@@ -90,8 +99,15 @@ class _RoomScreenState extends State<RoomScreen>
     /// 🔥 SOCKET JOIN
     GlobalSocketManager.instance.joinRoom(widget.roomId);
 
-    /// 🔥 LIVEKIT CONNECT (FIXED POSITION)
-    /// 🔥 LIVEKIT CONNECT (SAFE FIX)
+    /// 🔥 WAIT SOCKET + FETCH SEAT MAP (MAIN FIX)
+    await _waitForSocket();
+
+    GlobalSocketManager.instance.send({
+      "type": "GET_SEAT_MAP",
+      "roomId": widget.roomId,
+    });
+
+    /// 🔥 LIVEKIT CONNECT
     if (!_livekitConnected) {
       _livekitConnected = true;
 
@@ -105,10 +121,8 @@ class _RoomScreenState extends State<RoomScreen>
           role: "listener",
         );
 
-        // 🔥 ALWAYS START AS LISTENER
         await _livekit.disableMic();
 
-         // 🔥 RECONNECT LISTENER
         _livekit.room?.events.listen((event) {
           if (event.runtimeType.toString() == "RoomDisconnectedEvent") {
             AppDebug.log("LiveKit disconnected → reconnecting...");
@@ -120,6 +134,7 @@ class _RoomScreenState extends State<RoomScreen>
         AppDebug.log("LiveKit connect failed: $e");
       }
     }
+
     /// 🔥 SEAT MAP LISTENER
     GlobalSocketManager.instance.onSeatMapUpdate((data) async {
       if (!mounted) return;
@@ -144,15 +159,11 @@ class _RoomScreenState extends State<RoomScreen>
         }
       }
 
-      /// 🔥 MIC CONTROL ONLY
       if (amISpeaker) {
-      // 🔥 SPEAKER MODE (FULL QUALITY)
-      await _livekit.enableMic();
-
-    } else {
-      // 🔥 LISTENER MODE (ULTRA LIGHT)
-      await _livekit.disableMic();
-    }
+        await _livekit.enableMic();
+      } else {
+        await _livekit.disableMic();
+      }
 
       setState(() {
         seats = updatedSeats;
@@ -210,12 +221,14 @@ class _RoomScreenState extends State<RoomScreen>
       final userId = UserSession.getUserId();
       if (userId == null) return;
 
-      await RoomApi.joinRoom(
+      RoomApi.joinRoom(
         userId: userId,
         roomId: widget.roomId,
       );
 
       GlobalSocketManager.instance.joinRoom(widget.roomId);
+
+      await _waitForSocket();
 
       GlobalSocketManager.instance.send({
         "type": "GET_SEAT_MAP",
