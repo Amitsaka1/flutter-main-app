@@ -59,15 +59,6 @@ class _RoomScreenState extends State<RoomScreen>
     }
   }
 
-  Future<void> _waitForSocket() async {
-    int retry = 0;
-
-    while (!GlobalSocketManager.instance.isConnected && retry < 10) {
-      await Future.delayed(const Duration(milliseconds: 300));
-      retry++;
-    }
-  }
-
   Future<void> _initRoom() async {
     if (_roomJoined) return;
     _roomJoined = true;
