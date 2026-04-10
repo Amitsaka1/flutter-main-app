@@ -176,7 +176,16 @@ class _RoomScreenState extends State<RoomScreen>
         Navigator.pop(context);
       }
     });
-  }
+
+    // 🔥 FALLBACK FIX (LOADING NEVER STUCK)
+    Future.delayed(const Duration(seconds: 2), () {
+      if (!mounted) return;
+
+      if (loading) {
+        setState(() {
+          loading = false;
+        });
+      }
 
   void sendMessage() {
     final text = chatController.text.trim();
