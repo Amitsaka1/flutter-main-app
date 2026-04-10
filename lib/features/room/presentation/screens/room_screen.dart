@@ -187,6 +187,7 @@ class _RoomScreenState extends State<RoomScreen>
         });
       }
     });
+  }
 
   void sendMessage() {
     final text = chatController.text.trim();
