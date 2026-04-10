@@ -79,6 +79,43 @@ class _RoomScreenState extends State<RoomScreen>
     final userId = UserSession.getUserId();
     if (userId == null) return;
 
+    /// 🔥 SEAT MAP LISTENER
+    GlobalSocketManager.instance.onSeatMapUpdate((data) async {
+      if (!mounted) return;
+
+      final seatData = data["seats"];
+      if (seatData == null || seatData is! List) return;
+
+      final updatedSeats = List<Map<String, dynamic>>.from(seatData);
+
+      final currentUserId = UserSession.getUserId();
+
+      bool hostFlag = false;
+      bool amISpeaker = false;
+
+      for (final seat in updatedSeats) {
+        if (seat["userId"] == currentUserId) {
+          if (seat["role"] == "HOST") hostFlag = true;
+          if (seat["role"] == "HOST" ||
+              seat["role"] == "SPEAKER") {
+            amISpeaker = true;
+          }
+        }
+      }
+
+      if (amISpeaker) {
+        await _livekit.enableMic();
+      } else {
+        await _livekit.disableMic();
+      }
+
+      setState(() {
+        seats = updatedSeats;
+        isHost = hostFlag;
+        loading = false;
+      });
+    });
+
     /// 🔥 JOIN ROOM (NO WAIT → FAST OPEN)
     RoomApi.joinRoom(
       userId: userId,
@@ -125,46 +162,6 @@ class _RoomScreenState extends State<RoomScreen>
         AppDebug.log("LiveKit connect failed: $e");
       }
     }
-
-    final userId = UserSession.getUserId();
-    if (userId == null) return;
-
-    /// 🔥 SEAT MAP LISTENER
-    GlobalSocketManager.instance.onSeatMapUpdate((data) async {
-      if (!mounted) return;
-
-      final seatData = data["seats"];
-      if (seatData == null || seatData is! List) return;
-
-      final updatedSeats = List<Map<String, dynamic>>.from(seatData);
-
-      final currentUserId = UserSession.getUserId();
-
-      bool hostFlag = false;
-      bool amISpeaker = false;
-
-      for (final seat in updatedSeats) {
-        if (seat["userId"] == currentUserId) {
-          if (seat["role"] == "HOST") hostFlag = true;
-          if (seat["role"] == "HOST" ||
-              seat["role"] == "SPEAKER") {
-            amISpeaker = true;
-          }
-        }
-      }
-
-      if (amISpeaker) {
-        await _livekit.enableMic();
-      } else {
-        await _livekit.disableMic();
-      }
-
-      setState(() {
-        seats = updatedSeats;
-        isHost = hostFlag;
-        loading = false;
-      });
-    });
 
     /// 🔥 ROOM CLOSED
     GlobalSocketManager.instance.onRoomClosed(() {
