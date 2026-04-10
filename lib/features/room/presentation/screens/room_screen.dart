@@ -126,6 +126,9 @@ class _RoomScreenState extends State<RoomScreen>
       }
     }
 
+    final userId = UserSession.getUserId();
+    if (userId == null) return;
+
     /// 🔥 SEAT MAP LISTENER
     GlobalSocketManager.instance.onSeatMapUpdate((data) async {
       if (!mounted) return;
@@ -186,6 +189,7 @@ class _RoomScreenState extends State<RoomScreen>
           loading = false;
         });
       }
+    });
 
   void sendMessage() {
     final text = chatController.text.trim();
