@@ -91,13 +91,13 @@ class _RoomScreenState extends State<RoomScreen>
     GlobalSocketManager.instance.joinRoom(widget.roomId);
 
     /// 🔥 WAIT SOCKET + FETCH SEAT MAP (MAIN FIX)
-    await _waitForSocket();
-
-    GlobalSocketManager.instance.send({
-      "type": "GET_SEAT_MAP",
-      "roomId": widget.roomId,
+    // 🔥 FIX (NO WAIT - DIRECT + SAFE)
+    Future.delayed(const Duration(milliseconds: 300), () {
+      GlobalSocketManager.instance.send({
+        "type": "GET_SEAT_MAP",
+        "roomId": widget.roomId,
+      });
     });
-
     /// 🔥 LIVEKIT CONNECT
     if (!_livekitConnected) {
       _livekitConnected = true;
