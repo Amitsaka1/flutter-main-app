@@ -79,7 +79,7 @@ class _RoomScreenState extends State<RoomScreen>
     final userId = UserSession.getUserId();
     if (userId == null) return;
 
-    /// 🔥 SEAT MAP LISTENER
+    /// 🔥 SEAT MAP LISTENER (FIRST - IMPORTANT)
     GlobalSocketManager.instance.onSeatMapUpdate((data) async {
       if (!mounted) return;
 
@@ -116,7 +116,7 @@ class _RoomScreenState extends State<RoomScreen>
       });
     });
 
-    /// 🔥 JOIN ROOM (NO WAIT → FAST OPEN)
+    /// 🔥 JOIN ROOM
     RoomApi.joinRoom(
       userId: userId,
       roomId: widget.roomId,
@@ -127,14 +127,14 @@ class _RoomScreenState extends State<RoomScreen>
     /// 🔥 SOCKET JOIN
     GlobalSocketManager.instance.joinRoom(widget.roomId);
 
-    /// 🔥 WAIT SOCKET + FETCH SEAT MAP (MAIN FIX)
-    // 🔥 FIX (NO WAIT - DIRECT + SAFE)
+    /// 🔥 SEAT MAP FETCH (SAFE DELAY)
     Future.delayed(const Duration(milliseconds: 300), () {
       GlobalSocketManager.instance.send({
         "type": "GET_SEAT_MAP",
         "roomId": widget.roomId,
       });
     });
+
     /// 🔥 LIVEKIT CONNECT
     if (!_livekitConnected) {
       _livekitConnected = true;
@@ -177,7 +177,7 @@ class _RoomScreenState extends State<RoomScreen>
       }
     });
 
-    // 🔥 FALLBACK FIX (LOADING NEVER STUCK)
+    /// 🔥 FALLBACK (LOADING FIX)
     Future.delayed(const Duration(seconds: 2), () {
       if (!mounted) return;
 
@@ -214,6 +214,7 @@ class _RoomScreenState extends State<RoomScreen>
     });
   }
 
+  /// ✅ FIXED (NO _waitForSocket)
   Future<void> _handleReconnect() async {
     if (_isReconnecting || !_wasInRoom) return;
 
@@ -230,11 +231,12 @@ class _RoomScreenState extends State<RoomScreen>
 
       GlobalSocketManager.instance.joinRoom(widget.roomId);
 
-      await _waitForSocket();
-
-      GlobalSocketManager.instance.send({
-        "type": "GET_SEAT_MAP",
-        "roomId": widget.roomId,
+      /// 🔥 FIXED DELAY (IMPORTANT)
+      Future.delayed(const Duration(milliseconds: 300), () {
+        GlobalSocketManager.instance.send({
+          "type": "GET_SEAT_MAP",
+          "roomId": widget.roomId,
+        });
       });
 
       await _livekit.disconnect();
