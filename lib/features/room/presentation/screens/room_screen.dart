@@ -6,7 +6,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../../../core/debug/app_debug.dart';
 import '../../../../core/livekit/livekit_service.dart';
 //import 'package:livekit_client/livekit_client.dart';
-
+import 'package:flutter/foundation.dart'; // 👈 ADD THIS
 import '../widgets/room_ui.dart';
 
 class RoomScreen extends StatefulWidget {
@@ -37,7 +37,7 @@ class _RoomScreenState extends State<RoomScreen>
   bool showChat = false;
   bool showGift = false;
 
-  final LiveKitService _livekit = LiveKitService();
+  LiveKitService? _livekit; // 👈 CHANGE
 
   bool _livekitConnected = false;
 
@@ -104,9 +104,9 @@ class _RoomScreenState extends State<RoomScreen>
       }
 
       if (amISpeaker) {
-        await _livekit.enableMic();
+        await _livekit?.enableMic();
       } else {
-        await _livekit.disableMic();
+        await _livekit?.disableMic();
       }
 
       setState(() {
@@ -143,13 +143,13 @@ class _RoomScreenState extends State<RoomScreen>
         final currentUserId = UserSession.getUserId();
         if (currentUserId == null) return;
 
-        await _livekit.connect(
+        await _livekit?.connect(
           userId: currentUserId,
           roomId: widget.roomId,
           role: "listener",
         );
 
-        await _livekit.disableMic();
+        await _livekit?.disableMic();
 
         _livekit.room?.events.listen((event) {
           if (event.runtimeType.toString() == "RoomDisconnectedEvent") {
@@ -239,7 +239,7 @@ class _RoomScreenState extends State<RoomScreen>
         });
       });
 
-      await _livekit.disconnect();
+      await _livekit?.disconnect();
 
       await _livekit.connect(
         userId: userId,
