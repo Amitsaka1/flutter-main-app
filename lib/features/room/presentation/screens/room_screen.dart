@@ -63,6 +63,10 @@ class _RoomScreenState extends State<RoomScreen>
     if (_roomJoined) return;
     _roomJoined = true;
 
+    if (!kIsWeb) {
+      _livekit = LiveKitService();
+    }
+
     try {
       await requestMicPermission();
     } catch (e) {
@@ -151,7 +155,7 @@ class _RoomScreenState extends State<RoomScreen>
 
         await _livekit?.disableMic();
 
-        _livekit.room?.events.listen((event) {
+        _livekit?.room?.events.listen((event) {
           if (event.runtimeType.toString() == "RoomDisconnectedEvent") {
             AppDebug.log("LiveKit disconnected → reconnecting...");
             _handleReconnect();
@@ -241,7 +245,7 @@ class _RoomScreenState extends State<RoomScreen>
 
       await _livekit?.disconnect();
 
-      await _livekit.connect(
+      await _livekit?.connect(
         userId: userId,
         roomId: widget.roomId,
         role: "listener",
@@ -382,7 +386,7 @@ class _RoomScreenState extends State<RoomScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _livekit.disconnect();
+    _livekit?.disconnect();
     chatController.dispose();
     super.dispose();
   }
