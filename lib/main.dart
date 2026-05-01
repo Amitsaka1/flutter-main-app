@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:livekit_client/livekit_client.dart';
+import 'package:flutter/foundation.dart'; // ✅ IMPORTANT (WEB CHECK)
 import 'app.dart';
 
 /// 🔥 Global Navigator Key
@@ -9,7 +9,7 @@ final GlobalKey<NavigatorState> appNavigatorKey =
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  /// 🔥 AUDIO HARDWARE SETUP (ULTRA FIX)
+  /// 🔥 AUDIO HARDWARE SETUP (SAFE)
   await _setupAudio();
 
   runApp(const MyApp());
@@ -20,10 +20,13 @@ void main() async {
 /// =========================
 Future<void> _setupAudio() async {
   try {
-    // 🔥 Force speaker (avoid wrong routing)
-    await Hardware.instance.setSpeakerphoneOn(true);
+    // ❌ WEB में LiveKit hardware नहीं चलता
+    if (!kIsWeb) {
+      // 👉 अगर future में mobile audio चाहिए तो यहाँ डालना
+      // await Hardware.instance.setSpeakerphoneOn(true);
+    }
 
-    debugPrint("✅ Audio hardware configured (ULTRA)");
+    debugPrint("✅ Audio hardware configured (SAFE)");
   } catch (e) {
     debugPrint("❌ Audio setup error: $e");
   }
