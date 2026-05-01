@@ -281,7 +281,7 @@ class _RoomScreenState extends State<RoomScreen>
 
     GlobalSocketManager.instance.leaveRoom(widget.roomId);
 
-    _livekit.disconnect();
+    _livekit?.disconnect();
 
     await Future.delayed(const Duration(milliseconds: 100));
   }
