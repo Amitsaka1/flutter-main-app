@@ -346,6 +346,15 @@ class _RoomScreenState extends State<RoomScreen>
 
   @override
   Widget build(BuildContext context) {
+
+    if (kIsWeb) {
+      return const Scaffold(
+        body: Center(
+          child: Text("Rooms Coming Soon 🚀"),
+        ),
+      );
+    }
+
     if (loading) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
