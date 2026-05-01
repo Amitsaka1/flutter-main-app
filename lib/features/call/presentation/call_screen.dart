@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:app_project/core/utils/permission_helper.dart';
 import 'package:app_project/core/network/api_client.dart';
 import 'package:app_project/core/socket/global_socket_manager.dart';
+import 'package:flutter/foundation.dart';
 
 class CallScreen extends StatefulWidget {
   final String channelName;
@@ -90,7 +91,10 @@ class _CallScreenState extends State<CallScreen> {
       _callConnected = true;
     });
 
-    await _initAgora();
+    if (!kIsWeb) {
+    await _initAgora(); // 🔥 ONLY MOBILE
+    }
+
     _startTimer();
   }
 
