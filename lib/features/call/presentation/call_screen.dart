@@ -143,7 +143,7 @@ class _CallScreenState extends State<CallScreen> {
     final appId = response["appId"];
     final uid = response["uid"];
 
-    if (_engine == null) {
+    if (!kIsWeb) {
       _engine = createAgoraRtcEngine();
     }
 
@@ -326,8 +326,8 @@ class _CallScreenState extends State<CallScreen> {
   body: Stack(
   children: [
 
-       // 🔥 Remote video (full screen)
-      if (_callConnected &&
+      if (!kIsWeb &&
+          _callConnected &&
           widget.callType == "VIDEO_CALL" &&
           _remoteUid != null &&
           _engine != null)
@@ -342,7 +342,8 @@ class _CallScreenState extends State<CallScreen> {
         ),
 
       // 🔥 Local camera preview (small window)
-       if (_callConnected &&
+      if (!kIsWeb &&
+          _callConnected &&
           widget.callType == "VIDEO_CALL" &&
           _engine != null)
         Positioned(
