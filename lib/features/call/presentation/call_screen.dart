@@ -1,10 +1,13 @@
 import 'dart:async';
-//import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // ✅ WEB CHECK
+
+// ❌ Agora import WEB में issue देता है → अभी disable
+// import 'package:agora_rtc_engine/agora_rtc_engine.dart';
+
 import 'package:app_project/core/utils/permission_helper.dart';
 import 'package:app_project/core/network/api_client.dart';
 import 'package:app_project/core/socket/global_socket_manager.dart';
-import 'package:flutter/foundation.dart';
 
 class CallScreen extends StatefulWidget {
   final String channelName;
@@ -23,7 +26,7 @@ class CallScreen extends StatefulWidget {
 }
 
 class _CallScreenState extends State<CallScreen> {
-  dynamic _engine; // 🔥 FIXED (was RtcEngine)
+  dynamic _engine; // ✅ SAFE (Agora remove kiya)
   int? _remoteUid;
   StreamSubscription? _socketSub;
 
@@ -55,6 +58,7 @@ class _CallScreenState extends State<CallScreen> {
 
     _socketSub =
         GlobalSocketManager.instance.messages.listen((data) {
+
       if (data["type"] == "CALL_ACCEPTED") {
         _onCallAccepted();
       }
@@ -68,8 +72,11 @@ class _CallScreenState extends State<CallScreen> {
         _onCallCancelled();
       }
 
-      if (data["type"] == "CALL_ENDED" ||
-          data["type"] == "CALL_ENDED_LOW_BALANCE") {
+      if (data["type"] == "CALL_ENDED") {
+        _leaveCall(remote: true);
+      }
+
+      if (data["type"] == "CALL_ENDED_LOW_BALANCE") {
         _leaveCall(remote: true);
       }
     });
@@ -87,6 +94,7 @@ class _CallScreenState extends State<CallScreen> {
       _callConnected = true;
     });
 
+    // ❌ WEB पर Agora नहीं चलेगा
     if (!kIsWeb) {
       await _initAgora();
     }
@@ -95,11 +103,39 @@ class _CallScreenState extends State<CallScreen> {
   }
 
   // ===============================
-  // 🔥 INIT AGORA
+  // 🔥 CALL REJECTED
+  // ===============================
+
+  void _onCallRejected() {
+    setState(() {
+      callStatus = "Rejected";
+    });
+
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) Navigator.pop(context);
+    });
+  }
+
+  // ===============================
+  // 🔥 CALL CANCELLED
+  // ===============================
+
+  void _onCallCancelled() {
+    setState(() {
+      callStatus = "Cancelled";
+    });
+
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) Navigator.pop(context);
+    });
+  }
+
+  // ===============================
+  // 🔥 INIT (SAFE VERSION)
   // ===============================
 
   Future<void> _initAgora() async {
-    if (kIsWeb) return; // 🔥 CRITICAL
+    if (kIsWeb) return; // ✅ VERY IMPORTANT
 
     final granted =
         await PermissionHelper.requestCallPermissions();
@@ -110,55 +146,9 @@ class _CallScreenState extends State<CallScreen> {
     });
 
     final token = response["token"];
-    final appId = response["appId"];
-    final uid = response["uid"];
 
-    // 🔥 FULL BLOCK
-    _engine = createAgoraRtcEngine();
-
-    await _engine?.initialize(
-      RtcEngineContext(appId: appId),
-    );
-
-    await _engine?.setChannelProfile(
-      ChannelProfileType.channelProfileCommunication,
-    );
-
-    await _engine?.setClientRole(
-      role: ClientRoleType.clientRoleBroadcaster,
-    );
-
-    _engine?.registerEventHandler(
-      RtcEngineEventHandler(
-        onUserJoined: (connection, remoteUid, elapsed) {
-          if (!mounted) return;
-          setState(() => _remoteUid = remoteUid);
-        },
-        onUserOffline: (connection, remoteUid, reason) {
-          _leaveCall(remote: true);
-        },
-      ),
-    );
-
-    if (widget.callType == "VOICE_CALL") {
-      await _engine?.enableAudio();
-      await _engine?.disableVideo();
-    } else {
-      await _engine?.enableVideo();
-      await _engine?.startPreview();
-    }
-
-    await _engine?.joinChannel(
-      token: token,
-      channelId: widget.channelName,
-      uid: uid,
-      options: ChannelMediaOptions(
-        publishCameraTrack: widget.callType == "VIDEO_CALL",
-        publishMicrophoneTrack: true,
-        autoSubscribeVideo: true,
-        autoSubscribeAudio: true,
-      ),
-    );
+    // ⚠️ Agora disabled for now (to fix web build)
+    print("Agora disabled for web-safe build. Token: $token");
   }
 
   // ===============================
@@ -187,16 +177,25 @@ class _CallScreenState extends State<CallScreen> {
   // ===============================
 
   Future<void> _leaveCall({bool remote = false}) async {
+
     if (_callEnded) return;
     _callEnded = true;
 
     _timer?.cancel();
 
-    if (_engine != null) {
-      await _engine?.leaveChannel();
-      await _engine?.release();
-      _engine = null;
-    }
+    try {
+      if (!remote) {
+        if (!_callConnected) {
+          await ApiClient.post("/call/cancel", {
+            "sessionId": widget.channelName
+          });
+        } else {
+          await ApiClient.post("/call/end", {
+            "sessionId": widget.channelName
+          });
+        }
+      }
+    } catch (_) {}
 
     if (mounted) Navigator.pop(context);
   }
@@ -205,12 +204,6 @@ class _CallScreenState extends State<CallScreen> {
   void dispose() {
     _socketSub?.cancel();
     _timer?.cancel();
-
-    if (_engine != null) {
-      _engine?.release();
-      _engine = null;
-    }
-
     super.dispose();
   }
 
@@ -221,7 +214,7 @@ class _CallScreenState extends State<CallScreen> {
   @override
   Widget build(BuildContext context) {
 
-    // 🔥 WEB BLOCK
+    // ✅ WEB SAFE SCREEN
     if (kIsWeb) {
       return const Scaffold(
         body: Center(
@@ -236,14 +229,21 @@ class _CallScreenState extends State<CallScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+
             Text(
-              callStatus,
+              callStatus == "OFFLINE"
+                  ? "User Offline"
+                  : callStatus == "RINGING"
+                      ? "Ringing..."
+                      : callStatus,
               style: const TextStyle(
                 color: Colors.white70,
                 fontSize: 20,
               ),
             ),
+
             const SizedBox(height: 20),
+
             if (_callConnected)
               Text(
                 _formatTime(_seconds),
@@ -253,7 +253,9 @@ class _CallScreenState extends State<CallScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
+
             const SizedBox(height: 40),
+
             FloatingActionButton(
               backgroundColor: Colors.red,
               onPressed: () => _leaveCall(),
