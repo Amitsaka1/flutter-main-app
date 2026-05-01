@@ -23,7 +23,7 @@ class CallScreen extends StatefulWidget {
 }
 
 class _CallScreenState extends State<CallScreen> {
-  RtcEngine? _engine;
+  dynamic _engine; // 🔥 FIXED (was RtcEngine)
   int? _remoteUid;
   StreamSubscription? _socketSub;
 
@@ -55,7 +55,6 @@ class _CallScreenState extends State<CallScreen> {
 
     _socketSub =
         GlobalSocketManager.instance.messages.listen((data) {
-
       if (data["type"] == "CALL_ACCEPTED") {
         _onCallAccepted();
       }
@@ -69,11 +68,8 @@ class _CallScreenState extends State<CallScreen> {
         _onCallCancelled();
       }
 
-      if (data["type"] == "CALL_ENDED") {
-        _leaveCall(remote: true);
-      }
-
-      if (data["type"] == "CALL_ENDED_LOW_BALANCE") {
+      if (data["type"] == "CALL_ENDED" ||
+          data["type"] == "CALL_ENDED_LOW_BALANCE") {
         _leaveCall(remote: true);
       }
     });
@@ -92,45 +88,19 @@ class _CallScreenState extends State<CallScreen> {
     });
 
     if (!kIsWeb) {
-    await _initAgora(); // 🔥 ONLY MOBILE
+      await _initAgora();
     }
 
     _startTimer();
   }
 
   // ===============================
-  // 🔥 CALL REJECTED
-  // ===============================
-
-  void _onCallRejected() {
-    setState(() {
-      callStatus = "Rejected";
-    });
-
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) Navigator.pop(context);
-    });
-  }
-
-  // ===============================
-  // 🔥 CALL CANCELLED / MISSED
-  // ===============================
-
-  void _onCallCancelled() {
-    setState(() {
-      callStatus = "Cancelled";
-    });
-
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) Navigator.pop(context);
-    });
-  }
-
-  // ===============================
-  // 🔥 INIT AGORA ONLY AFTER ACCEPT
+  // 🔥 INIT AGORA
   // ===============================
 
   Future<void> _initAgora() async {
+    if (kIsWeb) return; // 🔥 CRITICAL
+
     final granted =
         await PermissionHelper.requestCallPermissions();
     if (!granted) return;
@@ -143,94 +113,42 @@ class _CallScreenState extends State<CallScreen> {
     final appId = response["appId"];
     final uid = response["uid"];
 
-    if (!kIsWeb) {
-      _engine = createAgoraRtcEngine();
-    }
+    // 🔥 FULL BLOCK
+    _engine = createAgoraRtcEngine();
 
-    await _engine!.initialize(
+    await _engine?.initialize(
       RtcEngineContext(appId: appId),
     );
 
-    await _engine!.setChannelProfile(
+    await _engine?.setChannelProfile(
       ChannelProfileType.channelProfileCommunication,
     );
 
-    await _engine!.setVideoEncoderConfiguration(
-      const VideoEncoderConfiguration(
-      dimensions: VideoDimensions(width: 640, height: 360),
-      frameRate: 15,
-      bitrate: 800,
-      orientationMode: OrientationMode.orientationModeAdaptive,
-    ),
-   );
-
-    await _engine!.setClientRole(
+    await _engine?.setClientRole(
       role: ClientRoleType.clientRoleBroadcaster,
     );
 
-    await _engine!.setAudioProfile(
-      profile: AudioProfileType.audioProfileSpeechStandard,
-      scenario: AudioScenarioType.audioScenarioChatroom,
-    );
-
-    _engine!.registerEventHandler(
+    _engine?.registerEventHandler(
       RtcEngineEventHandler(
-
-        // 🔥 Remote user joined
         onUserJoined: (connection, remoteUid, elapsed) {
-           if (!mounted) return;
-
-          setState(() {
-            _remoteUid = remoteUid;
-          });
+          if (!mounted) return;
+          setState(() => _remoteUid = remoteUid);
         },
-
-        // 🔥 Remote user left
         onUserOffline: (connection, remoteUid, reason) {
           _leaveCall(remote: true);
-        },
-
-        // 🔥 Network lost
-        onConnectionLost: (connection) {
-          print("⚠ Agora connection lost");
-        },
-
-        // 🔥 Network unstable
-        onConnectionInterrupted: (connection) {
-          print("⚠ Network unstable");
-        },
-
-        // 🔥 Connection state changes
-        onConnectionStateChanged: (connection, state, reason) {
-
-          if (state == ConnectionStateType.connectionStateReconnecting) {
-            print("🔄 Reconnecting to call...");
-          }
-
-          if (state == ConnectionStateType.connectionStateConnected) {
-            print("✅ Call connection restored");
-          }
-
-          if (state == ConnectionStateType.connectionStateDisconnected) {
-            _leaveCall(remote: true);
-          }
         },
       ),
     );
 
     if (widget.callType == "VOICE_CALL") {
-      await _engine!.enableAudio();
-      await _engine!.disableVideo();
+      await _engine?.enableAudio();
+      await _engine?.disableVideo();
     } else {
-      await _engine!.enableVideo();
-      await _engine!.enableDualStreamMode(enabled: true);
-      await _engine!.setRemoteSubscribeFallbackOption(
-      StreamFallbackOptions.streamFallbackOptionAudioOnly,
-    );
-      await _engine!.startPreview();
+      await _engine?.enableVideo();
+      await _engine?.startPreview();
     }
 
-    await _engine!.joinChannel(
+    await _engine?.joinChannel(
       token: token,
       channelId: widget.channelName,
       uid: uid,
@@ -241,12 +159,10 @@ class _CallScreenState extends State<CallScreen> {
         autoSubscribeAudio: true,
       ),
     );
-    await _engine!.setEnableSpeakerphone(true);
-    await _engine!.setDefaultAudioRouteToSpeakerphone(true);
   }
 
   // ===============================
-  // 🔥 TIMER START
+  // 🔥 TIMER
   // ===============================
 
   void _startTimer() {
@@ -271,44 +187,27 @@ class _CallScreenState extends State<CallScreen> {
   // ===============================
 
   Future<void> _leaveCall({bool remote = false}) async {
+    if (_callEnded) return;
+    _callEnded = true;
 
-  if (_callEnded) return;
-  _callEnded = true;
+    _timer?.cancel();
 
-  _timer?.cancel();
-
-  try {
-
-    if (!remote) {
-      if (!_callConnected) {
-        await ApiClient.post("/call/cancel", {
-          "sessionId": widget.channelName
-        });
-      } else {
-        await ApiClient.post("/call/end", {
-          "sessionId": widget.channelName
-        });
-      }
+    if (_engine != null) {
+      await _engine?.leaveChannel();
+      await _engine?.release();
+      _engine = null;
     }
 
-  } catch (_) {}
+    if (mounted) Navigator.pop(context);
+  }
 
-  if (_engine != null) {
-    await _engine!.leaveChannel();
-    await _engine!.release();
-    _engine = null;
-  }
-    
-  if (mounted) Navigator.pop(context);
-  }
-  
   @override
   void dispose() {
     _socketSub?.cancel();
     _timer?.cancel();
 
     if (_engine != null) {
-      _engine!.release();
+      _engine?.release();
       _engine = null;
     }
 
@@ -321,68 +220,30 @@ class _CallScreenState extends State<CallScreen> {
 
   @override
   Widget build(BuildContext context) {
-  return Scaffold(
-  backgroundColor: Colors.black,
-  body: Stack(
-  children: [
 
-      if (!kIsWeb &&
-          _callConnected &&
-          widget.callType == "VIDEO_CALL" &&
-          _remoteUid != null &&
-          _engine != null)
-        AgoraVideoView(
-          controller: VideoViewController.remote(
-            rtcEngine: _engine!,
-            canvas: VideoCanvas(uid: _remoteUid),
-            connection: RtcConnection(
-              channelId: widget.channelName,
-            ),
-          ),
+    // 🔥 WEB BLOCK
+    if (kIsWeb) {
+      return const Scaffold(
+        body: Center(
+          child: Text("Call Coming Soon 🚀"),
         ),
+      );
+    }
 
-      // 🔥 Local camera preview (small window)
-      if (!kIsWeb &&
-          _callConnected &&
-          widget.callType == "VIDEO_CALL" &&
-          _engine != null)
-        Positioned(
-          top: 60,
-           right: 20,
-          child: SizedBox(
-            width: 120,
-            height: 160,
-            child: AgoraVideoView(
-              controller: VideoViewController(
-                rtcEngine: _engine!,
-                canvas: VideoCanvas(
-                  uid: 0,
-                  renderMode: RenderModeType.renderModeHidden,
-                ),
-              ),
-            ),
-          ),
-        ),
-
-      Center(
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-  
             Text(
-              callStatus == "OFFLINE"
-                  ? "User Offline"
-                  : callStatus == "RINGING"
-                      ? "Ringing..."
-                      : callStatus,
+              callStatus,
               style: const TextStyle(
                 color: Colors.white70,
                 fontSize: 20,
               ),
             ),
-
             const SizedBox(height: 20),
-
             if (_callConnected)
               Text(
                 _formatTime(_seconds),
@@ -392,9 +253,7 @@ class _CallScreenState extends State<CallScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-
             const SizedBox(height: 40),
-
             FloatingActionButton(
               backgroundColor: Colors.red,
               onPressed: () => _leaveCall(),
@@ -403,9 +262,6 @@ class _CallScreenState extends State<CallScreen> {
           ],
         ),
       ),
-    ],
-  ),
-
-  );
+    );
   }
 }
