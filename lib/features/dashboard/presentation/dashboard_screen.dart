@@ -338,6 +338,7 @@ class _DashboardScreenState extends State<DashboardScreen>
 
             Expanded(
               child: GridView.builder(
+                controller: _scrollController,
                 padding: EdgeInsets.zero,
                 itemCount: profiles.length,
                 gridDelegate:
