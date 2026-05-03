@@ -8,231 +8,237 @@ import 'package:app_project/core/chat/unread_counter_service.dart';
 import 'package:app_project/core/controllers/chat_controller.dart';
 
 class GlobalSocketManager with WidgetsBindingObserver {
-GlobalSocketManager._internal();
-static final GlobalSocketManager _instance =
-GlobalSocketManager._internal();
-static GlobalSocketManager get instance => _instance;
+  GlobalSocketManager._internal();
+  static final GlobalSocketManager _instance =
+      GlobalSocketManager._internal();
+  static GlobalSocketManager get instance => _instance;
 
-WebSocketService? _socketService;
-StreamSubscription? _socketSubscription;
+  WebSocketService? _socketService;
+  StreamSubscription? _socketSubscription;
 
-String? _userId;
-bool _initialized = false;
-bool _observerAdded = false;
+  String? _userId;
+  bool _initialized = false;
+  bool _observerAdded = false;
 
-bool _incomingScreenOpen = false;
+  bool _incomingScreenOpen = false;
 
-/// ✅ NEW: ONLINE USERS TRACKING
-final Set<String> onlineUsers = {};
+  /// ✅ ONLINE USERS (FINAL FIX)
+  final Set<String> onlineUsers = {};
 
-final StreamController<Map<String, dynamic>>
-_messageController = StreamController.broadcast();
+  final StreamController<Map<String, dynamic>>
+      _messageController = StreamController.broadcast();
 
-Stream<Map<String, dynamic>> get messages =>
-_messageController.stream;
+  Stream<Map<String, dynamic>> get messages =>
+      _messageController.stream;
 
-Stream<Map<String, dynamic>> get seatStream =>
-_seatMapController.stream;
+  Stream<Map<String, dynamic>> get seatStream =>
+      _seatMapController.stream;
 
-// ================= ROOM STREAMS =================
+  // ================= ROOM STREAMS =================
 
-final StreamController<Map<String, dynamic>>
-_seatMapController = StreamController.broadcast();
+  final StreamController<Map<String, dynamic>>
+      _seatMapController = StreamController.broadcast();
 
-final StreamController<void>
-_roomClosedController = StreamController.broadcast();
+  final StreamController<void>
+      _roomClosedController = StreamController.broadcast();
 
-// ================= INIT =================
+  // ================= INIT =================
 
-Future<void> init(String userId) async {
-if (_initialized && _userId == userId) return;
+  Future<void> init(String userId) async {
+    if (_initialized && _userId == userId) return;
 
-_userId = userId;
+    _userId = userId;
 
-await _socketSubscription?.cancel();
-_socketSubscription = null;
+    await _socketSubscription?.cancel();
+    _socketSubscription = null;
 
-_socketService?.dispose();
+    _socketService?.dispose();
 
-_socketService = WebSocketService(userId: userId);
+    _socketService = WebSocketService(userId: userId);
 
-_socketSubscription =
-    _socketService!.messages.listen((event) {
+    _socketSubscription =
+        _socketService!.messages.listen((event) {
 
-  final type = event["type"];
+      final type = event["type"];
 
-  /// ===============================
-  /// 🔥 ONLINE STATUS (NEW FIX)
-  /// ===============================
-  if (type == "USER_ONLINE") {
-    onlineUsers.add(event["userId"]);
-    _messageController.add(event);
-  }
+      /// ===============================
+      /// 🔥 ONLINE STATUS (FINAL FIX)
+      /// ===============================
+      if (type == "USER_ONLINE") {
+        final userId = event["userId"]?.toString();
+        if (userId != null) {
+          onlineUsers.add(userId);
+        }
+        _messageController.add(event);
+      }
 
-  else if (type == "USER_OFFLINE") {
-    onlineUsers.remove(event["userId"]);
-    _messageController.add(event);
-  }
+      else if (type == "USER_OFFLINE") {
+        final userId = event["userId"]?.toString();
+        if (userId != null) {
+          onlineUsers.remove(userId);
+        }
+        _messageController.add(event);
+      }
 
-  // 🔥 Incoming Call
-  else if (type == "INCOMING_CALL") {
-    _handleIncomingCall(event);
-  }
+      // 🔥 Incoming Call
+      else if (type == "INCOMING_CALL") {
+        _handleIncomingCall(event);
+      }
 
-  // 🔥 Seat map update
-  else if (type == "SEAT_MAP_UPDATE") {
-    _seatMapController.add(event);
-  }
+      // 🔥 Seat map update
+      else if (type == "SEAT_MAP_UPDATE") {
+        _seatMapController.add(event);
+      }
 
-  // 🔥 Room closed / kicked
-  else if (type == "ROOM_CLOSED" ||
-      type == "ROOM_KICKED") {
-    _roomClosedController.add(null);
-  }
+      // 🔥 Room closed / kicked
+      else if (type == "ROOM_CLOSED" ||
+          type == "ROOM_KICKED") {
+        _roomClosedController.add(null);
+      }
 
-  // 🔥 Speaker demoted
-  else if (type == "DEMOTED_TO_LISTENER") {
-    _messageController.add(event);
-  }
+      // 🔥 Speaker demoted
+      else if (type == "DEMOTED_TO_LISTENER") {
+        _messageController.add(event);
+      }
 
-  // 🔥 NEW MESSAGE
-  else if (type == "NEW_MESSAGE") {
-    final senderId = event["data"]["senderId"];
+      // 🔥 NEW MESSAGE
+      else if (type == "NEW_MESSAGE") {
+        final senderId = event["data"]["senderId"];
 
-    if (senderId != _userId) {
-      UnreadCounterService.increment(senderId);
+        if (senderId != _userId) {
+          UnreadCounterService.increment(senderId);
+        }
+
+        ChatController.instance
+            .handleNewMessage(event["data"]);
+
+        _messageController.add(event);
+      }
+    });
+
+    if (!_observerAdded) {
+      WidgetsBinding.instance.addObserver(this);
+      _observerAdded = true;
     }
 
-    ChatController.instance
-        .handleNewMessage(event["data"]);
+    await _socketService!.connect();
 
-    _messageController.add(event);
+    _initialized = true;
   }
-});
 
-if (!_observerAdded) {
-  WidgetsBinding.instance.addObserver(this);
-  _observerAdded = true;
-}
+  // ================= ROOM SOCKET =================
 
-await _socketService!.connect();
+  void joinRoom(String roomId) {
+    send({
+      "type": "JOIN_ROOM_SOCKET",
+      "roomId": roomId,
+    });
+  }
 
-_initialized = true;
+  void leaveRoom(String roomId) {
+    send({
+      "type": "LEAVE_ROOM_SOCKET",
+      "roomId": roomId,
+    });
+  }
 
-}
+  StreamSubscription onSeatMapUpdate(
+    Function(Map<String, dynamic>) callback,
+  ) {
+    return _seatMapController.stream.listen(callback);
+  }
 
-// ================= ROOM SOCKET =================
+  StreamSubscription onRoomClosed(
+    VoidCallback callback,
+  ) {
+    return _roomClosedController.stream.listen((_) {
+      callback();
+    });
+  }
 
-void joinRoom(String roomId) {
-send({
-"type": "JOIN_ROOM_SOCKET",
-"roomId": roomId,
-});
-}
+  // ================= INCOMING CALL =================
 
-void leaveRoom(String roomId) {
-send({
-"type": "LEAVE_ROOM_SOCKET",
-"roomId": roomId,
-});
-}
+  void _handleIncomingCall(Map<String, dynamic> data) {
+    if (_incomingScreenOpen) return;
 
-StreamSubscription onSeatMapUpdate(
-Function(Map<String, dynamic>) callback,
-) {
-return _seatMapController.stream.listen(callback);
-}
+    final context = appNavigatorKey.currentContext;
+    if (context == null) return;
 
-StreamSubscription onRoomClosed(
-VoidCallback callback,
-) {
-return roomClosedController.stream.listen(() {
-callback();
-});
-}
+    _incomingScreenOpen = true;
 
-// ================= INCOMING CALL =================
+    Navigator.of(context)
+        .push(
+      MaterialPageRoute(
+        builder: (_) => IncomingCallScreen(
+          sessionId: data["sessionId"],
+          callerId: data["callerId"],
+          callType: data["callType"],
+        ),
+      ),
+    )
+        .then((_) {
+      _incomingScreenOpen = false;
+    });
+  }
 
-void _handleIncomingCall(Map<String, dynamic> data) {
-if (_incomingScreenOpen) return;
+  // ================= SEND =================
 
-final context = appNavigatorKey.currentContext;
-if (context == null) return;
+  void send(Map<String, dynamic> data) {
+    _socketService?.send(data);
+  }
 
-_incomingScreenOpen = true;
+  // ================= APP LIFECYCLE =================
 
-Navigator.of(context)
-    .push(
-  MaterialPageRoute(
-    builder: (_) => IncomingCallScreen(
-      sessionId: data["sessionId"],
-      callerId: data["callerId"],
-      callType: data["callType"],
-    ),
-  ),
-)
-    .then((_) {
-  _incomingScreenOpen = false;
-});
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      if (_socketService?.isConnected != true) {
+        _socketService?.connect();
+      }
+    }
+  }
 
-}
+  // ================= DISCONNECT =================
 
-// ================= SEND =================
+  Future<void> disconnect() async {
+    await _socketSubscription?.cancel();
+    _socketSubscription = null;
 
-void send(Map<String, dynamic> data) {
-_socketService?.send(data);
-}
+    _socketService?.disconnect();
+    _socketService = null;
 
-// ================= APP LIFECYCLE =================
+    _initialized = false;
+    _userId = null;
 
-@override
-void didChangeAppLifecycleState(AppLifecycleState state) {
-if (state == AppLifecycleState.resumed) {
-if (_socketService?.isConnected != true) {
-_socketService?.connect();
-}
-}
-}
+    onlineUsers.clear(); // 🔥 IMPORTANT RESET
+  }
 
-// ================= DISCONNECT =================
+  bool get isConnected =>
+      _socketService?.isConnected ?? false;
 
-Future<void> disconnect() async {
-await _socketSubscription?.cancel();
-_socketSubscription = null;
+  String get wsUrl => _socketService?.wsUrl ?? "";
 
-_socketService?.disconnect();
-_socketService = null;
+  // ================= DISPOSE =================
 
-_initialized = false;
-_userId = null;
+  void dispose() {
+    if (_observerAdded) {
+      WidgetsBinding.instance.removeObserver(this);
+      _observerAdded = false;
+    }
 
-}
+    _socketSubscription?.cancel();
+    _socketSubscription = null;
 
-bool get isConnected =>
-_socketService?.isConnected ?? false;
+    _socketService?.dispose();
+    _socketService = null;
 
-String get wsUrl => _socketService?.wsUrl ?? "";
+    _messageController.close();
+    _seatMapController.close();
+    _roomClosedController.close();
 
-// ================= DISPOSE =================
+    onlineUsers.clear(); // 🔥 CLEANUP
 
-void dispose() {
-if (_observerAdded) {
-WidgetsBinding.instance.removeObserver(this);
-_observerAdded = false;
-}
-
-_socketSubscription?.cancel();
-_socketSubscription = null;
-
-_socketService?.dispose();
-_socketService = null;
-
-_messageController.close();
-_seatMapController.close();
-_roomClosedController.close();
-
-_initialized = false;
-_userId = null;
-
-}
+    _initialized = false;
+    _userId = null;
+  }
 }
