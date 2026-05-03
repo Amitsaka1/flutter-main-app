@@ -244,12 +244,13 @@ class _DashboardScreenState extends State<DashboardScreen>
       if (type == "NEW_PROFILE") {
         final newProfile = message["data"];
 
-        if (global.profiles != null &&
-            !global.profiles!.any((p) => p["id"] == newProfile["id"])) {
+        final global = GlobalDataManager.instance;
 
-          global.profiles!.insert(0, newProfile); // 🔥 GLOBAL UPDATE
+        global.profiles ??= []; // 🔥 FIX
+  
+        if (!global.profiles!.any((p) => p["id"] == newProfile["id"])) {
+          global.profiles!.insert(0, newProfile);
           global.notify();
-
         }
       }
 
