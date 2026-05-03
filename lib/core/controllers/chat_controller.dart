@@ -2,7 +2,7 @@ import 'dart:async';
 import '../network/api_client.dart';
 
 class ChatController {
-  //  Singleton
+  // Singleton
   ChatController._internal();
   static final ChatController _instance = ChatController._internal();
   static ChatController get instance => _instance;
@@ -11,6 +11,9 @@ class ChatController {
   List<dynamic> _chats = [];
   bool _loading = false;
   DateTime? _lastFetch;
+
+  /// ✅ NEW: loaded flag (instant open)
+  bool _loaded = false;
 
   final StreamController<List<dynamic>> _chatStreamController =
       StreamController.broadcast();
@@ -22,18 +25,21 @@ class ChatController {
 
   bool get isLoading => _loading;
 
-  bool get hasData => _chats.isNotEmpty;
+  /// ✅ FIXED
+  bool get hasData => _loaded && _chats.isNotEmpty;
 
   bool get isFresh {
     if (_lastFetch == null) return false;
     return DateTime.now().difference(_lastFetch!).inSeconds < 20;
   }
 
-  // 🔥 Initial Load
+  // ================= LOAD =================
+
   Future<void> loadChats({bool forceRefresh = false}) async {
     if (_loading) return;
 
-    if (!forceRefresh && hasData && isFresh) {
+    /// 🔥 INSTANT (NO API)
+    if (!forceRefresh && _loaded) {
       _chatStreamController.add(List.from(_chats));
       return;
     }
@@ -46,7 +52,8 @@ class ChatController {
       if (response["success"] == true) {
         final data = response["data"] as List;
 
-        _chats = List.from(data); // 🔥 safe copy
+        _chats = List.from(data);
+        _loaded = true; // ✅ IMPORTANT
         _lastFetch = DateTime.now();
 
         _chatStreamController.add(List.from(_chats));
@@ -56,12 +63,14 @@ class ChatController {
     _loading = false;
   }
 
-  // 🔥 Background Refresh
+  // ================= REFRESH =================
+
   Future<void> refresh() async {
     await loadChats(forceRefresh: true);
   }
 
-  // 🔥 Update from Socket
+  // ================= SOCKET =================
+
   void handleNewMessage(dynamic message) {
     final senderId = message["senderId"] ?? message["receiverId"];
     final updatedChats = List<dynamic>.from(_chats);
@@ -88,7 +97,8 @@ class ChatController {
     _chatStreamController.add(List.from(_chats));
   }
 
-  // 🔥 Mark as Read
+  // ================= READ =================
+
   void markAsRead(String userId) {
     final updatedChats = List<dynamic>.from(_chats);
 
@@ -108,6 +118,8 @@ class ChatController {
 
     _chatStreamController.add(List.from(_chats));
   }
+
+  // ================= DISPOSE =================
 
   void dispose() {
     _chatStreamController.close();
