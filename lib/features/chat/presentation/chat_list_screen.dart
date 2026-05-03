@@ -38,13 +38,13 @@ class _ChatListScreenState extends State<ChatListScreen>
       return;
     }
 
+    // 🔥 INSTANT DATA (CACHE)
     if (_controller.hasData) {
-      setState(() {
-        chats = _controller.chats;
-        loading = false;
-      });
+      chats = _controller.chats;
+      loading = false;
     }
 
+    // 🔥 STREAM LISTEN (REALTIME UPDATE)
     _subscription = _controller.chatStream.listen((data) {
       if (!mounted) return;
 
@@ -54,7 +54,10 @@ class _ChatListScreenState extends State<ChatListScreen>
       });
     });
 
-    _controller.loadChats();
+    // 🔥 LOAD ONLY IF NOT LOADED
+    if (!_controller.hasData) {
+      _controller.loadChats();
+    }
   }
 
   @override
@@ -81,7 +84,7 @@ class _ChatListScreenState extends State<ChatListScreen>
           onTap: () {
             final userId = chat["user"]["id"];
 
-            // 🔥 NO await loadMessages here
+            // 🔥 INSTANT OPEN (NO LOAD HERE)
             context.push("/chat/$userId");
           },
         );
