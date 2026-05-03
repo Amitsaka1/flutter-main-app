@@ -18,6 +18,9 @@ class ProfileDetailsScreen extends StatefulWidget {
 class _ProfileDetailsScreenState
     extends State<ProfileDetailsScreen> {
 
+  /// 🔥 GLOBAL CACHE
+  static final Map<String, Map<String, dynamic>> _profileCache = {};
+
   Map<String, dynamic>? profile;
   bool loading = true;
   bool actionLoading = false;
@@ -29,6 +32,16 @@ class _ProfileDetailsScreenState
   }
 
   Future<void> _fetchProfile() async {
+
+    /// 🔥 CACHE HIT (INSTANT OPEN)
+    if (_profileCache.containsKey(widget.userId)) {
+      profile = _profileCache[widget.userId];
+      loading = false;
+
+      if (mounted) setState(() {});
+      return;
+    }
+
     try {
       final response =
           await ApiClient.get("/profile/user/${widget.userId}");
@@ -37,10 +50,16 @@ class _ProfileDetailsScreenState
 
       if (response["success"] == true &&
           response["data"] != null) {
+
+        profile = response["data"];
+
+        /// 🔥 SAVE CACHE
+        _profileCache[widget.userId] = profile!;
+
         setState(() {
-          profile = response["data"];
           loading = false;
         });
+
       } else {
         setState(() => loading = false);
       }
@@ -83,6 +102,9 @@ class _ProfileDetailsScreenState
                 : currentFollowers + 1;
         actionLoading = false;
       });
+
+      /// 🔥 UPDATE CACHE
+      _profileCache[widget.userId] = profile!;
 
     } catch (_) {
       if (mounted) {
@@ -351,8 +373,6 @@ class _ProfileDetailsScreenState
     );
   }
 }
-
-// ================= PILL STAT (MISSING CLASS FIX) =================
 
 class _PillStat extends StatelessWidget {
   final String title;
