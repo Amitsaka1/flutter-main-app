@@ -156,28 +156,8 @@ class _DashboardScreenState extends State<DashboardScreen>
       }
     }
 
-    if (type == "USER_ONLINE") {
-      final userId = message["userId"] ?? message["data"]?["userId"];
-
-      setState(() {
-        for (var p in profiles) {
-          if (p["userId"] == userId) {
-            p["user"]["isOnline"] = true;
-          }
-        }
-      });
-    }
-
-    if (type == "USER_OFFLINE") {
-      final userId = message["userId"] ?? message["data"]?["userId"];
-
-      setState(() {
-        for (var p in profiles) {
-          if (p["userId"] == userId) {
-            p["user"]["isOnline"] = false;
-          }
-        }
-      });
+    if (type == "USER_ONLINE" || type == "USER_OFFLINE") {
+      setState(() {}); // 🔥 only rebuild UI
     }
 
     if (type == "NEW_MESSAGE") {
