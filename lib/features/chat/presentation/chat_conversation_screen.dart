@@ -26,6 +26,7 @@ class _ChatConversationScreenState
 
   final ScrollController _scrollController =
       ScrollController();
+
   final TextEditingController _textController =
       TextEditingController();
 
@@ -64,6 +65,7 @@ class _ChatConversationScreenState
     _subscription = _logic
         .stream(widget.chatUserId)
         .listen((data) {
+
       if (!mounted) return;
 
       setState(() {
@@ -71,7 +73,7 @@ class _ChatConversationScreenState
         loading = false;
       });
 
-      _scrollBottom();
+      _scrollBottom(); // 🔥 ALWAYS STAY BOTTOM
     });
 
     await _logic.loadMessages(widget.chatUserId);
@@ -88,15 +90,17 @@ class _ChatConversationScreenState
     _textController.clear();
 
     await _logic.sendMessage(widget.chatUserId, text);
+
+    _scrollBottom(); // 🔥 instant scroll on send
   }
 
+  // 🔥 FIXED: bottom scroll (reverse:true compatible)
   void _scrollBottom() {
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 200),
+          0, // 🔥 IMPORTANT (reverse:true)
+          duration: const Duration(milliseconds: 250),
           curve: Curves.easeOut,
         );
       }
@@ -104,22 +108,56 @@ class _ChatConversationScreenState
   }
 
   // ===========================
-  // 🔥 START CALL FUNCTION
+  // 🔥 CALL FUNCTION (UNCHANGED SAFE)
   // ===========================
+
   Future<void> _startCall(String type) async {
 
-  if (myId == null) return;
+    if (myId == null) return;
 
-  final response = await ApiClient.post("/call/start", {
-    "callerId": myId,
-    "receiverId": widget.chatUserId,
-    "type": type
-  });
+    final response = await ApiClient.post("/call/start", {
+      "callerId": myId,
+      "receiverId": widget.chatUserId,
+      "type": type
+    });
 
-  // 🔥 OFFLINE OR ERROR HANDLING
-  if (response["success"] != true) {
+    if (response["success"] != true) {
 
-  if (response["status"] == "OFFLINE") {
+      if (response["status"] == "OFFLINE") {
+
+        if (!mounted) return;
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => CallScreen(
+              channelName: "",
+              callType: type,
+              initialStatus: "OFFLINE",
+            ),
+          ),
+        );
+
+        return;
+      }
+
+      String msg = response["message"] ?? "Call failed";
+
+      if (msg == "Insufficient balance") {
+        msg = "Low balance. Please recharge.";
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(msg),
+          backgroundColor: Colors.red,
+        ),
+      );
+
+      return;
+    }
+
+    final sessionId = response["sessionId"];
 
     if (!mounted) return;
 
@@ -127,47 +165,12 @@ class _ChatConversationScreenState
       context,
       MaterialPageRoute(
         builder: (_) => CallScreen(
-          channelName: "",
+          channelName: sessionId,
           callType: type,
-          initialStatus: "OFFLINE",
+          initialStatus: "RINGING",
         ),
       ),
     );
-
-    return;
-  }
-
-  String msg = response["message"] ?? "Call failed";
-
-  if (msg == "Insufficient balance") {
-    msg = "Low balance. Please recharge to make calls.";
-  }
-
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(msg),
-      backgroundColor: Colors.red,
-    ),
-  );
-
-  return;
-  }
-
-  final sessionId = response["sessionId"];
-
-  if (!mounted) return;
-
-  // 🔥 RINGING STATE
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-       builder: (_) => CallScreen(
-        channelName: sessionId,
-        callType: type,
-        initialStatus: "RINGING", // 🔥 new param
-       ),
-    ),
-  );
   }
 
   @override
@@ -212,31 +215,37 @@ class _ChatConversationScreenState
           ),
         ],
       ),
+
       body: Column(
         children: [
 
+          // 🔥 CHAT LIST
           Expanded(
             child: ListView.builder(
               controller: _scrollController,
+              reverse: true, // 🔥 MAIN FIX
+              padding: const EdgeInsets.only(top: 10),
               itemCount: messages.length,
               itemBuilder: (context, index) {
-                final msg = messages[index];
-                final isMe =
-                    msg["senderId"] == myId;
+
+                final msg = messages[messages.length - 1 - index]; // 🔥 reverse index
+                final isMe = msg["senderId"] == myId;
 
                 return Align(
                   alignment: isMe
                       ? Alignment.centerRight
                       : Alignment.centerLeft,
-                  child: Container(
-                    margin:
-                        const EdgeInsets.symmetric(
-                            vertical: 6,
-                            horizontal: 12),
-                    padding:
-                        const EdgeInsets.symmetric(
-                            vertical: 10,
-                            horizontal: 14),
+
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    margin: const EdgeInsets.symmetric(
+                        vertical: 6,
+                        horizontal: 12),
+
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 10,
+                        horizontal: 14),
+
                     decoration: BoxDecoration(
                       gradient: isMe
                           ? const LinearGradient(
@@ -252,6 +261,7 @@ class _ChatConversationScreenState
                       borderRadius:
                           BorderRadius.circular(20),
                     ),
+
                     child: Text(
                       msg["content"].toString(),
                       style: TextStyle(
@@ -266,27 +276,27 @@ class _ChatConversationScreenState
             ),
           ),
 
+          // 🔥 INPUT BOX
           Container(
             padding: const EdgeInsets.all(12),
             color: const Color(0xFF111111),
             child: Row(
               children: [
+
                 Expanded(
                   child: TextField(
                     controller: _textController,
                     style: const TextStyle(
                         color: Colors.white),
-                    decoration:
-                        const InputDecoration(
-                      hintText:
-                          "Type a message...",
+                    decoration: const InputDecoration(
+                      hintText: "Type a message...",
                       hintStyle: TextStyle(
-                          color:
-                              Colors.white54),
+                          color: Colors.white54),
                       border: InputBorder.none,
                     ),
                   ),
                 ),
+
                 GestureDetector(
                   onTap: sendMessage,
                   child: const Icon(
