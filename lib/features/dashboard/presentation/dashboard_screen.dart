@@ -47,7 +47,16 @@ class _DashboardScreenState extends State<DashboardScreen>
   void initState() {
     super.initState();
     _init();
+
+    // 🔥 SCROLL LISTENER (LOAD MORE TRIGGER)
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >=
+          _scrollController.position.maxScrollExtent - 200) {
+        _loadMore();
+      }
+    });
   }
+  
 
   Future<void> _init() async {
 
