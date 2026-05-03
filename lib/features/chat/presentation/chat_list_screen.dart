@@ -31,6 +31,7 @@ class _ChatListScreenState extends State<ChatListScreen>
   }
 
   Future<void> _initialize() async {
+
     final token = await ApiClient.getToken();
 
     if (token == null) {
@@ -38,13 +39,7 @@ class _ChatListScreenState extends State<ChatListScreen>
       return;
     }
 
-    // 🔥 INSTANT DATA (CACHE)
-    if (_controller.hasData) {
-      chats = _controller.chats;
-      loading = false;
-    }
-
-    // 🔥 STREAM LISTEN (REALTIME UPDATE)
+    // 🔥 ALWAYS LISTEN FIRST (IMPORTANT)
     _subscription = _controller.chatStream.listen((data) {
       if (!mounted) return;
 
@@ -54,10 +49,16 @@ class _ChatListScreenState extends State<ChatListScreen>
       });
     });
 
-    // 🔥 LOAD ONLY IF NOT LOADED
-    if (!_controller.hasData) {
-      _controller.loadChats();
+    // 🔥 INSTANT CACHE SHOW
+    if (_controller.hasData) {
+      setState(() {
+        chats = _controller.chats;
+        loading = false;
+      });
     }
+
+    // 🔥 ALWAYS LOAD (NO CONDITION)
+    _controller.loadChats();
   }
 
   @override
@@ -74,6 +75,12 @@ class _ChatListScreenState extends State<ChatListScreen>
       return const Center(child: CircularProgressIndicator());
     }
 
+    if (chats.isEmpty) {
+      return const Center(
+        child: Text("No chats yet"),
+      );
+    }
+
     return ListView.builder(
       itemCount: chats.length,
       itemBuilder: (context, index) {
@@ -84,7 +91,6 @@ class _ChatListScreenState extends State<ChatListScreen>
           onTap: () {
             final userId = chat["user"]["id"];
 
-            // 🔥 INSTANT OPEN (NO LOAD HERE)
             context.push("/chat/$userId");
           },
         );
