@@ -25,8 +25,6 @@ class ConversationController {
 
     _myId = myId;
 
-    GlobalSocketManager.instance.init(myId);
-
     _socketSub?.cancel();
     _socketSub = GlobalSocketManager.instance.messages
         .listen(_handleSocket);
