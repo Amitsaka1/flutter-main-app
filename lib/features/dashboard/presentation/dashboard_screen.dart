@@ -163,6 +163,43 @@ class _DashboardScreenState extends State<DashboardScreen>
     }
   }
   }
+
+  Future<void> _loadMore() async {
+  if (loadingMore || !hasMore) return;
+
+  loadingMore = true;
+
+  try {
+    final res = await ApiClient.get(
+      "/profile/all",
+      queryParams: {
+        ...filters,
+        "page": page + 1,
+        "limit": 20,
+      },
+    );
+
+    if (!mounted) return;
+
+    if (res["success"] == true) {
+
+      final newData = res["data"] as List;
+
+      if (newData.isEmpty) {
+        hasMore = false; // 🔥 no more data
+      } else {
+        page++;
+
+        setState(() {
+          profiles.addAll(newData); // 🔥 append (not replace)
+        });
+      }
+    }
+
+  } catch (_) {}
+
+  loadingMore = false;
+  }
   
   // =========================
   // 🔥 FETCH UNREAD
