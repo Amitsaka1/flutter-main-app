@@ -133,8 +133,8 @@ class _DashboardScreenState extends State<DashboardScreen>
       "/profile/all",
       queryParams: {
         ...filters,
-        "page": 1,
-        "limit": 20,
+        "page": "1",
+        "limit": "20",
       },
     );
 
@@ -174,8 +174,8 @@ class _DashboardScreenState extends State<DashboardScreen>
       "/profile/all",
       queryParams: {
         ...filters,
-        "page": page + 1,
-        "limit": 20,
+        "page": (page + 1).toString(),
+        "limit": "20",
       },
     );
 
