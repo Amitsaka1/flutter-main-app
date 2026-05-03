@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/socket/global_socket_manager.dart';
 import '../../../core/controllers/chat_controller.dart';
+import '../../../core/data/global_data_manager.dart'; // ✅ NEW
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -22,7 +23,6 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   bool filterOpen = false;
   int unreadCount = 0;
-  bool showActive = true;
 
   Map<String, String> filters = {
     "gender": "",
@@ -32,9 +32,10 @@ class _DashboardScreenState extends State<DashboardScreen>
   };
 
   StreamSubscription? _socketSub;
+  StreamSubscription? _globalSub; // ✅ NEW
 
   @override
-  bool get wantKeepAlive => true; // 🔥 important
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -43,12 +44,13 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   Future<void> _init() async {
-  final token = await ApiClient.getToken();
 
-  if (token == null) {
-    if (mounted) context.pushReplacement("/login");
-    return;
-  }
+    final token = await ApiClient.getToken();
+
+    if (token == null) {
+      if (mounted) context.pushReplacement("/login");
+      return;
+    }
 
     final payload = jsonDecode(
       utf8.decode(
@@ -60,55 +62,86 @@ class _DashboardScreenState extends State<DashboardScreen>
 
     final myId = payload["id"];
 
-    // 🔥 SOCKET START
     await GlobalSocketManager.instance.init(myId);
 
-  // 🔥 Don't block UI
-  _fetchProfiles();
-  _fetchUnread();
-  _listenSocket();
+    _listenGlobal();   // ✅ NEW
+    _fetchProfiles();
+    _fetchUnread();
+    _listenSocket();
 
-  Future.delayed(const Duration(seconds: 1), () {
-    if (mounted) {
-      _fetchProfiles();
-    }
-  });
-
-  // 🔥 Only check profile existence separately
-  ApiClient.get("/profile/me").then((profileRes) {
-    if (!mounted) return;
-
-    if (profileRes["success"] != true) {
-      context.pushReplacement("/create-profile");
-    }
-  });
+    ApiClient.get("/profile/me").then((profileRes) {
+      if (!mounted) return;
+      if (profileRes["success"] != true) {
+        context.pushReplacement("/create-profile");
+      }
+    });
   }
+
+  // =========================
+  // 🔥 GLOBAL LISTENER
+  // =========================
+
+  void _listenGlobal() {
+    final global = GlobalDataManager.instance;
+
+    _globalSub = global.stream.listen((_) {
+      if (!mounted) return;
+
+      if (global.profiles != null) {
+        setState(() {
+          profiles = global.profiles!;
+          loading = false;
+        });
+      }
+    });
+  }
+
+  // =========================
+  // 🔥 FETCH PROFILES (CACHE)
+  // =========================
 
   Future<void> _fetchProfiles() async {
-  try {
-    final response =
-        await ApiClient.get("/profile/all", queryParams: filters);
 
-    if (!mounted) return;
+    final global = GlobalDataManager.instance;
 
-    if (response["success"] == true) {
+    // ✅ instant load
+    if (global.profiles != null) {
       setState(() {
-        profiles = response["data"];
+        profiles = global.profiles!;
         loading = false;
       });
-    } else {
-      setState(() {
-        loading = false;
-      });
+      return;
     }
-  } catch (_) {
-    if (mounted) {
-      setState(() {
-        loading = false;
-      });
+
+    try {
+      final response =
+          await ApiClient.get("/profile/all", queryParams: filters);
+
+      if (!mounted) return;
+
+      if (response["success"] == true) {
+
+        global.setProfiles(response["data"]); // 🔥 SAVE GLOBAL
+
+        setState(() {
+          profiles = response["data"];
+          loading = false;
+        });
+
+      } else {
+        setState(() => loading = false);
+      }
+
+    } catch (_) {
+      if (mounted) {
+        setState(() => loading = false);
+      }
     }
   }
-  }
+
+  // =========================
+  // 🔥 FETCH UNREAD
+  // =========================
 
   Future<void> _fetchUnread() async {
     try {
@@ -125,60 +158,63 @@ class _DashboardScreenState extends State<DashboardScreen>
         }
 
         setState(() => unreadCount = total);
-        if (mounted) {
-          setState(() {
-            unreadCount = total;
-          });
-        }
       }
     } catch (_) {}
   }
 
+  // =========================
+  // 🔥 SOCKET LISTENER
+  // =========================
+
   void _listenSocket() {
-  final socket = GlobalSocketManager.instance;
 
-  // 🔥 old listener remove
-  _socketSub?.cancel();
+    final socket = GlobalSocketManager.instance;
+    final global = GlobalDataManager.instance;
 
-  _socketSub = socket.messages.listen((message) {
+    _socketSub?.cancel();
 
-    if (!mounted) return;
+    _socketSub = socket.messages.listen((message) {
 
-    final type = message["type"];
+      if (!mounted) return;
 
-    if (type == "NEW_PROFILE") {
-      final newProfile = message["data"];
+      final type = message["type"];
 
-      if (!profiles.any((p) => p["id"] == newProfile["id"])) {
+      if (type == "NEW_PROFILE") {
+        final newProfile = message["data"];
+
+        if (global.profiles != null &&
+            !global.profiles!.any((p) => p["id"] == newProfile["id"])) {
+
+          global.profiles!.insert(0, newProfile); // 🔥 GLOBAL UPDATE
+          global.notify();
+
+        }
+      }
+
+      if (type == "USER_ONLINE" || type == "USER_OFFLINE") {
+        setState(() {}); // only UI refresh
+      }
+
+      if (type == "NEW_MESSAGE") {
+        final msg = message["data"];
+
+        ChatController.instance.handleNewMessage(msg);
+
         setState(() {
-          profiles.insert(0, newProfile);
+          unreadCount++;
         });
       }
-    }
 
-    if (type == "USER_ONLINE" || type == "USER_OFFLINE") {
-      setState(() {}); // 🔥 only rebuild UI
-    }
-
-    if (type == "NEW_MESSAGE") {
-      final msg = message["data"];
-
-      ChatController.instance.handleNewMessage(msg);
-
-      setState(() {
-        unreadCount++;
-      });
-    }
-
-    if (type == "MESSAGES_READ") {
-      _fetchUnread();
-    }
-  });
+      if (type == "MESSAGES_READ") {
+        _fetchUnread();
+      }
+    });
   }
 
   @override
   void dispose() {
     _socketSub?.cancel();
+    _globalSub?.cancel(); // ✅ NEW
     super.dispose();
   }
 
@@ -199,7 +235,7 @@ class _DashboardScreenState extends State<DashboardScreen>
         child: Column(
           children: [
 
-            // SEARCH + FILTER
+            // SEARCH
 
             Row(
               children: [
@@ -233,27 +269,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                     ),
                   ),
                 ),
-
-                const SizedBox(width: 10),
-
-                GestureDetector(
-                  onTap: () =>
-                      setState(() => filterOpen = !filterOpen),
-                  child: Container(
-                    height: 48,
-                    width: 48,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1a1a1a),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: const Icon(Icons.tune,
-                        color: Colors.white70, size: 20),
-                  ),
-                ),
               ],
             ),
-
-            if (filterOpen) _buildFilterPanel(),
 
             const SizedBox(height: 14),
 
@@ -276,44 +293,6 @@ class _DashboardScreenState extends State<DashboardScreen>
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildFilterPanel() {
-    return Container(
-      padding: const EdgeInsets.all(15),
-      margin: const EdgeInsets.only(top: 10),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0d0d0d),
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: Column(
-        children: [
-          DropdownButtonFormField<String>(
-            decoration:
-                const InputDecoration(labelText: "Gender"),
-            items: const [
-              DropdownMenuItem(
-                  value: "Male", child: Text("Male")),
-              DropdownMenuItem(
-                  value: "Female", child: Text("Female")),
-            ],
-            onChanged: (val) =>
-                filters["gender"] = val ?? "",
-          ),
-          const SizedBox(height: 10),
-          ElevatedButton(
-            onPressed: () {
-              setState(() {
-                loading = true;
-              });
-              _fetchProfiles();
-              filterOpen = false;
-            },
-            child: const Text("Apply"),
-          )
-        ],
       ),
     );
   }
@@ -350,7 +329,6 @@ class _ProfileCard extends StatelessWidget {
         child: Stack(
           children: [
 
-            // 🔥 ONLINE DOT
             if (online)
               const Positioned(
                 top: 0,
@@ -361,12 +339,10 @@ class _ProfileCard extends StatelessWidget {
                 ),
               ),
 
-            // 🔥 CONTENT
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
 
-                // 🔥 AVATAR
                 CircleAvatar(
                   radius: 28,
                   backgroundImage: profile["avatarUrl"] != null &&
