@@ -52,17 +52,17 @@ class _DashboardScreenState extends State<DashboardScreen>
       return;
     }
 
-    final payload = jsonDecode(
-      utf8.decode(
-        base64Url.decode(
-          base64Url.normalize(token.split(".")[1]),
-        ),
-      ),
-    );
+//    final payload = jsonDecode(
+  //    utf8.decode(
+  //      base64Url.decode(
+  //        base64Url.normalize(token.split(".")[1]),
+  //      ),
+ //     ),
+//    );
 
-    final myId = payload["id"];
+ //   final myId = payload["id"];
 
-    await GlobalSocketManager.instance.init(myId);
+  //  await GlobalSocketManager.instance.init(myId);
 
     _listenGlobal();   // ✅ NEW
     _fetchProfiles();
