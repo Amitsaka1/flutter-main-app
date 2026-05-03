@@ -30,6 +30,13 @@ class _DashboardScreenState extends State<DashboardScreen>
     "maxAge": "",
   };
 
+  // 🔥 PAGINATION + SCROLL
+  final ScrollController _scrollController = ScrollController();
+
+  int page = 1;
+  bool hasMore = true;
+  bool loadingMore = false;
+
   StreamSubscription? _socketSub;
   StreamSubscription? _globalSub; // ✅ NEW
 
