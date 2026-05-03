@@ -73,33 +73,47 @@ class ChatController {
 
   // ================= SOCKET UPDATE =================
   void handleNewMessage(dynamic message) {
-    final senderId = message["senderId"] ?? message["receiverId"];
 
-    final updatedChats = List<dynamic>.from(_chats);
+  final senderId = message["senderId"];
+  final receiverId = message["receiverId"];
 
-    for (int i = 0; i < updatedChats.length; i++) {
-      final chat = updatedChats[i];
+  final chatUserId = senderId == _myId
+      ? receiverId
+      : senderId;
 
-      if (chat["user"]["id"] == senderId) {
-        updatedChats[i] = {
-          ...chat,
-          "lastMessage": message["type"] == "image"
-              ? "📷 Image"
-              : message["content"],
-          "unreadCount": (chat["unreadCount"] ?? 0) + 1,
-        };
+  final updatedChats = List<dynamic>.from(_chats);
 
-        // 🔥 move updated chat to top (UX improve)
-        final updated = updatedChats.removeAt(i);
-        updatedChats.insert(0, updated);
+  bool found = false;
 
-        break;
-      }
+  for (int i = 0; i < updatedChats.length; i++) {
+    final chat = updatedChats[i];
+
+    if (chat["user"]["id"] == chatUserId) {
+      updatedChats[i] = {
+        ...chat,
+        "lastMessage": message["content"],
+        "unreadCount": (chat["unreadCount"] ?? 0) + 1,
+      };
+      found = true;
+      break;
     }
+  }
 
-    _chats = updatedChats;
+  // 🔥 NEW CHAT ADD (IMPORTANT FIX)
+  if (!found) {
+    updatedChats.insert(0, {
+      "user": {
+        "id": chatUserId,
+        "phone": "New User",
+      },
+      "lastMessage": message["content"],
+      "unreadCount": 1,
+    });
+  }
 
-    _chatStreamController.add(List.from(_chats));
+  _chats = updatedChats;
+
+  _chatStreamController.add(List.from(_chats));
   }
 
   // ================= MARK READ =================
