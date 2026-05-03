@@ -346,8 +346,11 @@ class _ProfileCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
-    final online =
-        profile["user"]?["isOnline"] == true;
+    final socket = GlobalSocketManager.instance;
+
+    final online = socket.onlineUsers.contains(
+      profile["userId"]?.toString(),
+    );
 
     final String? userId =
         profile["userId"]?.toString();
