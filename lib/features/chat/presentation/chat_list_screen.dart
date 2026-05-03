@@ -58,7 +58,7 @@ class _ChatListScreenState extends State<ChatListScreen>
     }
 
     // 🔥 ALWAYS LOAD (NO CONDITION)
-    _controller.loadChats();
+    _controller.loadChats(forceRefresh: true);
   }
 
   @override
