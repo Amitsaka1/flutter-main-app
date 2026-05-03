@@ -117,43 +117,53 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   Future<void> _fetchProfiles() async {
 
-    final global = GlobalDataManager.instance;
+  final global = GlobalDataManager.instance;
 
-    // ✅ instant load
-    if (global.profiles != null) {
-      setState(() {
-        profiles = global.profiles!;
-        loading = false;
-      });
-      return;
-    }
-
-    try {
-      final response =
-          await ApiClient.get("/profile/all", queryParams: filters);
-
-      if (!mounted) return;
-
-      if (response["success"] == true) {
-
-        global.setProfiles(response["data"]); // 🔥 SAVE GLOBAL
-
-        setState(() {
-          profiles = response["data"];
-          loading = false;
-        });
-
-      } else {
-        setState(() => loading = false);
-      }
-
-    } catch (_) {
-      if (mounted) {
-        setState(() => loading = false);
-      }
-    }
+  // ✅ instant cache (no loading)
+  if (global.profiles != null) {
+    setState(() {
+      profiles = global.profiles!;
+      loading = false;
+    });
+    return;
   }
 
+  try {
+    final response = await ApiClient.get(
+      "/profile/all",
+      queryParams: {
+        ...filters,
+        "page": 1,
+        "limit": 20,
+      },
+    );
+
+    if (!mounted) return;
+
+    if (response["success"] == true) {
+
+      final data = response["data"] as List;
+
+      global.setProfiles(data); // 🔥 global save
+
+      setState(() {
+        profiles = data;
+        page = 1;
+        hasMore = data.length == 20;
+        loading = false;
+      });
+
+    } else {
+      setState(() => loading = false);
+    }
+
+  } catch (_) {
+    if (mounted) {
+      setState(() => loading = false);
+    }
+  }
+  }
+  
   // =========================
   // 🔥 FETCH UNREAD
   // =========================
