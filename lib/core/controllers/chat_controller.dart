@@ -2,17 +2,17 @@ import 'dart:async';
 import '../network/api_client.dart';
 
 class ChatController {
-  // Singleton
+  // ================= SINGLETON =================
   ChatController._internal();
   static final ChatController _instance = ChatController._internal();
   static ChatController get instance => _instance;
 
-  // 🔥 Internal State
+  // ================= STATE =================
   List<dynamic> _chats = [];
   bool _loading = false;
   DateTime? _lastFetch;
 
-  /// ✅ NEW: loaded flag (instant open)
+  /// 🔥 loaded flag (instant open)
   bool _loaded = false;
 
   final StreamController<List<dynamic>> _chatStreamController =
@@ -20,12 +20,11 @@ class ChatController {
 
   Stream<List<dynamic>> get chatStream => _chatStreamController.stream;
 
-  // 🔥 Return copy (mutation safe)
+  // ================= GETTERS =================
   List<dynamic> get chats => List.from(_chats);
 
   bool get isLoading => _loading;
 
-  /// ✅ FIXED
   bool get hasData => _loaded && _chats.isNotEmpty;
 
   bool get isFresh {
@@ -34,11 +33,10 @@ class ChatController {
   }
 
   // ================= LOAD =================
-
   Future<void> loadChats({bool forceRefresh = false}) async {
     if (_loading) return;
 
-    /// 🔥 INSTANT (NO API)
+    // 🔥 instant cache return
     if (!forceRefresh && _loaded) {
       _chatStreamController.add(List.from(_chats));
       return;
@@ -53,26 +51,30 @@ class ChatController {
         final data = response["data"] as List;
 
         _chats = List.from(data);
-        _loaded = true; // ✅ IMPORTANT
         _lastFetch = DateTime.now();
-
-        _chatStreamController.add(List.from(_chats));
       }
-    } catch (_) {}
+    } catch (_) {
+      // ignore error (UI will still update)
+    }
+
+    // 🔥 IMPORTANT: always mark loaded
+    _loaded = true;
 
     _loading = false;
+
+    // 🔥 ALWAYS emit (even if empty / failed)
+    _chatStreamController.add(List.from(_chats));
   }
 
   // ================= REFRESH =================
-
   Future<void> refresh() async {
     await loadChats(forceRefresh: true);
   }
 
-  // ================= SOCKET =================
-
+  // ================= SOCKET UPDATE =================
   void handleNewMessage(dynamic message) {
     final senderId = message["senderId"] ?? message["receiverId"];
+
     final updatedChats = List<dynamic>.from(_chats);
 
     for (int i = 0; i < updatedChats.length; i++) {
@@ -81,13 +83,16 @@ class ChatController {
       if (chat["user"]["id"] == senderId) {
         updatedChats[i] = {
           ...chat,
-          "lastMessage":
-              message["type"] == "image"
-                  ? "📷 Image"
-                  : message["content"],
-          "unreadCount":
-              (chat["unreadCount"] ?? 0) + 1,
+          "lastMessage": message["type"] == "image"
+              ? "📷 Image"
+              : message["content"],
+          "unreadCount": (chat["unreadCount"] ?? 0) + 1,
         };
+
+        // 🔥 move updated chat to top (UX improve)
+        final updated = updatedChats.removeAt(i);
+        updatedChats.insert(0, updated);
+
         break;
       }
     }
@@ -97,8 +102,7 @@ class ChatController {
     _chatStreamController.add(List.from(_chats));
   }
 
-  // ================= READ =================
-
+  // ================= MARK READ =================
   void markAsRead(String userId) {
     final updatedChats = List<dynamic>.from(_chats);
 
@@ -119,8 +123,16 @@ class ChatController {
     _chatStreamController.add(List.from(_chats));
   }
 
-  // ================= DISPOSE =================
+  // ================= RESET (LOGOUT SAFE) =================
+  void reset() {
+    _chats = [];
+    _loaded = false;
+    _lastFetch = null;
 
+    _chatStreamController.add([]);
+  }
+
+  // ================= DISPOSE =================
   void dispose() {
     _chatStreamController.close();
   }
