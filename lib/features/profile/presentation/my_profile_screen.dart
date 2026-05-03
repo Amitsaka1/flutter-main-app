@@ -16,76 +16,93 @@ class MyProfileScreen extends StatefulWidget {
 class _MyProfileScreenState extends State<MyProfileScreen>
     with AutomaticKeepAliveClientMixin {
 
+  // 🔥 GLOBAL CACHE
+  static Map<String, dynamic>? _cache;
+
   Map<String, dynamic>? profile;
   bool loading = true;
   StreamSubscription? _socketSub;
 
   final ImagePicker _picker = ImagePicker();
 
-  Future<void> _pickImage() async {
-  final XFile? image = await _picker.pickImage(
-    source: ImageSource.gallery,
-  );
-
-  if (image == null) return;
-
-  try {
-    final file = File(image.path);
-
-    final response = await ApiClient.multipart(
-      "/profile/upload-avatar",
-      file,
-      fieldName: "file",
-    );
-
-    if (response["success"] == true) {
-      final imageUrl = response["avatarUrl"];
-
-      // 🔥 UI update
-      setState(() {
-        profile!["avatarUrl"] = imageUrl;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Profile updated ✅")),
-      );
-    }
-
-  } catch (e) {
-    print("Upload error: $e");
-  }
-  }
-  
   @override
   bool get wantKeepAlive => true;
 
   @override
-void initState() {
-  super.initState();
-  _fetchProfile();
+  void initState() {
+    super.initState();
 
-  _socketSub =
-      GlobalSocketManager.instance.messages.listen((data) {
-
-    if (data["type"] == "WALLET_UPDATED") {
-
-      final newBalance = data["balance"];
-
-      if (!mounted) return;
-      if (profile == null) return;
-
-      setState(() {
-        profile!["user"]["wallet"] = newBalance;
-      });
+    // 🔥 INSTANT LOAD (NO LOADING)
+    if (_cache != null) {
+      profile = Map.from(_cache!);
+      loading = false;
     }
-  });
-}
+
+    _fetchProfile(); // background refresh
+
+    _socketSub =
+        GlobalSocketManager.instance.messages.listen((data) {
+
+      if (data["type"] == "WALLET_UPDATED") {
+        final newBalance = data["balance"];
+
+        if (!mounted || profile == null) return;
+
+        setState(() {
+          profile!["user"]["wallet"] = newBalance;
+        });
+
+        // 🔥 update cache also
+        _cache = Map.from(profile!);
+      }
+    });
+  }
 
   @override
   void dispose() {
     _socketSub?.cancel();
     super.dispose();
   }
+
+  // ================= IMAGE =================
+
+  Future<void> _pickImage() async {
+    final XFile? image = await _picker.pickImage(
+      source: ImageSource.gallery,
+    );
+
+    if (image == null) return;
+
+    try {
+      final file = File(image.path);
+
+      final response = await ApiClient.multipart(
+        "/profile/upload-avatar",
+        file,
+        fieldName: "file",
+      );
+
+      if (response["success"] == true) {
+        final imageUrl = response["avatarUrl"];
+
+        setState(() {
+          profile!["avatarUrl"] = imageUrl;
+        });
+
+        // 🔥 cache update
+        _cache = Map.from(profile!);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Profile updated ✅")),
+        );
+      }
+
+    } catch (e) {
+      print("Upload error: $e");
+    }
+  }
+
+  // ================= FETCH =================
 
   Future<void> _fetchProfile() async {
     try {
@@ -94,6 +111,8 @@ void initState() {
       if (!mounted) return;
 
       if (response["success"] == true) {
+        _cache = response["data"]; // 🔥 save cache
+
         setState(() {
           profile = response["data"];
           loading = false;
@@ -108,11 +127,13 @@ void initState() {
     }
   }
 
+  // ================= UI =================
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
 
-    if (loading) {
+    if (loading && profile == null) {
       return const Center(child: CircularProgressIndicator());
     }
 
@@ -135,7 +156,7 @@ void initState() {
         child: Column(
           children: [
 
-            /// 🔥 PROFILE AVATAR WITH CAMERA + LEVEL
+            // 🔥 PROFILE
             Stack(
               alignment: Alignment.center,
               children: [
@@ -151,22 +172,22 @@ void initState() {
                 Positioned(
                   bottom: 0,
                   right: 0,
-                child: GestureDetector(
-                  onTap: _pickImage,
-                  child: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Color(0xFF00F5A0),
-                    ),
-                    child: const Icon(
-                      Icons.camera_alt,
-                      size: 18,
-                      color: Colors.black,
+                  child: GestureDetector(
+                    onTap: _pickImage,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Color(0xFF00F5A0),
+                      ),
+                      child: const Icon(
+                        Icons.camera_alt,
+                        size: 18,
+                        color: Colors.black,
+                      ),
                     ),
                   ),
                 ),
-              ),
 
                 Positioned(
                   top: -4,
@@ -206,7 +227,6 @@ void initState() {
 
             const SizedBox(height: 25),
 
-            /// 🔥 FOLLOWING / FOLLOWERS BOXES
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -217,7 +237,6 @@ void initState() {
 
             const SizedBox(height: 30),
 
-            /// 🔥 EDIT + WALLET ROW
             Row(
               children: [
 
