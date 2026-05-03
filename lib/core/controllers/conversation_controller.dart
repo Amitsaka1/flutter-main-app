@@ -15,6 +15,9 @@ class ConversationController {
   bool _socketInitialized = false;
   StreamSubscription? _socketSub;
 
+  /// 🔥 NEW: track loaded conversations
+  final Set<String> _loadedConversations = {};
+
   // ================= INIT =================
 
   void init(String myId) {
@@ -42,12 +45,23 @@ class ConversationController {
     return List.from(_conversationCache[userId] ?? []);
   }
 
+  /// 🔥 NEW: check cache
+  bool hasMessages(String userId) {
+    return _conversationCache.containsKey(userId) &&
+        _conversationCache[userId]!.isNotEmpty;
+  }
+
   // ================= LOAD =================
 
   Future<void> loadMessages(String userId) async {
+
+    /// 🔥 INSTANT SHOW (CACHE)
     if (_conversationCache.containsKey(userId)) {
       _emit(userId);
     }
+
+    /// 🔥 ALREADY LOADED → SKIP API
+    if (_loadedConversations.contains(userId)) return;
 
     try {
       final response =
@@ -57,7 +71,10 @@ class ConversationController {
         _conversationCache[userId] =
             List.from(response["data"]);
 
-        await ApiClient.post("/chat/mark-read", {
+        _loadedConversations.add(userId); // ✅ IMPORTANT
+
+        /// 🔥 mark read (background)
+        ApiClient.post("/chat/mark-read", {
           "senderId": userId
         });
 
@@ -70,6 +87,7 @@ class ConversationController {
 
   Future<void> sendMessage(
       String userId, String content) async {
+
     if (_myId == null) return;
 
     final tempMessage = {
@@ -84,6 +102,7 @@ class ConversationController {
 
     final updated =
         List<dynamic>.from(_conversationCache[userId]!);
+
     updated.add(tempMessage);
 
     _conversationCache[userId] = updated;
@@ -116,9 +135,13 @@ class ConversationController {
       final updated =
           List<dynamic>.from(_conversationCache[chatUser]!);
 
+      /// 🔥 DUPLICATE PREVENTION
       if (!updated.any((m) => m["id"] == msg["id"])) {
         updated.add(msg);
         _conversationCache[chatUser] = updated;
+
+        _loadedConversations.add(chatUser); // ✅ mark loaded
+
         _emit(chatUser);
       }
     }
@@ -128,6 +151,7 @@ class ConversationController {
 
       if (userId != null &&
           _conversationCache.containsKey(userId)) {
+
         final updated =
             List<dynamic>.from(_conversationCache[userId]!);
 
@@ -166,5 +190,7 @@ class ConversationController {
     }
 
     _streams.clear();
+    _conversationCache.clear();
+    _loadedConversations.clear();
   }
 }
