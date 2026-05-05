@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // ✅ NEW
 import 'websocket_service.dart';
 import 'package:app_project/features/call/presentation/incoming_call_screen.dart';
 import 'package:app_project/main.dart';
 import 'package:app_project/core/chat/unread_counter_service.dart';
 import 'package:app_project/core/controllers/chat_controller.dart';
+import 'package:app_project/providers/online_users_provider.dart'; // ✅ NEW
 
 class GlobalSocketManager with WidgetsBindingObserver {
   GlobalSocketManager._internal();
@@ -22,8 +24,11 @@ class GlobalSocketManager with WidgetsBindingObserver {
 
   bool _incomingScreenOpen = false;
 
-  /// ✅ ONLINE USERS (FINAL FIX)
+  /// ✅ ONLINE USERS (OLD SYSTEM - KEEP)
   final Set<String> onlineUsers = {};
+
+  /// ✅ Riverpod container (NEW)
+  final ProviderContainer _container = ProviderContainer();
 
   final StreamController<Map<String, dynamic>>
       _messageController = StreamController.broadcast();
@@ -62,12 +67,16 @@ class GlobalSocketManager with WidgetsBindingObserver {
       final type = event["type"];
 
       /// ===============================
-      /// 🔥 ONLINE STATUS (FINAL FIX)
+      /// 🔥 ONLINE STATUS (UPDATED)
       /// ===============================
       if (type == "USER_ONLINE") {
         final userId = event["userId"]?.toString();
         if (userId != null) {
           onlineUsers.add(userId);
+
+          final notifier =
+              _container.read(onlineUsersProvider.notifier);
+          notifier.state = {...notifier.state, userId};
         }
         _messageController.add(event);
       }
@@ -76,6 +85,13 @@ class GlobalSocketManager with WidgetsBindingObserver {
         final userId = event["userId"]?.toString();
         if (userId != null) {
           onlineUsers.remove(userId);
+
+          final notifier =
+              _container.read(onlineUsersProvider.notifier);
+
+          final updated = {...notifier.state};
+          updated.remove(userId);
+          notifier.state = updated;
         }
         _messageController.add(event);
       }
@@ -210,7 +226,10 @@ class GlobalSocketManager with WidgetsBindingObserver {
     _initialized = false;
     _userId = null;
 
-    onlineUsers.clear(); // 🔥 IMPORTANT RESET
+    onlineUsers.clear();
+
+    // 🔥 Provider reset
+    _container.read(onlineUsersProvider.notifier).state = {};
   }
 
   bool get isConnected =>
@@ -236,7 +255,9 @@ class GlobalSocketManager with WidgetsBindingObserver {
     _seatMapController.close();
     _roomClosedController.close();
 
-    onlineUsers.clear(); // 🔥 CLEANUP
+    onlineUsers.clear();
+
+    _container.read(onlineUsersProvider.notifier).state = {};
 
     _initialized = false;
     _userId = null;
