@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:convert';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // ✅ NEW
 
 import 'app.dart';
 import 'core/network/api_client.dart';
@@ -39,7 +40,11 @@ void main() async {
     debugPrint("❌ Socket init error: $e");
   }
 
-  runApp(const MyApp());
+  runApp(
+    const ProviderScope(
+      child: MyApp(),
+    ),
+  );
 }
 
 /// =========================
