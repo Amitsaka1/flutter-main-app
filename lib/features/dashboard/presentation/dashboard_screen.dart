@@ -5,6 +5,8 @@ import '../../../core/network/api_client.dart';
 import '../../../core/socket/global_socket_manager.dart';
 import '../../../core/controllers/chat_controller.dart';
 import '../../../core/data/global_data_manager.dart'; // ✅ NEW
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:app_project/providers/online_users_provider.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -362,19 +364,19 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 }
 
-class _ProfileCard extends StatelessWidget {
+class _ProfileCard extends ConsumerWidget {
   final dynamic profile;
   const _ProfileCard({required this.profile});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
 
-    final socket = GlobalSocketManager.instance;
+    final onlineUsers = ref.watch(onlineUsersProvider);
 
-    final online = socket.onlineUsers.contains(
+    final online = onlineUsers.contains(
       profile["userId"]?.toString(),
     );
-
+    
     final String? userId =
         profile["userId"]?.toString();
 
