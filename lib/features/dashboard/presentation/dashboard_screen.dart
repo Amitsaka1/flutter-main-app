@@ -256,9 +256,9 @@ class _DashboardScreenState extends State<DashboardScreen>
         }
       }
 
-      if (type == "USER_ONLINE" || type == "USER_OFFLINE") {
-        setState(() {}); // only UI refresh
-      }
+ //     if (type == "USER_ONLINE" || type == "USER_OFFLINE") {
+  //      setState(() {}); // only UI refresh
+//      }
 
       if (type == "NEW_MESSAGE") {
         final msg = message["data"];
