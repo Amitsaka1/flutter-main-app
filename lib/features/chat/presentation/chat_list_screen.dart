@@ -85,32 +85,32 @@ class _ChatListScreenState
 
     // 🔥 ALWAYS LOAD (NO CONDITION)
     _controller.loadChats(forceRefresh: true);
-  }
 
-  /// 🔥 DIRECT PROVIDER API SYNC
-  try {
+    /// 🔥 DIRECT PROVIDER API SYNC
+    try {
 
-    final response =
-        await ApiClient.get("/chat/recent");
+      final response =
+          await ApiClient.get("/chat/recent");
 
-    if (response["success"] == true) {
+      if (response["success"] == true) {
 
-      final data =
-          List<dynamic>.from(response["data"]);
+        final data =
+            List<dynamic>.from(response["data"]);
 
-      /// provider update
-      ref
-          .read(recentChatsProvider.notifier)
-          .state = data;
+        /// provider update
+        ref
+            .read(recentChatsProvider.notifier)
+            .state = data;
 
-      if (mounted) {
-        setState(() {
-          loading = false;
-        });
+        if (mounted) {
+          setState(() {
+            loading = false;
+          });
+        }
       }
-    }
 
-  } catch (_) {}
+    } catch (_) {}
+  }
 
   @override
   void dispose() {
