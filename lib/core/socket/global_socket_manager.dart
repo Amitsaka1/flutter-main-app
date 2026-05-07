@@ -116,52 +116,84 @@ class GlobalSocketManager with WidgetsBindingObserver {
       // 🔥 NEW MESSAGE
       else if (type == "NEW_MESSAGE") {
 
-        final data = event["data"];
+      final data = event["data"];
 
-        final senderId =
-            data["senderId"]?.toString();
+      final senderId =
+          data["senderId"]?.toString();
 
-        final receiverId =
-            data["receiverId"]?.toString();
+      final receiverId =
+          data["receiverId"]?.toString();
 
-        final currentUserId = _userId?.toString();
+      final currentUserId = _userId?.toString();
 
-        /// 🔥 unread
-        if (senderId != currentUserId &&
-            senderId != null) {
-          UnreadCounterService.increment(senderId);
-        }
+      /// 🔥 unread
+      if (senderId != currentUserId &&
+          senderId != null) {
+        UnreadCounterService.increment(senderId);
+      }
 
-        /// 🔥 OLD SYSTEM (KEEP SAFE)
-        ChatController.instance
-           .handleNewMessage(data);
+      /// 🔥 OLD SYSTEM (KEEP SAFE)
+      ChatController.instance
+          .handleNewMessage(data);
 
-        /// 🔥 NEW RIVERPOD SYSTEM
-        final notifier =
-            _container.read(messagesProvider.notifier);
+      /// 🔥 NEW RIVERPOD MESSAGE SYSTEM
+      final notifier =
+          _container.read(messagesProvider.notifier);
+    
+      final current =
+           {...notifier.state};
 
-          final current =
-             {...notifier.state};
+      /// determine chat partner
+      String chatId = senderId == currentUserId
+          ? receiverId ?? ""
+          : senderId ?? "";
 
-        /// determine chat partner
-        String chatId = senderId == currentUserId
-             ? receiverId ?? ""
-             : senderId ?? "";
+      if (chatId.isNotEmpty) {
 
-        if (chatId.isNotEmpty) {
+        final oldMessages =
+            current[chatId] ?? [];
 
-          final oldMessages =
-              current[chatId] ?? [];
+        current[chatId] = [
+          ...oldMessages,
+          data,
+        ];
 
-          current[chatId] = [
-            ...oldMessages,
-            data,
-          ];
+        notifier.state = current;
 
-           notifier.state = current;
-        }
+        /// 🔥 RECENT CHATS UPDATE
+        final recentNotifier =
+            _container.read(recentChatsProvider.notifier);
 
-         _messageController.add(event);
+        final recentChats =
+            List<dynamic>.from(recentNotifier.state);
+
+        final existingIndex = recentChats.indexWhere(
+           (c) => c["userId"] == chatId,
+        );
+
+        if (existingIndex != -1) {
+
+          final old =
+              recentChats.removeAt(existingIndex);
+
+          recentChats.insert(0, {
+            ...old,
+            "lastMessage": data["content"],
+            "updatedAt":
+                DateTime.now().toIso8601String(),
+
+            /// unread increase only for receiver
+            "unreadCount":
+                senderId != currentUserId
+                    ? ((old["unreadCount"] ?? 0) + 1)
+                    : (old["unreadCount"] ?? 0),
+          });
+         }
+
+        recentNotifier.state = recentChats;
+      }
+
+      _messageController.add(event);
       }
       
     });
