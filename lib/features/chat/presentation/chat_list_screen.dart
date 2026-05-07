@@ -87,6 +87,31 @@ class _ChatListScreenState
     _controller.loadChats(forceRefresh: true);
   }
 
+  /// 🔥 DIRECT PROVIDER API SYNC
+  try {
+
+    final response =
+        await ApiClient.get("/chat/recent");
+
+    if (response["success"] == true) {
+
+      final data =
+          List<dynamic>.from(response["data"]);
+
+      /// provider update
+      ref
+          .read(recentChatsProvider.notifier)
+          .state = data;
+
+      if (mounted) {
+        setState(() {
+          loading = false;
+        });
+      }
+    }
+
+  } catch (_) {}
+
   @override
   void dispose() {
     _subscription?.cancel();
