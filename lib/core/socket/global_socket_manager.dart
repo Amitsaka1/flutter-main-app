@@ -8,6 +8,7 @@ import 'package:app_project/main.dart';
 import 'package:app_project/core/chat/unread_counter_service.dart';
 import 'package:app_project/core/controllers/chat_controller.dart';
 import 'package:app_project/providers/online_users_provider.dart'; // ✅ NEW
+import 'package:app_project/providers/messages_provider.dart';
 
 class GlobalSocketManager with WidgetsBindingObserver {
   GlobalSocketManager._internal();
@@ -114,17 +115,55 @@ class GlobalSocketManager with WidgetsBindingObserver {
 
       // 🔥 NEW MESSAGE
       else if (type == "NEW_MESSAGE") {
-        final senderId = event["data"]["senderId"];
 
-        if (senderId != _userId) {
+        final data = event["data"];
+
+        final senderId =
+            data["senderId"]?.toString();
+
+        final receiverId =
+            data["receiverId"]?.toString();
+
+        final currentUserId = _userId?.toString();
+
+        /// 🔥 unread
+        if (senderId != currentUserId &&
+            senderId != null) {
           UnreadCounterService.increment(senderId);
         }
 
+        /// 🔥 OLD SYSTEM (KEEP SAFE)
         ChatController.instance
-            .handleNewMessage(event["data"]);
+           .handleNewMessage(data);
 
-        _messageController.add(event);
+        /// 🔥 NEW RIVERPOD SYSTEM
+        final notifier =
+            _container.read(messagesProvider.notifier);
+
+          final current =
+             {...notifier.state};
+
+        /// determine chat partner
+        String chatId = senderId == currentUserId
+             ? receiverId ?? ""
+             : senderId ?? "";
+
+        if (chatId.isNotEmpty) {
+
+          final oldMessages =
+              current[chatId] ?? [];
+
+          current[chatId] = [
+            ...oldMessages,
+            data,
+          ];
+
+           notifier.state = current;
+        }
+
+         _messageController.add(event);
       }
+      
     });
 
     if (!_observerAdded) {
