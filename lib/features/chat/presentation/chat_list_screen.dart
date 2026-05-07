@@ -77,24 +77,28 @@ class _ChatListScreenState
     final providerChats =
         ref.watch(recentChatsProvider);
 
-    if (loading && chats.isEmpty) {
+    final displayChats =
+        providerChats.isNotEmpty
+            ? providerChats
+            : chats;
+
+    if (loading &&
+        chats.isEmpty &&
+        providerChats.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (chats.isEmpty) {
+    if (providerChats.isEmpty &&
+        chats.isEmpty) {
       return const Center(
         child: Text("No chats yet"),
       );
     }
 
     return ListView.builder(
-      itemCount: providerChats.isNotEmpty
-          ? providerChats.length
-          : chats.length,
+      itemCount: displayChats.length,
       itemBuilder: (context, index) {
-        final chat = providerChats.isNotEmpty
-            ? providerChats[index]
-            : chats[index];
+        final chat = displayChats[index];
 
         return ChatCard(
           chat: chat,
