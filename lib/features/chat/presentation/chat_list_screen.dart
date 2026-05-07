@@ -44,7 +44,17 @@ class _ChatListScreenState
 
     // 🔥 ALWAYS LISTEN FIRST (IMPORTANT)
     _subscription = _controller.chatStream.listen((data) {
+
       if (!mounted) return;
+
+      /// 🔥 If provider already has data,
+      /// avoid unnecessary controller rebuilds
+      final providerChats =
+          ref.read(recentChatsProvider);
+
+      if (providerChats.isNotEmpty) {
+        return;
+      }
 
       setState(() {
         chats = data;
