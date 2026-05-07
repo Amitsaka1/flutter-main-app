@@ -54,8 +54,21 @@ class _ChatListScreenState
 
     // 🔥 INSTANT CACHE SHOW
     if (_controller.hasData) {
+
+      final cachedChats =
+          List<dynamic>.from(_controller.chats);
+
+      /// 🔥 PROVIDER SYNC
+      WidgetsBinding.instance
+          .addPostFrameCallback((_) {
+
+        ref
+            .read(recentChatsProvider.notifier)
+            .state = cachedChats;
+      });
+
       setState(() {
-        chats = _controller.chats;
+        chats = cachedChats;
         loading = false;
       });
     }
