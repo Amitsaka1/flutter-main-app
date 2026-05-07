@@ -20,7 +20,7 @@ class _ChatListScreenState
   final ChatController _controller = ChatController.instance;
 
 
-  List<dynamic> chats = [];
+  List<dynamic> fallbackChats = [];
   bool loading = true;
 
   @override
