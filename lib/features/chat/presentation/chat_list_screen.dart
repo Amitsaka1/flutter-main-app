@@ -42,25 +42,16 @@ class _ChatListScreenState
       return;
     }
 
-    // 🔥 ALWAYS LISTEN FIRST (IMPORTANT)
-    _subscription = _controller.chatStream.listen((data) {
+    /// 🔥 LEGACY FALLBACK ONLY
+    if (_controller.hasData &&
+        ref.read(recentChatsProvider).isEmpty) {
 
-      if (!mounted) return;
+      chats = List<dynamic>.from(
+        _controller.chats,
+      );
 
-      /// 🔥 If provider already has data,
-      /// avoid unnecessary controller rebuilds
-      final providerChats =
-          ref.read(recentChatsProvider);
-
-      if (providerChats.isNotEmpty) {
-        return;
-      }
-
-      setState(() {
-        chats = data;
-        loading = false;
-      });
-    });
+      loading = false;
+    }
 
     // 🔥 INSTANT CACHE SHOW
     if (_controller.hasData) {
