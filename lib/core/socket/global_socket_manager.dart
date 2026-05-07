@@ -154,12 +154,20 @@ class GlobalSocketManager with WidgetsBindingObserver {
         final oldMessages =
             current[chatId] ?? [];
 
-        current[chatId] = [
-          ...oldMessages,
-          data,
-        ];
+        /// 🔥 DUPLICATE SAFE APPEND
+        final alreadyExists = oldMessages.any(
+          (m) => m["id"] == data["id"],
+        );
+
+        if (!alreadyExists) {
+
+          current[chatId] = [
+            ...oldMessages,
+            data,
+          ];
 
         notifier.state = current;
+        }
 
         /// 🔥 RECENT CHATS UPDATE
         final recentNotifier =
