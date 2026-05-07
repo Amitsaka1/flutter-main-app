@@ -24,9 +24,6 @@ class GlobalSocketManager with WidgetsBindingObserver {
 
   bool _incomingScreenOpen = false;
 
-  /// ✅ ONLINE USERS (OLD SYSTEM - KEEP)
-  final Set<String> onlineUsers = {};
-
   /// ✅ Riverpod container (NEW)
   final ProviderContainer _container = ProviderContainer();
 
@@ -72,7 +69,6 @@ class GlobalSocketManager with WidgetsBindingObserver {
       if (type == "USER_ONLINE") {
         final userId = event["userId"]?.toString();
         if (userId != null) {
-          onlineUsers.add(userId);
 
           final notifier =
               _container.read(onlineUsersProvider.notifier);
@@ -84,7 +80,6 @@ class GlobalSocketManager with WidgetsBindingObserver {
       else if (type == "USER_OFFLINE") {
         final userId = event["userId"]?.toString();
         if (userId != null) {
-          onlineUsers.remove(userId);
 
           final notifier =
               _container.read(onlineUsersProvider.notifier);
@@ -225,8 +220,6 @@ class GlobalSocketManager with WidgetsBindingObserver {
 
     _initialized = false;
     _userId = null;
-
-    onlineUsers.clear();
 
     // 🔥 Provider reset
     _container.read(onlineUsersProvider.notifier).state = {};
