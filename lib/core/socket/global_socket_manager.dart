@@ -189,14 +189,29 @@ class GlobalSocketManager with WidgetsBindingObserver {
                     ? ((old["unreadCount"] ?? 0) + 1)
                     : (old["unreadCount"] ?? 0),
           });
-         }
+        } else {
 
-        recentNotifier.state = recentChats;
-      }
+          /// 🔥 FULL SAFE NEW CHAT OBJECT
+          recentChats.insert(0, {
+             "userId": chatId,
 
-      _messageController.add(event);
-      }
-      
+             "user": {
+              "id": chatId,
+               "phone":
+                   data["senderPhone"] ??
+                   data["receiverPhone"] ??
+                  "Unknown",
+             },
+
+            "lastMessage": data["content"],
+
+            "updatedAt":
+                DateTime.now().toIso8601String(),
+
+            "unreadCount":
+                senderId != currentUserId ? 1 : 0,
+          });
+        }      
     });
 
     if (!_observerAdded) {
