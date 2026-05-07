@@ -84,7 +84,13 @@ class _ChatListScreenState
     }
 
     // 🔥 ALWAYS LOAD (NO CONDITION)
-    _controller.loadChats(forceRefresh: true);
+    final providerChats =
+    ref.read(recentChatsProvider);
+
+    /// 🔥 ONLY LOAD IF PROVIDER EMPTY
+    if (providerChats.isEmpty) {
+      _controller.loadChats(forceRefresh: true);
+    }
 
     /// 🔥 DIRECT PROVIDER API SYNC
     try {
