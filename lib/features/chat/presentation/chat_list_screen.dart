@@ -62,10 +62,6 @@ class _ChatListScreenState
       });
     }
 
-    // 🔥 ALWAYS LOAD (NO CONDITION)
-    final providerChats =
-    ref.read(recentChatsProvider);
-
     /// 🔥 DIRECT PROVIDER API SYNC
     try {
 
