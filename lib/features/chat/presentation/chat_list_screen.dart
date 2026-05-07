@@ -19,7 +19,6 @@ class _ChatListScreenState
 
   final ChatController _controller = ChatController.instance;
 
-  StreamSubscription? _subscription;
 
   List<dynamic> chats = [];
   bool loading = true;
@@ -111,7 +110,6 @@ class _ChatListScreenState
 
   @override
   void dispose() {
-    _subscription?.cancel();
     super.dispose();
   }
 
