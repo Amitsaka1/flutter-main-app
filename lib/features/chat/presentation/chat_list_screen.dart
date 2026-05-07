@@ -74,6 +74,9 @@ class _ChatListScreenState
   Widget build(BuildContext context) {
     super.build(context);
 
+    final providerChats =
+        ref.watch(recentChatsProvider);
+
     if (loading && chats.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
