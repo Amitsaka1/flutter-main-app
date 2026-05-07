@@ -191,7 +191,12 @@ class _ChatConversationScreenState
         ref.watch(messagesProvider);
 
     final providerChatMessages =
-    providerMessages[widget.chatUserId] ?? [];
+  providerMessages[widget.chatUserId] ?? [];
+
+    final displayMessages =
+        providerChatMessages.isNotEmpty
+            ? providerChatMessages
+            : messages;
 
     if (loading &&
         messages.isEmpty &&
