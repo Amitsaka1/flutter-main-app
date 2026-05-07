@@ -96,16 +96,23 @@ class ConversationController {
       "isRead": false,
     };
 
-    _conversationCache[userId] ??= [];
+    /// 🔥 Skip local append if
+    /// Riverpod already handling UI
+    if (_loadedConversations.contains(userId)) {
 
-    final updated =
-        List<dynamic>.from(_conversationCache[userId]!);
+    } else {
 
-    updated.add(tempMessage);
+      _conversationCache[userId] ??= [];
 
-    _conversationCache[userId] = updated;
+      final updated =
+          List<dynamic>.from(_conversationCache[userId]!);
 
-    _emit(userId);
+      updated.add(tempMessage);
+
+      _conversationCache[userId] = updated;
+
+      _emit(userId);
+    }
 
     try {
       await ApiClient.post("/chat/send", {
