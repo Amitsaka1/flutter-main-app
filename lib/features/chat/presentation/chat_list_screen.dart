@@ -99,9 +99,7 @@ class _ChatListScreenState
             .state = data;
 
         if (mounted) {
-          setState(() {
             loading = false;
-          });
         }
       }
 
