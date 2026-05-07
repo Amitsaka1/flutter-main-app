@@ -86,17 +86,48 @@ class _ChatConversationScreenState
   }
 
   Future<void> sendMessage() async {
-    if (_textController.text.trim().isEmpty) return;
+  if (_textController.text.trim().isEmpty) return;
 
-    final text = _textController.text.trim();
+  final text = _textController.text.trim();
 
-    _textController.clear();
+  /// 🔥 INSTANT PROVIDER MESSAGE
+  final providerNotifier =
+      ref.read(messagesProvider.notifier);
 
-    await _logic.sendMessage(widget.chatUserId, text);
+  final current =
+      {...providerNotifier.state};
 
-    _scrollBottom(); // 🔥 instant scroll on send
+  final old =
+      current[widget.chatUserId] ?? [];
+
+  final tempMessage = {
+    "id":
+        DateTime.now()
+            .millisecondsSinceEpoch
+            .toString(),
+
+    "senderId": myId,
+    "receiverId": widget.chatUserId,
+    "content": text,
+    "isRead": false,
+  };
+
+  current[widget.chatUserId] = [
+    ...old,
+    tempMessage,
+  ];
+
+  providerNotifier.state = current;
+
+  _textController.clear();
+
+  await _logic.sendMessage(
+    widget.chatUserId,
+    text,
+  );
+
+  _scrollBottom(); // 🔥 instant scroll on send
   }
-
   // 🔥 FIXED: bottom scroll (reverse:true compatible)
   void _scrollBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
