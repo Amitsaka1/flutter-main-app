@@ -41,17 +41,6 @@ class _ChatListScreenState
       return;
     }
 
-    /// 🔥 LEGACY FALLBACK ONLY
-    if (_controller.hasData &&
-        ref.read(recentChatsProvider).isEmpty) {
-
-      fallbackChats = List<dynamic>.from(
-        _controller.chats,
-      );
-
-      loading = false;
-    }
-
     // 🔥 INSTANT CACHE SHOW
     if (_controller.hasData) {
 
