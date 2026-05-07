@@ -45,7 +45,7 @@ class _ChatListScreenState
     if (_controller.hasData &&
         ref.read(recentChatsProvider).isEmpty) {
 
-      chats = List<dynamic>.from(
+      fallbackChats = List<dynamic>.from(
         _controller.chats,
       );
 
@@ -68,7 +68,7 @@ class _ChatListScreenState
       });
 
       setState(() {
-        chats = cachedChats;
+        fallbackChats = cachedChats;
         loading = false;
       });
     }
@@ -123,16 +123,16 @@ class _ChatListScreenState
     final displayChats =
         providerChats.isNotEmpty
             ? providerChats
-            : chats;
+            : fallbackChats;
 
     if (loading &&
-        chats.isEmpty &&
+        fallbackChats.isEmpty &&
         providerChats.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
 
     if (providerChats.isEmpty &&
-        chats.isEmpty) {
+        fallbackChats.isEmpty) {
       return const Center(
         child: Text("No chats yet"),
       );
