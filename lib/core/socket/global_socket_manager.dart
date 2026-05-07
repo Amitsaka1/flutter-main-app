@@ -248,8 +248,6 @@ class GlobalSocketManager with WidgetsBindingObserver {
     _seatMapController.close();
     _roomClosedController.close();
 
-    onlineUsers.clear();
-
     _container.read(onlineUsersProvider.notifier).state = {};
 
     _initialized = false;
