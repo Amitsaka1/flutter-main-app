@@ -3,15 +3,18 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/controllers/chat_controller.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:app_project/providers/recent_chats_provider.dart';
 
-class ChatListScreen extends StatefulWidget {
+class ChatListScreen extends ConsumerStatefulWidget {
   const ChatListScreen({super.key});
 
   @override
   State<ChatListScreen> createState() => _ChatListScreenState();
 }
 
-class _ChatListScreenState extends State<ChatListScreen>
+class _ChatListScreenState
+    extends ConsumerState<ChatListScreen>
     with AutomaticKeepAliveClientMixin {
 
   final ChatController _controller = ChatController.instance;
@@ -82,9 +85,13 @@ class _ChatListScreenState extends State<ChatListScreen>
     }
 
     return ListView.builder(
-      itemCount: chats.length,
+      itemCount: providerChats.isNotEmpty
+          ? providerChats.length
+          : chats.length,
       itemBuilder: (context, index) {
-        final chat = chats[index];
+        final chat = providerChats.isNotEmpty
+            ? providerChats[index]
+            : chats[index];
 
         return ChatCard(
           chat: chat,
