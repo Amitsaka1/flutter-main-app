@@ -7,8 +7,11 @@ import '../../../core/controllers/conversation_controller.dart';
 import 'package:app_project/features/call/presentation/call_screen.dart';
 import '../../../core/controllers/chat_controller.dart';
 import 'package:app_project/core/chat/unread_counter_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:app_project/providers/messages_provider.dart';
 
-class ChatConversationScreen extends StatefulWidget {
+class ChatConversationScreen
+    extends ConsumerStatefulWidget {
   final String chatUserId;
 
   const ChatConversationScreen({
@@ -22,7 +25,7 @@ class ChatConversationScreen extends StatefulWidget {
 }
 
 class _ChatConversationScreenState
-    extends State<ChatConversationScreen> {
+    extends ConsumerState<ChatConversationScreen> {
 
   final ScrollController _scrollController =
       ScrollController();
@@ -184,7 +187,15 @@ class _ChatConversationScreenState
   @override
   Widget build(BuildContext context) {
 
-    if (loading && messages.isEmpty) {
+    final providerMessages =
+        ref.watch(messagesProvider);
+
+    final providerChatMessages =
+    providerMessages[widget.chatUserId] ?? [];
+
+    if (loading &&
+        messages.isEmpty &&
+        displayMessages.isEmpty) {
       return const Scaffold(
         backgroundColor: Color(0xFF0A0A0A),
         body: Center(
@@ -225,10 +236,13 @@ class _ChatConversationScreenState
               controller: _scrollController,
               reverse: true, // 🔥 MAIN FIX
               padding: const EdgeInsets.only(top: 10),
-              itemCount: messages.length,
+              itemCount: displayMessages.length,
               itemBuilder: (context, index) {
 
-                final msg = messages[messages.length - 1 - index]; // 🔥 reverse index
+                final msg =
+                    displayMessages[
+                      displayMessages.length - 1 - index
+                    ]; // 🔥 reverse index
                 final isMe = msg["senderId"] == myId;
 
                 return Align(
