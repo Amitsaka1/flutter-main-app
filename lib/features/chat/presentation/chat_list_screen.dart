@@ -98,8 +98,10 @@ class _ChatListScreenState
             .read(recentChatsProvider.notifier)
             .state = data;
 
-        if (mounted) {
+        if (mounted && loading) {
+          setState(() {
             loading = false;
+          });
         }
       }
 
