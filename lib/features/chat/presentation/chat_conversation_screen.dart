@@ -66,18 +66,30 @@ class _ChatConversationScreenState
     _logic.init(myId!);
 
     _subscription = _logic
-        .stream(widget.chatUserId)
-        .listen((data) {
+    .stream(widget.chatUserId)
+    .listen((data) {
 
-      if (!mounted) return;
+    if (!mounted) return;
 
-      setState(() {
-        messages = data;
-        loading = false;
-      });
+    /// 🔥 provider already active?
+    final providerMessages =
+        ref.read(messagesProvider);
 
-      _scrollBottom(); // 🔥 ALWAYS STAY BOTTOM
+    final providerChat =
+        providerMessages[widget.chatUserId] ?? [];
+
+    /// 🔥 avoid duplicate rebuild
+    if (providerChat.isNotEmpty) {
+      return;
+    }
+
+    setState(() {
+      messages = data;
+      loading = false;
     });
+
+    _scrollBottom();
+  });
 
     await _logic.loadMessages(widget.chatUserId);
 
