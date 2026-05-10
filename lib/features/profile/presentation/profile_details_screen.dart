@@ -35,42 +35,57 @@ class _ProfileDetailsScreenState
 
   Future<void> _fetchProfile() async {
 
-    /// 🔥 CACHE HIT (INSTANT OPEN)
-    if (_profileCache.containsKey(widget.userId)) {
-      profile = _profileCache[widget.userId];
-      loading = false;
+  /// 🔥 CACHE HIT (INSTANT OPEN)
+  if (_profileCache.containsKey(widget.userId)) {
 
-      if (mounted) setState(() {});
+    profile = _profileCache[widget.userId];
+
+    loading = false;
+
+    if (mounted) {
+      setState(() {});
     }
+
+    /// 🔥 continue background refresh
   }
 
-    try {
-      final response =
-          await ApiClient.get("/profile/user/${widget.userId}");
+  try {
 
-      if (!mounted) return;
+    final response =
+        await ApiClient.get(
+      "/profile/user/${widget.userId}",
+    );
 
-      if (response["success"] == true &&
-          response["data"] != null) {
+    if (!mounted) return;
 
-        profile = response["data"];
+    if (response["success"] == true &&
+        response["data"] != null) {
 
-        /// 🔥 SAVE CACHE
-        _profileCache[widget.userId] = profile!;
+      profile = response["data"];
 
-        setState(() {
-          loading = false;
-        });
+      /// 🔥 SAVE CACHE
+      _profileCache[widget.userId] =
+          profile!;
 
-      } else {
-        setState(() => loading = false);
-      }
+      setState(() {
+        loading = false;
+      });
 
-    } catch (_) {
-      if (mounted) {
-        setState(() => loading = false);
-      }
+    } else {
+
+      setState(() {
+        loading = false;
+      });
     }
+
+  } catch (_) {
+
+    if (mounted) {
+      setState(() {
+        loading = false;
+      });
+    }
+  }
   }
 
   Future<void> _toggleFollow() async {
