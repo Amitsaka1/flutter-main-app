@@ -227,17 +227,19 @@ class GlobalSocketManager with WidgetsBindingObserver {
 
           if (!alreadyExists) {
 
-            final updatedMessages = [
+            final updatedMessages =
+                List<dynamic>.from([
               ...oldMessages,
               data,
-            ];
+            ]);
 
             /// 🔥 keep only latest 100
             if (updatedMessages.length > 100) {
               updatedMessages.removeAt(0);
             }
 
-            current[chatId] = updatedMessages;
+            current[chatId] =
+                updatedMessages;
 
             notifier.state = current;
           }
@@ -319,7 +321,8 @@ class GlobalSocketManager with WidgetsBindingObserver {
             );
           }
 
-          recentNotifier.state = recentChats;
+          recentNotifier.state =
+              recentChats;
         }
 
         _messageController.add(event);
