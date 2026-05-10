@@ -559,8 +559,19 @@ class _ChatConversationScreenState
   Widget build(BuildContext context) {
     final provMap      = ref.watch(messagesProvider);
     final provMsgs     = provMap[widget.chatUserId] ?? [];
-    final displayMsgs  = provMsgs.isNotEmpty ? provMsgs : _messages;
+    final allMessages = [
+      ..._messages,
+      ...provMsgs,
+    ];
 
+    final uniqueMessages = {
+      for (final msg in allMessages)
+        msg["id"].toString(): msg,
+    };
+
+    final displayMsgs =
+        uniqueMessages.values.toList();
+    
     if (_loading && _messages.isEmpty && displayMsgs.isEmpty) {
       return const Scaffold(
         backgroundColor: _C.bg,
