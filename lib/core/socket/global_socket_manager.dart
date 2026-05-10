@@ -227,10 +227,17 @@ class GlobalSocketManager with WidgetsBindingObserver {
 
           if (!alreadyExists) {
 
-            current[chatId] = [
+            final updatedMessages = [
               ...oldMessages,
               data,
             ];
+
+            /// 🔥 keep only latest 100
+            if (updatedMessages.length > 100) {
+              updatedMessages.removeAt(0);
+            }
+
+            current[chatId] = updatedMessages;
 
             notifier.state = current;
           }
