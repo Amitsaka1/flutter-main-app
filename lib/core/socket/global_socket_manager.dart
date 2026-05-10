@@ -27,6 +27,7 @@ class GlobalSocketManager with WidgetsBindingObserver {
   bool _incomingScreenOpen = false;
 
   bool _isReconnecting = false;
+  Timer? _reconnectTimer;
 
   /// ✅ Riverpod container (NEW)
   final ProviderContainer _container = ProviderContainer();
@@ -231,8 +232,26 @@ class GlobalSocketManager with WidgetsBindingObserver {
 
     await _socketService!.connect();
 
+    /// 🔥 auto reconnect watchdog
+    _reconnectTimer?.cancel();
+
+    _reconnectTimer = Timer.periodic(
+      const Duration(seconds: 10),
+      (_) {
+
+        if (_socketService?.isConnected != true &&
+            !_isReconnecting) {
+
+          _isReconnecting = true;
+
+          _socketService?.connect().whenComplete(() {
+            _isReconnecting = false;
+          });
+        }
+      },
+    );
+
     _initialized = true;
-  }
 
   // ================= ROOM SOCKET =================
 
