@@ -103,7 +103,7 @@ class GlobalSocketManager with WidgetsBindingObserver {
             .state = users.toSet();
 
         _messageController.add(event);
-          }
+       }
 
      else if (type == "USER_ONLINE") {
 
@@ -119,7 +119,7 @@ class GlobalSocketManager with WidgetsBindingObserver {
 
           notifier.state = {
             ...notifier.state,
-            userId,
+            ...users.toSet(),
           };
         }
 
