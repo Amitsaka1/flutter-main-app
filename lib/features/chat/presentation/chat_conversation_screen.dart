@@ -20,9 +20,8 @@ class ChatConversationScreen
   });
 
   @override
-  State<ChatConversationScreen> createState() =>
-      _ChatConversationScreenState();
-}
+ConsumerState<ChatConversationScreen> createState() =>
+    _ChatConversationScreenState();
 
 class _ChatConversationScreenState
     extends ConsumerState<ChatConversationScreen> {
