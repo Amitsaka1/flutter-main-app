@@ -341,6 +341,9 @@ class GlobalSocketManager with WidgetsBindingObserver {
     _socketService?.disconnect();
     _socketService = null;
 
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+
     _initialized = false;
     _userId = null;
 
@@ -367,11 +370,16 @@ class GlobalSocketManager with WidgetsBindingObserver {
     _socketService?.dispose();
     _socketService = null;
 
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+
     _messageController.close();
     _seatMapController.close();
     _roomClosedController.close();
 
     _container.read(onlineUsersProvider.notifier).state = {};
+
+    
 
     _initialized = false;
     _userId = null;
