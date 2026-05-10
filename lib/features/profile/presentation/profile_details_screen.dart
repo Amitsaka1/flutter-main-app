@@ -41,8 +41,8 @@ class _ProfileDetailsScreenState
       loading = false;
 
       if (mounted) setState(() {});
-      return;
     }
+  }
 
     try {
       final response =
