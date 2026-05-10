@@ -26,6 +26,8 @@ class GlobalSocketManager with WidgetsBindingObserver {
 
   bool _incomingScreenOpen = false;
 
+  bool _isReconnecting = false;
+
   /// ✅ Riverpod container (NEW)
   final ProviderContainer _container = ProviderContainer();
 
@@ -298,8 +300,15 @@ class GlobalSocketManager with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      if (_socketService?.isConnected != true) {
-        _socketService?.connect();
+
+      if (_socketService?.isConnected != true &&
+          !_isReconnecting) {
+
+        _isReconnecting = true;
+
+        _socketService?.connect().whenComplete(() {
+          _isReconnecting = false;
+        });
       }
     }
   }
