@@ -344,7 +344,22 @@ class GlobalSocketManager with WidgetsBindingObserver {
 
         _messageController.add(event);
       }
-    });
+    },
+
+    onError: (e) {
+      debugPrint(
+        "❌ Socket stream error: $e",
+      );
+    },
+
+    onDone: () {
+      debugPrint(
+        "⚠️ Socket stream closed",
+      );
+    },
+
+    cancelOnError: false,
+  );
 
     // ================= OBSERVER =================
 
