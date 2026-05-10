@@ -12,6 +12,7 @@ class ChatListScreen extends ConsumerStatefulWidget {
   @override
 ConsumerState<ChatListScreen> createState() =>
     _ChatListScreenState();
+}
 
 class _ChatListScreenState
     extends ConsumerState<ChatListScreen>
