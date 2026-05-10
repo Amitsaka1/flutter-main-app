@@ -54,9 +54,14 @@ class ConversationController {
   Future<void> loadMessages(String userId) async {
 
     /// 🔥 INSTANT SHOW (CACHE)
+    /// 🔥 INSTANT SHOW (CACHE)
     if (_conversationCache.containsKey(userId)) {
+
+    /// 🔥 avoid unnecessary emit
+    if (!_loadedConversations.contains(userId)) {
       _emit(userId);
     }
+  }
 
     /// 🔥 ALREADY LOADED → SKIP API
     if (_loadedConversations.contains(userId)) return;
