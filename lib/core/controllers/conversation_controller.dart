@@ -142,6 +142,11 @@ class ConversationController {
 
       updated.add(tempMessage);
 
+      /// 🔥 keep latest 100
+      if (updated.length > 100) {
+        updated.removeAt(0);
+      }
+
       _conversationCache[userId] = updated;
 
       _emit(userId);
@@ -195,6 +200,11 @@ class ConversationController {
                 .contains(chatUser);
 
         updated.add(msg);
+
+        /// 🔥 keep latest 100
+        if (updated.length > 100) {
+          updated.removeAt(0);
+        }
 
         _conversationCache[chatUser] =
             updated;
