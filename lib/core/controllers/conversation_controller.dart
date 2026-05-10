@@ -166,57 +166,51 @@ class ConversationController {
 
   void _handleSocket(dynamic data) {
 
-    if (_myId == null) return;
+  if (_myId == null) return;
 
-    // ================= NEW MESSAGE =================
+  // ================= NEW MESSAGE =================
 
-    if (data["type"] == "NEW_MESSAGE") {
+  if (data["type"] == "NEW_MESSAGE") {
 
-      final msg = data["data"];
+    final msg = data["data"];
 
-      final sender = msg["senderId"];
+    final sender = msg["senderId"];
 
-      final receiver = msg["receiverId"];
+    final receiver = msg["receiverId"];
 
-      final chatUser =
-          sender == _myId
-              ? receiver
-              : sender;
+    final chatUser =
+        sender == _myId
+            ? receiver
+            : sender;
 
-      _conversationCache[chatUser] ??= [];
+    _conversationCache[chatUser] ??= [];
 
-      final updated =
-          List<dynamic>.from(
-        _conversationCache[chatUser]!,
-      );
+    final updated =
+        List<dynamic>.from(
+      _conversationCache[chatUser]!,
+    );
 
-      /// 🔥 DUPLICATE PREVENTION
-      if (!updated.any(
-        (m) => m["id"] == msg["id"],
-      )) {
+    /// 🔥 DUPLICATE PREVENTION
+    if (!updated.any(
+      (m) => m["id"] == msg["id"],
+    )) {
 
-        final alreadyLoaded =
-            _loadedConversations
-                .contains(chatUser);
+      updated.add(msg);
 
-        updated.add(msg);
-
-        /// 🔥 keep latest 100
-        if (updated.length > 100) {
-          updated.removeAt(0);
-        }
-
-        _conversationCache[chatUser] =
-            updated;
-
-        _loadedConversations.add(chatUser);
-
-        /// 🔥 avoid unnecessary stream emit
-        if (!alreadyLoaded) {
-          _emit(chatUser);
-        }
+      /// 🔥 keep latest 100
+      if (updated.length > 100) {
+        updated.removeAt(0);
       }
+
+      _conversationCache[chatUser] =
+          updated;
+
+      _loadedConversations.add(chatUser);
+
+      /// 🔥 ALWAYS EMIT
+      _emit(chatUser);
     }
+  }
 
     // ================= MESSAGES READ =================
 
