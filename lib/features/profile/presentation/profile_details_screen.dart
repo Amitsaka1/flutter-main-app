@@ -200,6 +200,24 @@ class _ProfileDetailsScreenState
                               "assets/profile_placeholder.png")
                               as ImageProvider,
                     ),
+                    Positioned(
+                      bottom: 10,
+                      right: 10,
+                       child: Container(
+                         width: 22,
+                         height: 22,
+                         decoration: BoxDecoration(
+                           color: isOnline
+                               ? Colors.green
+                               : Colors.grey,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.black,
+                              width: 3,
+                            ),
+                          ),
+                       ),
+                     ),
                   ],
                 ),
 
