@@ -22,6 +22,7 @@ class ChatConversationScreen
   @override
 ConsumerState<ChatConversationScreen> createState() =>
     _ChatConversationScreenState();
+}
 
 class _ChatConversationScreenState
     extends ConsumerState<ChatConversationScreen> {
