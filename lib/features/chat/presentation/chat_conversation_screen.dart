@@ -898,7 +898,7 @@ class _ChatConversationScreenState
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    _nowTime(),
+                    _msgTime(msg),
                     style: const TextStyle(
                       color: _C.hint,
                       fontSize: 10,
