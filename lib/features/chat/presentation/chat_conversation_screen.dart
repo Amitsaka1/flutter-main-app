@@ -924,11 +924,38 @@ class _ChatConversationScreenState
     );
   }
 
-  String _nowTime() {
-    final t = DateTime.now();
-    final h = t.hour.toString().padLeft(2, '0');
-    final m = t.minute.toString().padLeft(2, '0');
-    return '$h:$m';
+  String _msgTime(Map<dynamic, dynamic> msg) {
+
+    final raw =
+        msg["createdAt"] ??
+        msg["timestamp"];
+
+    if (raw == null) {
+      return "";
+    }
+
+    try {
+
+      final date = DateTime.parse(
+        raw.toString(),
+      ).toLocal();
+
+      final h =
+          date.hour
+              .toString()
+              .padLeft(2, '0');
+
+      final m =
+          date.minute
+              .toString()
+              .padLeft(2, '0');
+
+      return "$h:$m";
+
+    } catch (_) {
+
+      return "";
+    }
   }
 
   // ──────────────────────────────────────────────────────────
