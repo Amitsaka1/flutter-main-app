@@ -75,11 +75,8 @@ class ChatController {
   void handleNewMessage(dynamic message) {
 
   final senderId = message["senderId"];
-  final receiverId = message["receiverId"];
 
-  final chatUserId = senderId == _myId
-      ? receiverId
-      : senderId;
+  final chatUserId = senderId;
 
   final updatedChats = List<dynamic>.from(_chats);
 
