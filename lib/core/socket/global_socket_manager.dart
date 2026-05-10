@@ -311,6 +311,14 @@ class GlobalSocketManager with WidgetsBindingObserver {
             });
           }
 
+          /// 🔥 keep latest 200 chats
+          if (recentChats.length > 200) {
+            recentChats.removeRange(
+              200,
+              recentChats.length,
+            );
+          }
+
           recentNotifier.state = recentChats;
         }
 
