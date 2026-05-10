@@ -96,14 +96,18 @@ class GlobalSocketManager with WidgetsBindingObserver {
           event["users"] ?? [],
         );
 
-        globalProviderContainer
-            .read(
-              onlineUsersProvider.notifier,
-            )
-            .state = users.toSet();
+        final notifier =
+            globalProviderContainer.read(
+          onlineUsersProvider.notifier,
+        );
+
+        notifier.state = {
+          ...notifier.state,
+          ...users.toSet(),
+        };
 
         _messageController.add(event);
-       }
+      }
 
      else if (type == "USER_ONLINE") {
 
@@ -119,7 +123,7 @@ class GlobalSocketManager with WidgetsBindingObserver {
 
           notifier.state = {
             ...notifier.state,
-            ...users.toSet(),
+            userId,
           };
         }
 
