@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/network/api_client.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:app_project/providers/online_users_provider.dart';
 
-class ProfileDetailsScreen extends StatefulWidget {
+class ProfileDetailsScreen extends ConsumerStatefulWidget {
   final String userId;
 
   const ProfileDetailsScreen({
@@ -11,12 +13,12 @@ class ProfileDetailsScreen extends StatefulWidget {
   });
 
   @override
-  State<ProfileDetailsScreen> createState() =>
+  ConsumerState<ProfileDetailsScreen> createState() =>
       _ProfileDetailsScreenState();
 }
 
 class _ProfileDetailsScreenState
-    extends State<ProfileDetailsScreen> {
+    extends ConsumerState<ProfileDetailsScreen> {
 
   /// 🔥 GLOBAL CACHE
   static final Map<String, Map<String, dynamic>> _profileCache = {};
