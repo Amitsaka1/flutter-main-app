@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:convert';
-import 'package:flutter_riverpod/flutter_riverpod.dart'; // ✅ NEW
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app.dart';
 import 'core/network/api_client.dart';
@@ -10,6 +10,10 @@ import 'core/socket/global_socket_manager.dart';
 /// 🔥 Global Navigator Key
 final GlobalKey<NavigatorState> appNavigatorKey =
     GlobalKey<NavigatorState>();
+
+/// 🔥 GLOBAL RIVERPOD CONTAINER
+final ProviderContainer globalProviderContainer =
+    ProviderContainer();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,8 +45,9 @@ void main() async {
   }
 
   runApp(
-    const ProviderScope(
-      child: MyApp(),
+    UncontrolledProviderScope(
+      container: globalProviderContainer,
+      child: const MyApp(),
     ),
   );
 }
