@@ -1,250 +1,348 @@
 import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'; // ✅ NEW
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'websocket_service.dart';
+
 import 'package:app_project/features/call/presentation/incoming_call_screen.dart';
 import 'package:app_project/main.dart';
+
 import 'package:app_project/core/chat/unread_counter_service.dart';
 import 'package:app_project/core/controllers/chat_controller.dart';
-import 'package:app_project/providers/online_users_provider.dart'; // ✅ NEW
+
+import 'package:app_project/providers/online_users_provider.dart';
 import 'package:app_project/providers/messages_provider.dart';
 import 'package:app_project/providers/recent_chats_provider.dart';
 
 class GlobalSocketManager with WidgetsBindingObserver {
+
   GlobalSocketManager._internal();
+
   static final GlobalSocketManager _instance =
       GlobalSocketManager._internal();
+
   static GlobalSocketManager get instance => _instance;
 
   WebSocketService? _socketService;
+
   StreamSubscription? _socketSubscription;
 
   String? _userId;
+
   bool _initialized = false;
+
   bool _observerAdded = false;
 
   bool _incomingScreenOpen = false;
 
+  /// 🔥 reconnect protection
   bool _isReconnecting = false;
+
   Timer? _reconnectTimer;
 
-  /// ✅ Riverpod container (NEW)
-  final ProviderContainer _container = ProviderContainer();
+  /// 🔥 Riverpod container
+  final ProviderContainer _container =
+      ProviderContainer();
+
+  // ================= STREAMS =================
 
   final StreamController<Map<String, dynamic>>
-      _messageController = StreamController.broadcast();
+      _messageController =
+          StreamController.broadcast();
 
   Stream<Map<String, dynamic>> get messages =>
       _messageController.stream;
 
+  final StreamController<Map<String, dynamic>>
+      _seatMapController =
+          StreamController.broadcast();
+
   Stream<Map<String, dynamic>> get seatStream =>
       _seatMapController.stream;
 
-  // ================= ROOM STREAMS =================
-
-  final StreamController<Map<String, dynamic>>
-      _seatMapController = StreamController.broadcast();
-
   final StreamController<void>
-      _roomClosedController = StreamController.broadcast();
+      _roomClosedController =
+          StreamController.broadcast();
 
   // ================= INIT =================
 
   Future<void> init(String userId) async {
-    if (_initialized && _userId == userId) return;
+
+    if (_initialized &&
+        _userId == userId) {
+      return;
+    }
 
     _userId = userId;
 
     await _socketSubscription?.cancel();
+
     _socketSubscription = null;
 
     _socketService?.dispose();
 
-    _socketService = WebSocketService(userId: userId);
+    _socketService =
+        WebSocketService(userId: userId);
 
     _socketSubscription =
         _socketService!.messages.listen((event) {
 
       final type = event["type"];
 
-      /// ===============================
-      /// 🔥 ONLINE STATUS (UPDATED)
-      /// ===============================
+      // ================= ONLINE =================
+
       if (type == "USER_ONLINE") {
-        final userId = event["userId"]?.toString();
+
+        final userId =
+            event["userId"]?.toString();
+
         if (userId != null) {
 
           final notifier =
-              _container.read(onlineUsersProvider.notifier);
-          notifier.state = {...notifier.state, userId};
+              _container.read(
+            onlineUsersProvider.notifier,
+          );
+
+          notifier.state = {
+            ...notifier.state,
+            userId,
+          };
         }
+
         _messageController.add(event);
       }
+
+      // ================= OFFLINE =================
 
       else if (type == "USER_OFFLINE") {
-        final userId = event["userId"]?.toString();
+
+        final userId =
+            event["userId"]?.toString();
+
         if (userId != null) {
 
           final notifier =
-              _container.read(onlineUsersProvider.notifier);
+              _container.read(
+            onlineUsersProvider.notifier,
+          );
 
-          final updated = {...notifier.state};
+          final updated = {
+            ...notifier.state,
+          };
+
           updated.remove(userId);
+
           notifier.state = updated;
         }
+
         _messageController.add(event);
       }
 
-      // 🔥 Incoming Call
+      // ================= INCOMING CALL =================
+
       else if (type == "INCOMING_CALL") {
+
         _handleIncomingCall(event);
       }
 
-      // 🔥 Seat map update
+      // ================= SEAT MAP =================
+
       else if (type == "SEAT_MAP_UPDATE") {
+
         _seatMapController.add(event);
       }
 
-      // 🔥 Room closed / kicked
+      // ================= ROOM CLOSED =================
+
       else if (type == "ROOM_CLOSED" ||
           type == "ROOM_KICKED") {
+
         _roomClosedController.add(null);
       }
 
-      // 🔥 Speaker demoted
+      // ================= DEMOTED =================
+
       else if (type == "DEMOTED_TO_LISTENER") {
+
         _messageController.add(event);
       }
 
-      // 🔥 NEW MESSAGE
+      // ================= NEW MESSAGE =================
+
       else if (type == "NEW_MESSAGE") {
 
-      final data = event["data"];
+        final data = event["data"];
 
-      final senderId =
-          data["senderId"]?.toString();
+        final senderId =
+            data["senderId"]?.toString();
 
-      final receiverId =
-          data["receiverId"]?.toString();
+        final receiverId =
+            data["receiverId"]?.toString();
 
-      final currentUserId = _userId?.toString();
+        final currentUserId =
+            _userId?.toString();
 
-      /// 🔥 unread
-      if (senderId != currentUserId &&
-          senderId != null) {
-        UnreadCounterService.increment(senderId);
-      }
+        // ================= UNREAD =================
 
-      /// 🔥 OLD SYSTEM (KEEP SAFE)
-      ChatController.instance
-          .handleNewMessage(data);
+        if (senderId != currentUserId &&
+            senderId != null) {
 
-      /// 🔥 NEW RIVERPOD MESSAGE SYSTEM
-      final notifier =
-          _container.read(messagesProvider.notifier);
-    
-      final current =
-           {...notifier.state};
-
-      /// determine chat partner
-      String chatId = senderId == currentUserId
-          ? receiverId ?? ""
-          : senderId ?? "";
-
-      if (chatId.isNotEmpty) {
-
-        final oldMessages =
-            current[chatId] ?? [];
-
-        /// 🔥 DUPLICATE SAFE APPEND
-        final alreadyExists = oldMessages.any(
-          (m) => m["id"] == data["id"],
-        );
-
-        if (!alreadyExists) {
-
-          current[chatId] = [
-            ...oldMessages,
-            data,
-          ];
-
-        notifier.state = current;
+          UnreadCounterService.increment(
+            senderId,
+          );
         }
 
-        /// 🔥 RECENT CHATS UPDATE
-        final recentNotifier =
-            _container.read(recentChatsProvider.notifier);
+        // ================= LEGACY =================
 
-        final recentChats =
-            List<dynamic>.from(recentNotifier.state);
+        ChatController.instance
+            .handleNewMessage(data);
 
-        final existingIndex = recentChats.indexWhere(
-           (c) => c["userId"] == chatId,
+        // ================= PROVIDER MESSAGES =================
+
+        final notifier =
+            _container.read(
+          messagesProvider.notifier,
         );
 
-        if (existingIndex != -1) {
+        final current = {
+          ...notifier.state,
+        };
 
-          final old =
-              recentChats.removeAt(existingIndex);
+        final chatId =
+            senderId == currentUserId
+                ? receiverId ?? ""
+                : senderId ?? "";
 
-          recentChats.insert(0, {
-            ...old,
-            "lastMessage": data["content"],
-            "updatedAt":
-                DateTime.now().toIso8601String(),
+        if (chatId.isNotEmpty) {
 
-            /// unread increase only for receiver
-            "unreadCount":
-                senderId != currentUserId
-                    ? ((old["unreadCount"] ?? 0) + 1)
-                    : (old["unreadCount"] ?? 0),
-          });
-        } else {
+          final oldMessages =
+              current[chatId] ?? [];
 
-          /// 🔥 FULL SAFE NEW CHAT OBJECT
-          recentChats.insert(0, {
-             "userId": chatId,
+          // 🔥 duplicate safe
+          final alreadyExists =
+              oldMessages.any(
+            (m) => m["id"] == data["id"],
+          );
 
-             "user": {
-              "id": chatId,
-               "phone":
-                   data["senderPhone"] ??
-                   data["receiverPhone"] ??
-                  "Unknown",
-             },
+          if (!alreadyExists) {
 
-            "lastMessage": data["content"],
+            current[chatId] = [
+              ...oldMessages,
+              data,
+            ];
 
-            "updatedAt":
-                DateTime.now().toIso8601String(),
+            notifier.state = current;
+          }
 
-            "unreadCount":
-                senderId != currentUserId ? 1 : 0,
-          });
-        }      
+          // ================= RECENT CHATS =================
+
+          final recentNotifier =
+              _container.read(
+            recentChatsProvider.notifier,
+          );
+
+          final recentChats =
+              List<dynamic>.from(
+            recentNotifier.state,
+          );
+
+          final existingIndex =
+              recentChats.indexWhere(
+            (c) => c["userId"] == chatId,
+          );
+
+          if (existingIndex != -1) {
+
+            final old =
+                recentChats.removeAt(
+              existingIndex,
+            );
+
+            recentChats.insert(0, {
+              ...old,
+
+              "lastMessage":
+                  data["content"],
+
+              "updatedAt":
+                  DateTime.now()
+                      .toIso8601String(),
+
+              "unreadCount":
+                  senderId != currentUserId
+                      ? ((old["unreadCount"] ?? 0) + 1)
+                      : (old["unreadCount"] ?? 0),
+            });
+
+          } else {
+
+            recentChats.insert(0, {
+
+              "userId": chatId,
+
+              "user": {
+                "id": chatId,
+
+                "phone":
+                    data["senderPhone"] ??
+                    data["receiverPhone"] ??
+                    "Unknown",
+              },
+
+              "lastMessage":
+                  data["content"],
+
+              "updatedAt":
+                  DateTime.now()
+                      .toIso8601String(),
+
+              "unreadCount":
+                  senderId != currentUserId
+                      ? 1
+                      : 0,
+            });
+          }
+
+          recentNotifier.state = recentChats;
+        }
+
+        _messageController.add(event);
+      }
     });
 
+    // ================= OBSERVER =================
+
     if (!_observerAdded) {
-      WidgetsBinding.instance.addObserver(this);
+
+      WidgetsBinding.instance
+          .addObserver(this);
+
       _observerAdded = true;
     }
 
+    // ================= CONNECT =================
+
     await _socketService!.connect();
 
-    /// 🔥 auto reconnect watchdog
+    // ================= WATCHDOG =================
+
     _reconnectTimer?.cancel();
 
     _reconnectTimer = Timer.periodic(
       const Duration(seconds: 10),
       (_) {
 
-        if (_socketService?.isConnected != true &&
+        if (_socketService?.isConnected !=
+                true &&
             !_isReconnecting) {
 
           _isReconnecting = true;
 
-          _socketService?.connect().whenComplete(() {
+          _socketService
+              ?.connect()
+              .whenComplete(() {
+
             _isReconnecting = false;
           });
         }
@@ -252,10 +350,12 @@ class GlobalSocketManager with WidgetsBindingObserver {
     );
 
     _initialized = true;
+  }
 
   // ================= ROOM SOCKET =================
 
   void joinRoom(String roomId) {
+
     send({
       "type": "JOIN_ROOM_SOCKET",
       "roomId": roomId,
@@ -263,6 +363,7 @@ class GlobalSocketManager with WidgetsBindingObserver {
   }
 
   void leaveRoom(String roomId) {
+
     send({
       "type": "LEAVE_ROOM_SOCKET",
       "roomId": roomId,
@@ -272,23 +373,33 @@ class GlobalSocketManager with WidgetsBindingObserver {
   StreamSubscription onSeatMapUpdate(
     Function(Map<String, dynamic>) callback,
   ) {
-    return _seatMapController.stream.listen(callback);
+
+    return _seatMapController.stream
+        .listen(callback);
   }
 
   StreamSubscription onRoomClosed(
     VoidCallback callback,
   ) {
-    return _roomClosedController.stream.listen((_) {
+
+    return _roomClosedController.stream
+        .listen((_) {
+
       callback();
     });
   }
 
   // ================= INCOMING CALL =================
 
-  void _handleIncomingCall(Map<String, dynamic> data) {
+  void _handleIncomingCall(
+    Map<String, dynamic> data,
+  ) {
+
     if (_incomingScreenOpen) return;
 
-    final context = appNavigatorKey.currentContext;
+    final context =
+        appNavigatorKey.currentContext;
+
     if (context == null) return;
 
     _incomingScreenOpen = true;
@@ -304,6 +415,7 @@ class GlobalSocketManager with WidgetsBindingObserver {
       ),
     )
         .then((_) {
+
       _incomingScreenOpen = false;
     });
   }
@@ -311,21 +423,30 @@ class GlobalSocketManager with WidgetsBindingObserver {
   // ================= SEND =================
 
   void send(Map<String, dynamic> data) {
+
     _socketService?.send(data);
   }
 
-  // ================= APP LIFECYCLE =================
+  // ================= LIFECYCLE =================
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
+  void didChangeAppLifecycleState(
+    AppLifecycleState state,
+  ) {
 
-      if (_socketService?.isConnected != true &&
+    if (state ==
+        AppLifecycleState.resumed) {
+
+      if (_socketService?.isConnected !=
+              true &&
           !_isReconnecting) {
 
         _isReconnecting = true;
 
-        _socketService?.connect().whenComplete(() {
+        _socketService
+            ?.connect()
+            .whenComplete(() {
+
           _isReconnecting = false;
         });
       }
@@ -335,53 +456,76 @@ class GlobalSocketManager with WidgetsBindingObserver {
   // ================= DISCONNECT =================
 
   Future<void> disconnect() async {
+
     await _socketSubscription?.cancel();
+
     _socketSubscription = null;
 
     _socketService?.disconnect();
+
     _socketService = null;
 
     _reconnectTimer?.cancel();
+
     _reconnectTimer = null;
 
     _initialized = false;
+
     _userId = null;
 
-    // 🔥 Provider reset
-    _container.read(onlineUsersProvider.notifier).state = {};
+    _container
+        .read(
+          onlineUsersProvider.notifier,
+        )
+        .state = {};
   }
+
+  // ================= GETTERS =================
 
   bool get isConnected =>
       _socketService?.isConnected ?? false;
 
-  String get wsUrl => _socketService?.wsUrl ?? "";
+  String get wsUrl =>
+      _socketService?.wsUrl ?? "";
 
   // ================= DISPOSE =================
 
   void dispose() {
+
     if (_observerAdded) {
-      WidgetsBinding.instance.removeObserver(this);
+
+      WidgetsBinding.instance
+          .removeObserver(this);
+
       _observerAdded = false;
     }
 
     _socketSubscription?.cancel();
+
     _socketSubscription = null;
 
     _socketService?.dispose();
+
     _socketService = null;
 
     _reconnectTimer?.cancel();
+
     _reconnectTimer = null;
 
     _messageController.close();
+
     _seatMapController.close();
+
     _roomClosedController.close();
 
-    _container.read(onlineUsersProvider.notifier).state = {};
-
-    
+    _container
+        .read(
+          onlineUsersProvider.notifier,
+        )
+        .state = {};
 
     _initialized = false;
+
     _userId = null;
   }
 }
