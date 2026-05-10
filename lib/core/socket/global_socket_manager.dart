@@ -41,10 +41,6 @@ class GlobalSocketManager with WidgetsBindingObserver {
 
   Timer? _reconnectTimer;
 
-  /// 🔥 Riverpod container
-  final ProviderContainer _container =
-      ProviderContainer();
-
   // ================= STREAMS =================
 
   final StreamController<Map<String, dynamic>>
@@ -247,7 +243,7 @@ class GlobalSocketManager with WidgetsBindingObserver {
           // ================= RECENT CHATS =================
 
           final recentNotifier =
-              _container.read(
+              globalProviderContainer.read(
             recentChatsProvider.notifier,
           );
 
