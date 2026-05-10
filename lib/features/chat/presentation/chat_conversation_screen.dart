@@ -1,17 +1,21 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../core/network/api_client.dart';
 import '../../../core/controllers/conversation_controller.dart';
-import 'package:app_project/features/call/presentation/call_screen.dart';
 import '../../../core/controllers/chat_controller.dart';
-import 'package:app_project/core/chat/unread_counter_service.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/chat/unread_counter_service.dart';
+
 import 'package:app_project/providers/messages_provider.dart';
+import 'package:app_project/features/call/presentation/call_screen.dart';
 
 class ChatConversationScreen
     extends ConsumerStatefulWidget {
+
   final String chatUserId;
 
   const ChatConversationScreen({
@@ -20,8 +24,9 @@ class ChatConversationScreen
   });
 
   @override
-ConsumerState<ChatConversationScreen> createState() =>
-    _ChatConversationScreenState();
+  ConsumerState<ChatConversationScreen>
+      createState() =>
+          _ChatConversationScreenState();
 }
 
 class _ChatConversationScreenState
@@ -39,7 +44,9 @@ class _ChatConversationScreenState
   StreamSubscription? _subscription;
 
   List<dynamic> messages = [];
+
   bool loading = true;
+
   String? myId;
 
   @override
@@ -48,128 +55,166 @@ class _ChatConversationScreenState
     _init();
   }
 
+  // ================= INIT =================
+
   Future<void> _init() async {
-    final token = await ApiClient.getToken();
+
+    final token =
+        await ApiClient.getToken();
 
     if (token == null) {
-      if (mounted) context.go("/login");
+
+      if (mounted) {
+        context.go("/login");
+      }
+
       return;
     }
 
     final payload = jsonDecode(
-      utf8.decode(base64Url.decode(
-          base64Url.normalize(token.split(".")[1]))),
+      utf8.decode(
+        base64Url.decode(
+          base64Url.normalize(
+            token.split(".")[1],
+          ),
+        ),
+      ),
     );
 
     myId = payload["id"];
 
     _logic.init(myId!);
 
+    /// 🔥 REALTIME LISTENER
     _subscription = _logic
-    .stream(widget.chatUserId)
-    .listen((data) {
+        .stream(widget.chatUserId)
+        .listen((data) {
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    /// 🔥 provider already active?
-    final providerMessages =
-        ref.read(messagesProvider);
+      setState(() {
+        messages = data;
+        loading = false;
+      });
 
-    final providerChat =
-        providerMessages[widget.chatUserId] ?? [];
+      _scrollBottom();
+    });
 
-    /// 🔥 avoid duplicate rebuild
-    if (providerChat.isNotEmpty) {
+    await _logic.loadMessages(
+      widget.chatUserId,
+    );
+
+    ChatController.instance
+        .markAsRead(widget.chatUserId);
+
+    UnreadCounterService.clearChat(
+      widget.chatUserId,
+    );
+  }
+
+  // ================= SEND MESSAGE =================
+
+  Future<void> sendMessage() async {
+
+    if (_textController.text
+        .trim()
+        .isEmpty) {
       return;
     }
 
-    setState(() {
-      messages = data;
-      loading = false;
-    });
+    final text =
+        _textController.text.trim();
+
+    /// 🔥 optimistic provider update
+    final providerNotifier =
+        ref.read(
+      messagesProvider.notifier,
+    );
+
+    final current = {
+      ...providerNotifier.state,
+    };
+
+    final old =
+        current[widget.chatUserId] ?? [];
+
+    final tempMessage = {
+      "id":
+          DateTime.now()
+              .millisecondsSinceEpoch
+              .toString(),
+
+      "senderId": myId,
+
+      "receiverId":
+          widget.chatUserId,
+
+      "content": text,
+
+      "isRead": false,
+    };
+
+    current[widget.chatUserId] = [
+      ...old,
+      tempMessage,
+    ];
+
+    providerNotifier.state = current;
+
+    _textController.clear();
+
+    await _logic.sendMessage(
+      widget.chatUserId,
+      text,
+    );
 
     _scrollBottom();
-  });
-
-    await _logic.loadMessages(widget.chatUserId);
-
-    ChatController.instance.markAsRead(widget.chatUserId);
-    UnreadCounterService.clearChat(widget.chatUserId);
   }
 
-  Future<void> sendMessage() async {
-  if (_textController.text.trim().isEmpty) return;
+  // ================= SCROLL =================
 
-  final text = _textController.text.trim();
-
-  /// 🔥 INSTANT PROVIDER MESSAGE
-  final providerNotifier =
-      ref.read(messagesProvider.notifier);
-
-  final current =
-      {...providerNotifier.state};
-
-  final old =
-      current[widget.chatUserId] ?? [];
-
-  final tempMessage = {
-    "id":
-        DateTime.now()
-            .millisecondsSinceEpoch
-            .toString(),
-
-    "senderId": myId,
-    "receiverId": widget.chatUserId,
-    "content": text,
-    "isRead": false,
-  };
-
-  current[widget.chatUserId] = [
-    ...old,
-    tempMessage,
-  ];
-
-  providerNotifier.state = current;
-
-  _textController.clear();
-
-  await _logic.sendMessage(
-    widget.chatUserId,
-    text,
-  );
-
-  _scrollBottom(); // 🔥 instant scroll on send
-  }
-  // 🔥 FIXED: bottom scroll (reverse:true compatible)
   void _scrollBottom() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
+
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) {
+
+      if (_scrollController
+          .hasClients) {
+
         _scrollController.animateTo(
-          0, // 🔥 IMPORTANT (reverse:true)
-          duration: const Duration(milliseconds: 250),
+          0,
+          duration: const Duration(
+            milliseconds: 250,
+          ),
           curve: Curves.easeOut,
         );
       }
     });
   }
 
-  // ===========================
-  // 🔥 CALL FUNCTION (UNCHANGED SAFE)
-  // ===========================
+  // ================= CALL =================
 
-  Future<void> _startCall(String type) async {
+  Future<void> _startCall(
+    String type,
+  ) async {
 
     if (myId == null) return;
 
-    final response = await ApiClient.post("/call/start", {
-      "callerId": myId,
-      "receiverId": widget.chatUserId,
-      "type": type
-    });
+    final response =
+        await ApiClient.post(
+      "/call/start",
+      {
+        "callerId": myId,
+        "receiverId":
+            widget.chatUserId,
+        "type": type,
+      },
+    );
 
     if (response["success"] != true) {
 
-      if (response["status"] == "OFFLINE") {
+      if (response["status"] ==
+          "OFFLINE") {
 
         if (!mounted) return;
 
@@ -187,13 +232,19 @@ class _ChatConversationScreenState
         return;
       }
 
-      String msg = response["message"] ?? "Call failed";
+      String msg =
+          response["message"] ??
+              "Call failed";
 
-      if (msg == "Insufficient balance") {
-        msg = "Low balance. Please recharge.";
+      if (msg ==
+          "Insufficient balance") {
+
+        msg =
+            "Low balance. Please recharge.";
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
         SnackBar(
           content: Text(msg),
           backgroundColor: Colors.red,
@@ -203,7 +254,8 @@ class _ChatConversationScreenState
       return;
     }
 
-    final sessionId = response["sessionId"];
+    final sessionId =
+        response["sessionId"];
 
     if (!mounted) return;
 
@@ -219,13 +271,21 @@ class _ChatConversationScreenState
     );
   }
 
+  // ================= DISPOSE =================
+
   @override
   void dispose() {
+
     _subscription?.cancel();
+
     _scrollController.dispose();
+
     _textController.dispose();
+
     super.dispose();
   }
+
+  // ================= UI =================
 
   @override
   Widget build(BuildContext context) {
@@ -234,43 +294,73 @@ class _ChatConversationScreenState
         ref.watch(messagesProvider);
 
     final providerChatMessages =
-  providerMessages[widget.chatUserId] ?? [];
+        providerMessages[
+                widget.chatUserId] ??
+            [];
 
     final displayMessages =
-        providerChatMessages.isNotEmpty
+        providerChatMessages
+                .isNotEmpty
             ? providerChatMessages
             : messages;
 
     if (loading &&
         messages.isEmpty &&
         displayMessages.isEmpty) {
+
       return const Scaffold(
-        backgroundColor: Color(0xFF0A0A0A),
+        backgroundColor:
+            Color(0xFF0A0A0A),
+
         body: Center(
-          child: CircularProgressIndicator(),
+          child:
+              CircularProgressIndicator(),
         ),
       );
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0A),
+
+      backgroundColor:
+          const Color(0xFF0A0A0A),
+
       appBar: AppBar(
-        backgroundColor: const Color(0xFF111111),
+
+        backgroundColor:
+            const Color(0xFF111111),
+
         title: const Text("Chat"),
+
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon:
+              const Icon(Icons.arrow_back),
+
           onPressed: () {
             context.pop();
           },
         ),
+
         actions: [
+
           IconButton(
-            icon: const Icon(Icons.call),
-            onPressed: () => _startCall("VOICE_CALL"),
+            icon:
+                const Icon(Icons.call),
+
+            onPressed: () =>
+                _startCall(
+              "VOICE_CALL",
+            ),
           ),
+
           IconButton(
-            icon: const Icon(Icons.videocam),
-            onPressed: () => _startCall("VIDEO_CALL"),
+            icon: const Icon(
+              Icons.videocam,
+            ),
+
+            onPressed: () =>
+                _startCall(
+              "VIDEO_CALL",
+            ),
           ),
         ],
       ),
@@ -278,54 +368,101 @@ class _ChatConversationScreenState
       body: Column(
         children: [
 
-          // 🔥 CHAT LIST
+          // ================= CHAT LIST =================
+
           Expanded(
             child: ListView.builder(
-              controller: _scrollController,
-              reverse: true, // 🔥 MAIN FIX
-              padding: const EdgeInsets.only(top: 10),
-              itemCount: displayMessages.length,
-              itemBuilder: (context, index) {
+
+              controller:
+                  _scrollController,
+
+              reverse: true,
+
+              padding:
+                  const EdgeInsets.only(
+                top: 10,
+              ),
+
+              itemCount:
+                  displayMessages.length,
+
+              itemBuilder:
+                  (context, index) {
 
                 final msg =
                     displayMessages[
-                      displayMessages.length - 1 - index
-                    ]; // 🔥 reverse index
-                final isMe = msg["senderId"] == myId;
+                        displayMessages
+                                .length -
+                            1 -
+                            index];
+
+                final isMe =
+                    msg["senderId"] ==
+                        myId;
 
                 return Align(
+
                   alignment: isMe
-                      ? Alignment.centerRight
-                      : Alignment.centerLeft,
+                      ? Alignment
+                          .centerRight
+                      : Alignment
+                          .centerLeft,
 
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    margin: const EdgeInsets.symmetric(
-                        vertical: 6,
-                        horizontal: 12),
+                  child:
+                      AnimatedContainer(
 
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 10,
-                        horizontal: 14),
+                    duration:
+                        const Duration(
+                      milliseconds: 200,
+                    ),
 
-                    decoration: BoxDecoration(
+                    margin:
+                        const EdgeInsets
+                            .symmetric(
+                      vertical: 6,
+                      horizontal: 12,
+                    ),
+
+                    padding:
+                        const EdgeInsets
+                            .symmetric(
+                      vertical: 10,
+                      horizontal: 14,
+                    ),
+
+                    decoration:
+                        BoxDecoration(
+
                       gradient: isMe
                           ? const LinearGradient(
                               colors: [
-                                Color(0xFF00F5A0),
-                                Color(0xFF00C9A7),
+                                Color(
+                                  0xFF00F5A0,
+                                ),
+                                Color(
+                                  0xFF00C9A7,
+                                ),
                               ],
                             )
                           : null,
+
                       color: isMe
                           ? null
-                          : const Color(0xFF1E1E1E),
+                          : const Color(
+                              0xFF1E1E1E,
+                            ),
+
                       borderRadius:
-                          BorderRadius.circular(20),
+                          BorderRadius
+                              .circular(
+                        20,
+                      ),
                     ),
 
                     child: Text(
-                      msg["content"].toString(),
+                      msg["content"]
+                          .toString(),
+
                       style: TextStyle(
                         color: isMe
                             ? Colors.black
@@ -338,37 +475,62 @@ class _ChatConversationScreenState
             ),
           ),
 
-          // 🔥 INPUT BOX
+          // ================= INPUT =================
+
           Container(
-            padding: const EdgeInsets.all(12),
-            color: const Color(0xFF111111),
+
+            padding:
+                const EdgeInsets.all(
+              12,
+            ),
+
+            color:
+                const Color(0xFF111111),
+
             child: Row(
               children: [
 
                 Expanded(
                   child: TextField(
-                    controller: _textController,
-                    style: const TextStyle(
-                        color: Colors.white),
-                    decoration: const InputDecoration(
-                      hintText: "Type a message...",
-                      hintStyle: TextStyle(
-                          color: Colors.white54),
-                      border: InputBorder.none,
+
+                    controller:
+                        _textController,
+
+                    style:
+                        const TextStyle(
+                      color:
+                          Colors.white,
+                    ),
+
+                    decoration:
+                        const InputDecoration(
+                      hintText:
+                          "Type a message...",
+
+                      hintStyle:
+                          TextStyle(
+                        color:
+                            Colors.white54,
+                      ),
+
+                      border:
+                          InputBorder.none,
                     ),
                   ),
                 ),
 
                 GestureDetector(
+
                   onTap: sendMessage,
+
                   child: const Icon(
                     Icons.send,
                     color: Colors.green,
                   ),
-                )
+                ),
               ],
             ),
-          )
+          ),
         ],
       ),
     );
