@@ -105,7 +105,7 @@ class GlobalSocketManager with WidgetsBindingObserver {
         _messageController.add(event);
           }
 
-      if (type == "USER_ONLINE") {
+     else if (type == "USER_ONLINE") {
 
         final userId =
             event["userId"]?.toString();
