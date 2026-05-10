@@ -97,7 +97,7 @@ class GlobalSocketManager with WidgetsBindingObserver {
         if (userId != null) {
 
           final notifier =
-              _container.read(
+              globalProviderContainer.read(
             onlineUsersProvider.notifier,
           );
 
@@ -120,7 +120,7 @@ class GlobalSocketManager with WidgetsBindingObserver {
         if (userId != null) {
 
           final notifier =
-              _container.read(
+              globalProviderContainer.read(
             onlineUsersProvider.notifier,
           );
 
@@ -198,7 +198,7 @@ class GlobalSocketManager with WidgetsBindingObserver {
         // ================= PROVIDER MESSAGES =================
 
         final notifier =
-            _container.read(
+            globalProviderContainer.read(
           messagesProvider.notifier,
         );
 
@@ -488,8 +488,7 @@ class GlobalSocketManager with WidgetsBindingObserver {
 
     _userId = null;
 
-    _container
-        .read(
+    globalProviderContainer.read(
           onlineUsersProvider.notifier,
         )
         .state = {};
@@ -533,8 +532,7 @@ class GlobalSocketManager with WidgetsBindingObserver {
 
     _roomClosedController.close();
 
-    _container
-        .read(
+    globalProviderContainer.read(
           onlineUsersProvider.notifier,
         )
         .state = {};
