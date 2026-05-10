@@ -89,6 +89,22 @@ class GlobalSocketManager with WidgetsBindingObserver {
 
       // ================= ONLINE =================
 
+      if (type == "ONLINE_USERS_LIST") {
+
+        final users =
+            List<String>.from(
+          event["users"] ?? [],
+        );
+
+        globalProviderContainer
+            .read(
+              onlineUsersProvider.notifier,
+            )
+            .state = users.toSet();
+
+        _messageController.add(event);
+          }
+
       if (type == "USER_ONLINE") {
 
         final userId =
