@@ -45788,37 +45788,35 @@ break
 case 6:case 1:return A.H(q,r)
 case 2:return A.G(o.at(-1),r)}})
 return A.I($async$yc,r)},
-ah7(a){var s,r,q,p,o,n,m,l,k,j,i,h,g=this,f="senderId"
-if(g.c==null)return
+ah7(a){var s,r,q,p,o,n,m,l,k,j,i,h=this,g="senderId"
+if(h.c==null)return
 s=J.aU(a)
 if(J.c(s.h(a,"type"),"NEW_MESSAGE")){r=s.h(a,"data")
 q=J.aU(r)
-p=q.h(r,f)
+p=q.h(r,g)
 o=q.h(r,"receiverId")
-n=J.c(p,g.c)?o:p
-q=g.a
+n=J.c(p,h.c)?o:p
+q=h.a
 if(q.h(0,n)==null)q.n(0,n,[])
 m=q.h(0,n)
 m.toString
 l=A.dy(m,!0,t.z)
-if(!B.b.hd(l,new A.a5j(r))){m=g.f
-k=m.p(0,n)
-l.push(r)
+if(!B.b.hd(l,new A.a5j(r))){l.push(r)
 if(l.length>100)B.b.fu(l,0)
 q.n(0,n,l)
-m.C(0,n)
-if(!k)g.uK(n)}}if(J.c(s.h(a,"type"),"MESSAGES_READ")){j=s.h(a,"userId")
-if(j!=null&&g.a.au(j)){s=g.a
-q=s.h(0,j)
+h.f.C(0,n)
+h.uK(n)}}if(J.c(s.h(a,"type"),"MESSAGES_READ")){k=s.h(a,"userId")
+if(k!=null&&h.a.au(k)){s=h.a
+q=s.h(0,k)
 q.toString
 m=t.z
 l=A.dy(q,!0,m)
-for(i=0;i<l.length;++i)if(J.c(J.aX(l[i],f),g.c)){q=l[i]
-h=A.vh(null,null,m,m)
-h.L(0,q)
-h.n(0,"isRead",!0)
-l[i]=h}s.n(0,j,l)
-g.uK(j)}}},
+for(j=0;j<l.length;++j)if(J.c(J.aX(l[j],g),h.c)){q=l[j]
+i=A.vh(null,null,m,m)
+i.L(0,q)
+i.n(0,"isRead",!0)
+l[j]=i}s.n(0,k,l)
+h.uK(k)}}},
 uK(a){var s,r=this.b
 if(r.h(0,a)==null)r.n(0,a,A.h1(!1,t.j))
 r=r.h(0,a)
