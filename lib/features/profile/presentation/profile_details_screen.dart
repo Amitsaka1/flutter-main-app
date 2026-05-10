@@ -132,6 +132,10 @@ class _ProfileDetailsScreenState
 
     final user = profile!["user"];
 
+    final isOnline =
+        ref.watch(onlineUsersProvider)
+            .contains(widget.userId);
+
     final name = profile!["name"] ?? "";
     final username = profile!["username"] ?? name;
     final avatar = profile!["avatarUrl"];
