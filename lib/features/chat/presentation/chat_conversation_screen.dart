@@ -414,7 +414,10 @@ class _ChatConversationScreenState
     if (text.isEmpty) return;
 
     final notifier = ref.read(messagesProvider.notifier);
-    final current  = Map<String, dynamic>.from(notifier.state);
+    final current =
+        Map<String, List<dynamic>>.from(
+      notifier.state,
+    );
     final prev     = (current[widget.chatUserId] as List<dynamic>?) ?? [];
 
     current[widget.chatUserId] = [
