@@ -10,8 +10,8 @@ class ChatListScreen extends ConsumerStatefulWidget {
   const ChatListScreen({super.key});
 
   @override
-  State<ChatListScreen> createState() => _ChatListScreenState();
-}
+ConsumerState<ChatListScreen> createState() =>
+    _ChatListScreenState();
 
 class _ChatListScreenState
     extends ConsumerState<ChatListScreen>
