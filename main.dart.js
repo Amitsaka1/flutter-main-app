@@ -47037,9 +47037,7 @@ yZ(){var s=0,r=A.J(t.H),q,p=2,o=[],n=this,m,l,k,j,i
 var $async$yZ=A.F(function(a,b){if(a===1){o.push(b)
 s=p}for(;;)switch(s){case 0:if($.awA.au(n.a.d)){n.w=$.awA.h(0,n.a.d)
 n.x=!1
-if(n.c!=null)n.M(new A.aww())
-s=1
-break}p=4
+if(n.c!=null)n.M(new A.aww())}p=4
 s=7
 return A.D(A.j8("/profile/user/"+n.a.d,null),$async$yZ)
 case 7:m=b
@@ -47151,10 +47149,10 @@ A.awx.prototype={
 $0(){this.a.x=!1},
 $S:0}
 A.awy.prototype={
-$0(){return this.a.x=!1},
+$0(){this.a.x=!1},
 $S:0}
 A.awz.prototype={
-$0(){return this.a.x=!1},
+$0(){this.a.x=!1},
 $S:0}
 A.awB.prototype={
 $0(){return this.a.y=!0},
