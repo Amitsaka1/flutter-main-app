@@ -205,14 +205,8 @@ class GlobalSocketManager with WidgetsBindingObserver {
          return;
         }
 
-        final senderId =
-            data["senderId"]?.toString();
-
         final receiverId =
             data["receiverId"]?.toString();
-
-        final currentUserId =
-            _userId?.toString();
 
         // ================= UNREAD =================
 
