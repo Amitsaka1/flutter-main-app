@@ -440,24 +440,7 @@ class _ChatConversationScreenState
     _textCtrl.clear();
 
     await _logic.sendMessage(widget.chatUserId, text);
-    final updatedCurrent =
-        Map<String, List<dynamic>>.from(
-      notifier.state,
-    );
-
-    final updatedMessages =
-        List<dynamic>.from(
-      updatedCurrent[widget.chatUserId] ?? [],
-    );
-
-    updatedMessages.removeWhere(
-      (m) => m["id"] == tempId,
-    );
-
-    updatedCurrent[widget.chatUserId] =
-        updatedMessages;
-
-    notifier.state = updatedCurrent;
+    
     _scrollToBottom();
   }
 
