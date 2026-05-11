@@ -76,6 +76,9 @@ class ConversationController {
 
     /// 🔥 ALREADY LOADED → SKIP API
     if (_loadedConversations.contains(userId)) {
+
+      _emit(userId);
+      
       return;
     }
 
