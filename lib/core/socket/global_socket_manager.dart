@@ -189,7 +189,21 @@ class GlobalSocketManager with WidgetsBindingObserver {
 
       else if (type == "NEW_MESSAGE") {
 
-        final data = event["data"];
+        final data = event["data"]; 
+
+        final senderId =
+            data["senderId"]?.toString();
+
+        final currentUserId =
+            _userId?.toString();
+
+        /// 🔥 Ignore self echo message
+        if (senderId == currentUserId) {
+
+          _messageController.add(event);
+
+         return;
+        }
 
         final senderId =
             data["senderId"]?.toString();
