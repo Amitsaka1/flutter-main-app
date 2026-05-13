@@ -1,12 +1,17 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../core/network/api_client.dart';
 import '../../../core/socket/global_socket_manager.dart';
 import '../../../core/controllers/chat_controller.dart';
-import '../../../core/data/global_data_manager.dart'; // ✅ NEW
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:app_project/providers/online_users_provider.dart';
+import '../../../core/data/global_data_manager.dart';
+
+import 'widgets/dashboard_search_bar.dart';
+import 'widgets/dashboard_grid.dart';
+import 'widgets/dashboard_loading.dart';
+import 'widgets/dashboard_empty.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -18,29 +23,20 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen>
     with AutomaticKeepAliveClientMixin {
-
   List<dynamic> profiles = [];
   bool loading = true;
 
-  bool filterOpen = false;
   int unreadCount = 0;
 
-  Map<String, String> filters = {
-    "gender": "",
-    "roleType": "",
-    "minAge": "",
-    "maxAge": "",
-  };
-
-  // 🔥 PAGINATION + SCROLL
-  final ScrollController _scrollController = ScrollController();
+  final ScrollController _scrollController =
+      ScrollController();
 
   int page = 1;
   bool hasMore = true;
   bool loadingMore = false;
 
   StreamSubscription? _socketSub;
-  StreamSubscription? _globalSub; // ✅ NEW
+  StreamSubscription? _globalSub;
 
   @override
   bool get wantKeepAlive => true;
@@ -50,7 +46,6 @@ class _DashboardScreenState extends State<DashboardScreen>
     super.initState();
     _init();
 
-    // 🔥 SCROLL LISTENER (LOAD MORE TRIGGER)
     _scrollController.addListener(() {
       if (_scrollController.position.pixels >=
           _scrollController.position.maxScrollExtent - 200) {
@@ -58,30 +53,20 @@ class _DashboardScreenState extends State<DashboardScreen>
       }
     });
   }
-  
 
   Future<void> _init() async {
-
     final token = await ApiClient.getToken();
 
     if (token == null) {
-      if (mounted) context.pushReplacement("/login");
+      if (mounted) {
+        context.pushReplacement("/login");
+      }
       return;
     }
 
-//    final payload = jsonDecode(
-  //    utf8.decode(
-  //      base64Url.decode(
-  //        base64Url.normalize(token.split(".")[1]),
-  //      ),
- //     ),
-//    );
+    // ===================== LOGIC START =====================
 
- //   final myId = payload["id"];
-
-  //  await GlobalSocketManager.instance.init(myId);
-
-    _listenGlobal();   // ✅ NEW
+    _listenGlobal();
     _fetchProfiles();
     _fetchUnread();
     _listenSocket();
@@ -92,11 +77,11 @@ class _DashboardScreenState extends State<DashboardScreen>
         context.pushReplacement("/create-profile");
       }
     });
+
+    // ===================== LOGIC END =======================
   }
 
-  // =========================
-  // 🔥 GLOBAL LISTENER
-  // =========================
+  // ===================== GLOBAL LISTENER START =====================
 
   void _listenGlobal() {
     final global = GlobalDataManager.instance;
@@ -113,99 +98,94 @@ class _DashboardScreenState extends State<DashboardScreen>
     });
   }
 
-  // =========================
-  // 🔥 FETCH PROFILES (CACHE)
-  // =========================
+  // ===================== GLOBAL LISTENER END =======================
+
+  // ===================== FETCH PROFILES START =====================
 
   Future<void> _fetchProfiles() async {
+    final global = GlobalDataManager.instance;
 
-  final global = GlobalDataManager.instance;
-
-  // ✅ instant cache (no loading)
-  if (global.profiles != null) {
-    setState(() {
-      profiles = global.profiles!;
-      loading = false;
-    });
-    return;
-  }
-
-  try {
-    final response = await ApiClient.get(
-      "/profile/all",
-      queryParams: {
-        ...filters,
-        "page": "1",
-        "limit": "20",
-      },
-    );
-
-    if (!mounted) return;
-
-    if (response["success"] == true) {
-
-      final data = response["data"] as List;
-
-      global.setProfiles(data); // 🔥 global save
-
+    // instant cache show
+    if (global.profiles != null) {
       setState(() {
-        profiles = data;
-        page = 1;
-        hasMore = data.length == 20;
+        profiles = global.profiles!;
         loading = false;
       });
-
-    } else {
-      setState(() => loading = false);
+      return;
     }
 
-  } catch (_) {
-    if (mounted) {
-      setState(() => loading = false);
-    }
-  }
-  }
+    try {
+      final response = await ApiClient.get(
+        "/profile/all",
+        queryParams: {
+          "page": "1",
+          "limit": "20",
+        },
+      );
 
-  Future<void> _loadMore() async {
-  if (loadingMore || !hasMore) return;
+      if (!mounted) return;
 
-  loadingMore = true;
+      if (response["success"] == true) {
+        final data = response["data"] as List;
 
-  try {
-    final res = await ApiClient.get(
-      "/profile/all",
-      queryParams: {
-        ...filters,
-        "page": (page + 1).toString(),
-        "limit": "20",
-      },
-    );
-
-    if (!mounted) return;
-
-    if (res["success"] == true) {
-
-      final newData = res["data"] as List;
-
-      if (newData.isEmpty) {
-        hasMore = false; // 🔥 no more data
-      } else {
-        page++;
+        global.setProfiles(data);
 
         setState(() {
-          profiles.addAll(newData); // 🔥 append (not replace)
+          profiles = data;
+          page = 1;
+          hasMore = data.length == 20;
+          loading = false;
         });
+      } else {
+        setState(() => loading = false);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => loading = false);
       }
     }
-
-  } catch (_) {}
-
-  loadingMore = false;
   }
-  
-  // =========================
-  // 🔥 FETCH UNREAD
-  // =========================
+
+  // ===================== FETCH PROFILES END =======================
+
+  // ===================== LOAD MORE START =========================
+
+  Future<void> _loadMore() async {
+    if (loadingMore || !hasMore) return;
+
+    loadingMore = true;
+
+    try {
+      final res = await ApiClient.get(
+        "/profile/all",
+        queryParams: {
+          "page": (page + 1).toString(),
+          "limit": "20",
+        },
+      );
+
+      if (!mounted) return;
+
+      if (res["success"] == true) {
+        final newData = res["data"] as List;
+
+        if (newData.isEmpty) {
+          hasMore = false;
+        } else {
+          page++;
+          setState(() {
+            profiles.addAll(newData);
+          });
+        }
+      }
+    } catch (_) {}
+
+    loadingMore = false;
+  }
+
+  // ===================== LOAD MORE END ===========================
+
+  // ===================== UNREAD START ===========================
 
   Future<void> _fetchUnread() async {
     try {
@@ -226,19 +206,16 @@ class _DashboardScreenState extends State<DashboardScreen>
     } catch (_) {}
   }
 
-  // =========================
-  // 🔥 SOCKET LISTENER
-  // =========================
+  // ===================== UNREAD END =============================
+
+  // ===================== SOCKET LISTENER START ==================
 
   void _listenSocket() {
-
     final socket = GlobalSocketManager.instance;
-    final global = GlobalDataManager.instance;
 
     _socketSub?.cancel();
 
     _socketSub = socket.messages.listen((message) {
-
       if (!mounted) return;
 
       final type = message["type"];
@@ -247,18 +224,15 @@ class _DashboardScreenState extends State<DashboardScreen>
         final newProfile = message["data"];
 
         final global = GlobalDataManager.instance;
+        global.profiles ??= [];
 
-        global.profiles ??= []; // 🔥 FIX
-  
-        if (!global.profiles!.any((p) => p["id"] == newProfile["id"])) {
+        if (!global.profiles!.any(
+          (p) => p["id"] == newProfile["id"],
+        )) {
           global.profiles!.insert(0, newProfile);
           global.notify();
         }
       }
-
- //     if (type == "USER_ONLINE" || type == "USER_OFFLINE") {
-  //      setState(() {}); // only UI refresh
-//      }
 
       if (type == "NEW_MESSAGE") {
         final msg = message["data"];
@@ -276,10 +250,13 @@ class _DashboardScreenState extends State<DashboardScreen>
     });
   }
 
+  // ===================== SOCKET LISTENER END ====================
+
   @override
   void dispose() {
     _socketSub?.cancel();
-    _globalSub?.cancel(); // ✅ NEW
+    _globalSub?.cancel();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -288,163 +265,36 @@ class _DashboardScreenState extends State<DashboardScreen>
     super.build(context);
 
     if (loading && profiles.isEmpty) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const DashboardLoading();
     }
+
+    if (!loading && profiles.isEmpty) {
+      return const DashboardEmpty();
+    }
+
+    // ===================== UI START =====================
 
     return SafeArea(
       child: Padding(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 8,
+          vertical: 6,
+        ),
         child: Column(
           children: [
-
-            // SEARCH
-
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    height: 48,
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 14),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1a1a1a),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.search,
-                            color: Colors.white54, size: 20),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: TextField(
-                            style:
-                                TextStyle(color: Colors.white),
-                            decoration: InputDecoration(
-                              hintText: "Search...",
-                              hintStyle: TextStyle(
-                                  color: Colors.white54),
-                              border: InputBorder.none,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
+            const DashboardSearchBar(),
             const SizedBox(height: 14),
-
             Expanded(
-              child: GridView.builder(
-                controller: _scrollController,
-                padding: EdgeInsets.zero,
-                itemCount: profiles.length,
-                gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  childAspectRatio: 0.85,
-                ),
-                itemBuilder: (context, index) {
-                  final p = profiles[index];
-                  return _ProfileCard(profile: p);
-                },
+              child: DashboardGrid(
+                profiles: profiles,
+                scrollController: _scrollController,
               ),
             ),
           ],
         ),
       ),
     );
-  }
-}
 
-class _ProfileCard extends ConsumerWidget {
-  final dynamic profile;
-  const _ProfileCard({required this.profile});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-
-    final onlineUsers = ref.watch(onlineUsersProvider);
-
-    final online = onlineUsers.contains(
-      profile["userId"]?.toString(),
-    );
-    
-    final String? userId =
-        profile["userId"]?.toString();
-
-    return GestureDetector(
-      onTap: () {
-        if (userId != null && userId.isNotEmpty) {
-          context.push("/profile/$userId");
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: const Color(0xFF0f0f0f),
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: Stack(
-          children: [
-
-            if (online)
-              const Positioned(
-                top: 0,
-                right: 0,
-                child: CircleAvatar(
-                  radius: 6,
-                  backgroundColor: Colors.green,
-                ),
-              ),
-
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-
-                CircleAvatar(
-                  radius: 28,
-                  backgroundImage: profile["avatarUrl"] != null &&
-                          profile["avatarUrl"].toString().isNotEmpty
-                      ? NetworkImage(profile["avatarUrl"])
-                      : const AssetImage("assets/profile_placeholder.png")
-                          as ImageProvider,
-                ),
-
-                const SizedBox(height: 10),
-
-                Text(
-                  profile["name"] ?? "",
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-
-                const SizedBox(height: 5),
-
-                Text(
-                  "${profile["gender"] ?? ""} • ${profile["age"] ?? ""}",
-                ),
-
-                Text(profile["roleType"] ?? ""),
-
-                Text(
-                  profile["havePlace"] == true
-                      ? "Has Place"
-                      : "No Place",
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
+    // ===================== UI END =======================
   }
 }
