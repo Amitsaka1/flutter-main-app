@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/network/api_client.dart';
@@ -22,21 +23,42 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen>
-    with AutomaticKeepAliveClientMixin {
-  List<dynamic> profiles = [];
-  bool loading = true;
+    with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
 
-  int unreadCount = 0;
+  // ── Palette ──────────────────────────────────
+  static const _bg        = Color(0xFF0A0A0F);
+  static const _surface   = Color(0xFF0E0E18);
+  static const _goldA     = Color(0xFFD4A843);
+  static const _goldB     = Color(0xFFE8C86A);
+  static const _goldC     = Color(0xFFB8892E);
+  static const _accent    = Color(0xFF6C63FF);
+  static const _border    = Color(0xFF1E1E2E);
+  static const _textPrime = Color(0xFFF0EDE8);
+  static const _textMuted = Color(0xFF55556A);
 
-  final ScrollController _scrollController =
-      ScrollController();
+  // ── State ────────────────────────────────────
+  List<dynamic> profiles  = [];
+  bool loading            = true;
+  int  unreadCount        = 0;
 
-  int page = 1;
-  bool hasMore = true;
+  final ScrollController _scrollController = ScrollController();
+
+  int  page        = 1;
+  bool hasMore     = true;
   bool loadingMore = false;
 
   StreamSubscription? _socketSub;
   StreamSubscription? _globalSub;
+
+  // ── UI Animations ────────────────────────────
+  late AnimationController _headerCtrl;
+  late AnimationController _badgeCtrl;
+  late Animation<double>   _headerFade;
+  late Animation<double>   _headerSlide;
+  late Animation<double>   _badgePulse;
+
+  // Header shrink on scroll
+  double _headerOpacity = 1.0;
 
   @override
   bool get wantKeepAlive => true;
@@ -44,27 +66,59 @@ class _DashboardScreenState extends State<DashboardScreen>
   @override
   void initState() {
     super.initState();
-    _init();
 
+    // Header entrance
+    _headerCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    )..forward();
+
+    _headerFade = CurvedAnimation(
+      parent: _headerCtrl,
+      curve: const Interval(0.0, 0.7, curve: Curves.easeOut),
+    );
+    _headerSlide = Tween<double>(begin: -20, end: 0).animate(
+      CurvedAnimation(
+        parent: _headerCtrl,
+        curve: const Interval(0.0, 0.8, curve: Curves.easeOutCubic),
+      ),
+    );
+
+    // Badge pulse
+    _badgeCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat(reverse: true);
+
+    _badgePulse = Tween<double>(begin: 0.85, end: 1.0).animate(
+      CurvedAnimation(parent: _badgeCtrl, curve: Curves.easeInOut),
+    );
+
+    // Scroll → header opacity
     _scrollController.addListener(() {
+      final offset = _scrollController.position.pixels;
+      setState(() {
+        _headerOpacity = (1.0 - (offset / 80).clamp(0.0, 0.4));
+      });
+
       if (_scrollController.position.pixels >=
           _scrollController.position.maxScrollExtent - 200) {
         _loadMore();
       }
     });
+
+    _init();
   }
+
+  // ===================== LOGIC START =====================
 
   Future<void> _init() async {
     final token = await ApiClient.getToken();
 
     if (token == null) {
-      if (mounted) {
-        context.pushReplacement("/login");
-      }
+      if (mounted) context.pushReplacement("/login");
       return;
     }
-
-    // ===================== LOGIC START =====================
 
     _listenGlobal();
     _fetchProfiles();
@@ -77,8 +131,6 @@ class _DashboardScreenState extends State<DashboardScreen>
         context.pushReplacement("/create-profile");
       }
     });
-
-    // ===================== LOGIC END =======================
   }
 
   // ===================== GLOBAL LISTENER START =====================
@@ -88,11 +140,10 @@ class _DashboardScreenState extends State<DashboardScreen>
 
     _globalSub = global.stream.listen((_) {
       if (!mounted) return;
-
       if (global.profiles != null) {
         setState(() {
           profiles = global.profiles!;
-          loading = false;
+          loading  = false;
         });
       }
     });
@@ -105,11 +156,10 @@ class _DashboardScreenState extends State<DashboardScreen>
   Future<void> _fetchProfiles() async {
     final global = GlobalDataManager.instance;
 
-    // instant cache show
     if (global.profiles != null) {
       setState(() {
         profiles = global.profiles!;
-        loading = false;
+        loading  = false;
       });
       return;
     }
@@ -117,32 +167,25 @@ class _DashboardScreenState extends State<DashboardScreen>
     try {
       final response = await ApiClient.get(
         "/profile/all",
-        queryParams: {
-          "page": "1",
-          "limit": "20",
-        },
+        queryParams: {"page": "1", "limit": "20"},
       );
 
       if (!mounted) return;
 
       if (response["success"] == true) {
         final data = response["data"] as List;
-
         global.setProfiles(data);
-
         setState(() {
           profiles = data;
-          page = 1;
-          hasMore = data.length == 20;
-          loading = false;
+          page     = 1;
+          hasMore  = data.length == 20;
+          loading  = false;
         });
       } else {
         setState(() => loading = false);
       }
     } catch (_) {
-      if (mounted) {
-        setState(() => loading = false);
-      }
+      if (mounted) setState(() => loading = false);
     }
   }
 
@@ -152,14 +195,13 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   Future<void> _loadMore() async {
     if (loadingMore || !hasMore) return;
-
     loadingMore = true;
 
     try {
       final res = await ApiClient.get(
         "/profile/all",
         queryParams: {
-          "page": (page + 1).toString(),
+          "page":  (page + 1).toString(),
           "limit": "20",
         },
       );
@@ -168,14 +210,11 @@ class _DashboardScreenState extends State<DashboardScreen>
 
       if (res["success"] == true) {
         final newData = res["data"] as List;
-
         if (newData.isEmpty) {
           hasMore = false;
         } else {
           page++;
-          setState(() {
-            profiles.addAll(newData);
-          });
+          setState(() => profiles.addAll(newData));
         }
       }
     } catch (_) {}
@@ -190,17 +229,14 @@ class _DashboardScreenState extends State<DashboardScreen>
   Future<void> _fetchUnread() async {
     try {
       final res = await ApiClient.get("/chat/recent");
-
       if (!mounted) return;
 
       if (res["success"] == true) {
-        final data = res["data"] as List;
-        int total = 0;
-
+        final data  = res["data"] as List;
+        int   total = 0;
         for (var c in data) {
           total += (c["unreadCount"] ?? 0) as int;
         }
-
         setState(() => unreadCount = total);
       }
     } catch (_) {}
@@ -212,7 +248,6 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   void _listenSocket() {
     final socket = GlobalSocketManager.instance;
-
     _socketSub?.cancel();
 
     _socketSub = socket.messages.listen((message) {
@@ -222,13 +257,10 @@ class _DashboardScreenState extends State<DashboardScreen>
 
       if (type == "NEW_PROFILE") {
         final newProfile = message["data"];
-
-        final global = GlobalDataManager.instance;
+        final global     = GlobalDataManager.instance;
         global.profiles ??= [];
 
-        if (!global.profiles!.any(
-          (p) => p["id"] == newProfile["id"],
-        )) {
+        if (!global.profiles!.any((p) => p["id"] == newProfile["id"])) {
           global.profiles!.insert(0, newProfile);
           global.notify();
         }
@@ -236,12 +268,8 @@ class _DashboardScreenState extends State<DashboardScreen>
 
       if (type == "NEW_MESSAGE") {
         final msg = message["data"];
-
         ChatController.instance.handleNewMessage(msg);
-
-        setState(() {
-          unreadCount++;
-        });
+        setState(() => unreadCount++);
       }
 
       if (type == "MESSAGES_READ") {
@@ -252,45 +280,319 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   // ===================== SOCKET LISTENER END ====================
 
+  // ===================== LOGIC END =======================
+
   @override
   void dispose() {
+    _headerCtrl.dispose();
+    _badgeCtrl.dispose();
     _socketSub?.cancel();
     _globalSub?.cancel();
     _scrollController.dispose();
     super.dispose();
   }
 
+  // ─────────────────────────────────────────────
+  //  Header — logo + title + chat button
+  // ─────────────────────────────────────────────
+
+  Widget _buildHeader() {
+    return FadeTransition(
+      opacity: _headerFade,
+      child: AnimatedBuilder(
+        animation: _headerSlide,
+        builder: (_, child) => Transform.translate(
+          offset: Offset(0, _headerSlide.value),
+          child: child,
+        ),
+        child: Opacity(
+          opacity: _headerOpacity.clamp(0.6, 1.0),
+          child: Row(
+            children: [
+
+              // ── Brand mark ──────────────────────
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const LinearGradient(
+                    colors: [_goldA, _goldC],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: _goldA.withOpacity(0.35),
+                      blurRadius: 12,
+                      spreadRadius: 1,
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.people_alt_rounded,
+                  size: 18,
+                  color: Color(0xFF0A0A0F),
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              // ── Title block ─────────────────────
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ShaderMask(
+                    shaderCallback: (b) => const LinearGradient(
+                      colors: [_goldA, _goldB],
+                    ).createShader(b),
+                    child: const Text(
+                      "Discover",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.4,
+                        height: 1.1,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    "Find your people",
+                    style: TextStyle(
+                      color: _textMuted,
+                      fontSize: 11,
+                      letterSpacing: 0.4,
+                    ),
+                  ),
+                ],
+              ),
+
+              const Spacer(),
+
+              // ── Chat icon + unread badge ─────────
+              GestureDetector(
+                onTap: () => context.push("/chats"),
+                child: AnimatedBuilder(
+                  animation: _badgePulse,
+                  builder: (_, child) => Transform.scale(
+                    scale: unreadCount > 0 ? _badgePulse.value : 1.0,
+                    child: child,
+                  ),
+                  child: Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: _surface,
+                      borderRadius: BorderRadius.circular(13),
+                      border: Border.all(
+                        color: unreadCount > 0
+                            ? _goldA.withOpacity(0.5)
+                            : _border,
+                        width: 1,
+                      ),
+                      boxShadow: unreadCount > 0
+                          ? [
+                              BoxShadow(
+                                color: _goldA.withOpacity(0.15),
+                                blurRadius: 16,
+                                spreadRadius: 1,
+                              ),
+                            ]
+                          : [],
+                    ),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Icon(
+                          unreadCount > 0
+                              ? Icons.chat_bubble_rounded
+                              : Icons.chat_bubble_outline_rounded,
+                          size: 20,
+                          color: unreadCount > 0 ? _goldA : _textMuted,
+                        ),
+                        if (unreadCount > 0)
+                          Positioned(
+                            top: 7,
+                            right: 7,
+                            child: Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: _goldA,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: _goldA.withOpacity(0.8),
+                                    blurRadius: 6,
+                                    spreadRadius: 1,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  //  Load-more footer spinner
+  // ─────────────────────────────────────────────
+
+  Widget _buildFooter() {
+    if (!loadingMore) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(
+              strokeWidth: 1.8,
+              valueColor: AlwaysStoppedAnimation(_goldA.withOpacity(0.7)),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            "Loading more...",
+            style: TextStyle(
+              color: _textMuted,
+              fontSize: 12,
+              letterSpacing: 0.4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  //  Decorative top glow strip
+  // ─────────────────────────────────────────────
+
+  Widget _buildTopGlow() {
+    return Positioned(
+      top: 0,
+      left: 60,
+      right: 60,
+      child: Container(
+        height: 1,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Colors.transparent,
+              _goldA.withOpacity(0.25),
+              Colors.transparent,
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
 
+    // ── Status bar style ────────────────────────
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor:       Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+    ));
+
+    // ── Loading ─────────────────────────────────
     if (loading && profiles.isEmpty) {
       return const DashboardLoading();
     }
 
+    // ── Empty ────────────────────────────────────
     if (!loading && profiles.isEmpty) {
       return const DashboardEmpty();
     }
 
     // ===================== UI START =====================
 
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 8,
-          vertical: 6,
-        ),
-        child: Column(
-          children: [
-            const DashboardSearchBar(),
-            const SizedBox(height: 14),
-            Expanded(
-              child: DashboardGrid(
-                profiles: profiles,
-                scrollController: _scrollController,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: Container(
+        color: _bg,
+        child: SafeArea(
+          child: Stack(
+            children: [
+
+              // ── Top glow strip ─────────────────
+              _buildTopGlow(),
+
+              // ── Main layout ────────────────────
+              Column(
+                children: [
+
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 14, 18, 0),
+                    child: _buildHeader(),
+                  ),
+
+                  // Gold hairline divider
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 14, 18, 0),
+                    child: Container(
+                      height: 1,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.transparent,
+                            _border,
+                            Colors.transparent,
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  // Search bar
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 18),
+                    child: DashboardSearchBar(),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Grid + footer
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      child: Column(
+                        children: [
+                          Expanded(
+                            child: DashboardGrid(
+                              profiles:         profiles,
+                              scrollController: _scrollController,
+                            ),
+                          ),
+                          _buildFooter(),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                ],
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
