@@ -131,7 +131,7 @@ class _DashboardEmptyState extends State<DashboardEmpty>
     _Particle(dx:  60,  dy: -60, size: 2.2, speed: 0.75),
   ];
 
-  Widget _particles() {
+  Widget _buildParticles() {
     return AnimatedBuilder(
       animation: _particleAnim,
       builder: (_, __) {
@@ -144,8 +144,8 @@ class _DashboardEmptyState extends State<DashboardEmpty>
               final t = (_particleAnim.value + p.speed) % 1.0;
               final floatOffset = math.sin(t * 2 * math.pi) * 8;
               return Positioned(
-                left: 130 + p.dx,
-                top:  130 + p.dy + floatOffset,
+                left: 130 + p.dx.toDouble(),
+                top: 130 + p.dy.toDouble() + floatOffset.toDouble(),
                 child: Opacity(
                   opacity: (0.3 + math.sin(t * math.pi) * 0.5).clamp(0.0, 1.0),
                   child: Container(
@@ -293,7 +293,7 @@ class _DashboardEmptyState extends State<DashboardEmpty>
                       alignment: Alignment.center,
                       children: [
                         // Drifting gold particles
-                        _particles(),
+                        _buildParticles(),
 
                         // Outer orbit ring + dot
                         _orbitDot(),
