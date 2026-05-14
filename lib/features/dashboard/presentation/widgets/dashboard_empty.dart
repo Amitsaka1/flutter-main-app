@@ -3,7 +3,6 @@ import 'dart:math' as math;
 
 // ─────────────────────────────────────────────
 //  DASHBOARD EMPTY  —  Premium Dark VIP Edition
-//  (Performance Optimized — UI Unchanged)
 // ─────────────────────────────────────────────
 
 class DashboardEmpty extends StatefulWidget {
@@ -14,9 +13,9 @@ class DashboardEmpty extends StatefulWidget {
 }
 
 class _DashboardEmptyState extends State<DashboardEmpty>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
 
-  // ── Palette (static const) ───────────────────
+  // ── Palette ──────────────────────────────────
   static const _bg        = Color(0xFF0A0A0F);
   static const _surface   = Color(0xFF0E0E18);
   static const _goldA     = Color(0xFFD4A843);
@@ -25,118 +24,155 @@ class _DashboardEmptyState extends State<DashboardEmpty>
   static const _accent    = Color(0xFF6C63FF);
   static const _border    = Color(0xFF1E1E2E);
   static const _textPrime = Color(0xFFF0EDE8);
+  static const _textMuted = Color(0xFF3A3A55);
   static const _textSub   = Color(0xFF55556A);
 
-  // ⚡ Ek hi controller — sab animations isi se
-  late AnimationController _ctrl;
+  // ── Controllers ──────────────────────────────
+  late AnimationController _entranceCtrl;
+  late AnimationController _floatCtrl;
+  late AnimationController _orbitCtrl;
+  late AnimationController _glowCtrl;
+  late AnimationController _particleCtrl;
 
+  // ── Animations ───────────────────────────────
   late Animation<double> _fadeIn;
   late Animation<double> _slideUp;
   late Animation<double> _iconScale;
   late Animation<double> _floatY;
   late Animation<double> _orbitAngle;
+  late Animation<double> _glowPulse;
+  late Animation<double> _particleAnim;
 
   @override
   void initState() {
     super.initState();
 
-    // ⚡ Single controller 3000ms
-    _ctrl = AnimationController(
+    // Entrance
+    _entranceCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 3000),
-    )..repeat();
+      duration: const Duration(milliseconds: 900),
+    )..forward();
 
-    // Entrance fade — only first 600ms
-    _fadeIn = Tween<double>(begin: 0.0, end: 1.0).animate(
+    _fadeIn = CurvedAnimation(
+      parent: _entranceCtrl,
+      curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+    );
+    _slideUp = Tween<double>(begin: 40, end: 0).animate(
       CurvedAnimation(
-        parent: _ctrl,
-        curve: const Interval(0.0, 0.2, curve: Curves.easeOut),
+        parent: _entranceCtrl,
+        curve: const Interval(0.0, 0.7, curve: Curves.easeOutCubic),
       ),
     );
-
-    // Slide up — only first 700ms
-    _slideUp = Tween<double>(begin: 40.0, end: 0.0).animate(
-      CurvedAnimation(
-        parent: _ctrl,
-        curve: const Interval(0.0, 0.23, curve: Curves.easeOutCubic),
-      ),
-    );
-
-    // Icon elastic scale — first 700ms
     _iconScale = Tween<double>(begin: 0.6, end: 1.0).animate(
       CurvedAnimation(
-        parent: _ctrl,
-        curve: const Interval(0.03, 0.23, curve: Curves.elasticOut),
+        parent: _entranceCtrl,
+        curve: const Interval(0.1, 0.7, curve: Curves.elasticOut),
       ),
     );
 
-    // Float — continuous gentle bob
-    _floatY = Tween<double>(begin: -6.0, end: 6.0).animate(
-      CurvedAnimation(
-        parent: _ctrl,
-        curve: const Interval(0.0, 1.0, curve: Curves.easeInOut),
-      ),
+    // Floating idle
+    _floatCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2800),
+    )..repeat(reverse: true);
+
+    _floatY = Tween<double>(begin: -6, end: 6).animate(
+      CurvedAnimation(parent: _floatCtrl, curve: Curves.easeInOut),
     );
 
-    // Orbit — full rotation per loop
+    // Orbit ring
+    _orbitCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 5000),
+    )..repeat();
+
     _orbitAngle = Tween<double>(begin: 0, end: 2 * math.pi).animate(
-      CurvedAnimation(
-        parent: _ctrl,
-        curve: Curves.linear,
-      ),
+      CurvedAnimation(parent: _orbitCtrl, curve: Curves.linear),
+    );
+
+    // Glow pulse
+    _glowCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2000),
+    )..repeat(reverse: true);
+
+    _glowPulse = Tween<double>(begin: 0.3, end: 0.8).animate(
+      CurvedAnimation(parent: _glowCtrl, curve: Curves.easeInOut),
+    );
+
+    // Particles drift
+    _particleCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 4000),
+    )..repeat();
+
+    _particleAnim = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _particleCtrl, curve: Curves.linear),
     );
   }
 
   @override
   void dispose() {
-    _ctrl.dispose();
+    _entranceCtrl.dispose();
+    _floatCtrl.dispose();
+    _orbitCtrl.dispose();
+    _glowCtrl.dispose();
+    _particleCtrl.dispose();
     super.dispose();
   }
 
-  // ── Particles (static — no animation) ────────
-  static const List<_Particle> _particleList = [
-    _Particle(dx: -90, dy: -120, size: 2.5),
-    _Particle(dx:  80, dy: -100, size: 1.8),
-    _Particle(dx: -70, dy:  60,  size: 2.0),
-    _Particle(dx:  100, dy: 80,  size: 1.5),
-    _Particle(dx: -110, dy: 20,  size: 1.2),
-    _Particle(dx:  60,  dy: -60, size: 2.2),
+  // ── Floating particles ────────────────────────
+  static const _particles = [
+    _Particle(dx: -90, dy: -120, size: 2.5, speed: 0.0),
+    _Particle(dx:  80, dy: -100, size: 1.8, speed: 0.2),
+    _Particle(dx: -70, dy:  60,  size: 2.0, speed: 0.4),
+    _Particle(dx:  100, dy: 80,  size: 1.5, speed: 0.6),
+    _Particle(dx: -110, dy: 20,  size: 1.2, speed: 0.15),
+    _Particle(dx:  60,  dy: -60, size: 2.2, speed: 0.75),
   ];
 
-  Widget _buildParticles() {
-    // ⚡ Static particles — no animation controller
-    // Float effect comes from parent _floatY naturally
-    return SizedBox(
-      width: 260,
-      height: 260,
-      child: Stack(
-        alignment: Alignment.center,
-        children: _particleList.map((p) {
-          return Positioned(
-            left: 130 + p.dx,
-            top:  130 + p.dy,
-            child: Container(
-              width: p.size,
-              height: p.size,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: _goldA.withOpacity(0.45),
-                boxShadow: [
-                  BoxShadow(
-                    color: _goldA.withOpacity(0.5),
-                    blurRadius: p.size * 2,
+  Widget _particles() {
+    return AnimatedBuilder(
+      animation: _particleAnim,
+      builder: (_, __) {
+        return SizedBox(
+          width: 260,
+          height: 260,
+          child: Stack(
+            alignment: Alignment.center,
+            children: _particles.map((p) {
+              final t = (_particleAnim.value + p.speed) % 1.0;
+              final floatOffset = math.sin(t * 2 * math.pi) * 8;
+              return Positioned(
+                left: 130 + p.dx,
+                top:  130 + p.dy + floatOffset,
+                child: Opacity(
+                  opacity: (0.3 + math.sin(t * math.pi) * 0.5).clamp(0.0, 1.0),
+                  child: Container(
+                    width: p.size,
+                    height: p.size,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: _goldA,
+                      boxShadow: [
+                        BoxShadow(
+                          color: _goldA.withOpacity(0.6),
+                          blurRadius: p.size * 2,
+                        ),
+                      ],
+                    ),
                   ),
-                ],
-              ),
-            ),
-          );
-        }).toList(),
-      ),
+                ),
+              );
+            }).toList(),
+          ),
+        );
+      },
     );
   }
 
-  // ── Orbit ring + dot ──────────────────────────
-  Widget _buildOrbit() {
+  // ── Orbiting dot ─────────────────────────────
+  Widget _orbitDot() {
     return AnimatedBuilder(
       animation: _orbitAngle,
       builder: (_, __) {
@@ -149,8 +185,7 @@ class _DashboardEmptyState extends State<DashboardEmpty>
           child: Stack(
             alignment: Alignment.center,
             children: [
-
-              // Dashed orbit track (static)
+              // Dashed orbit track
               CustomPaint(
                 size: const Size(116, 116),
                 painter: _DashedCirclePainter(
@@ -158,8 +193,7 @@ class _DashboardEmptyState extends State<DashboardEmpty>
                   dashCount: 28,
                 ),
               ),
-
-              // Moving orbit dot
+              // Moving dot
               Transform.translate(
                 offset: Offset(x, y),
                 child: Container(
@@ -178,7 +212,6 @@ class _DashboardEmptyState extends State<DashboardEmpty>
                   ),
                 ),
               ),
-
             ],
           ),
         );
@@ -187,27 +220,30 @@ class _DashboardEmptyState extends State<DashboardEmpty>
   }
 
   // ── Center icon ───────────────────────────────
-  Widget _buildIcon() {
-    return Container(
-      width: 72,
-      height: 72,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: _surface,
-        border: Border.all(color: _border, width: 1),
-        // ⚡ Static glow — no pulse animation
-        boxShadow: [
-          BoxShadow(
-            color: _goldA.withOpacity(0.12),
-            blurRadius: 28,
-            spreadRadius: 4,
-          ),
-          BoxShadow(
-            color: _accent.withOpacity(0.07),
-            blurRadius: 45,
-            spreadRadius: 8,
-          ),
-        ],
+  Widget _centerIcon() {
+    return AnimatedBuilder(
+      animation: _glowPulse,
+      builder: (_, child) => Container(
+        width: 72,
+        height: 72,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: _surface,
+          border: Border.all(color: _border, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: _goldA.withOpacity(_glowPulse.value * 0.15),
+              blurRadius: 30,
+              spreadRadius: 4,
+            ),
+            BoxShadow(
+              color: _accent.withOpacity(_glowPulse.value * 0.08),
+              blurRadius: 50,
+              spreadRadius: 8,
+            ),
+          ],
+        ),
+        child: child,
       ),
       child: ShaderMask(
         shaderCallback: (bounds) => const LinearGradient(
@@ -231,105 +267,98 @@ class _DashboardEmptyState extends State<DashboardEmpty>
     return Container(
       color: _bg,
       child: Center(
-        child: AnimatedBuilder(
-          animation: _ctrl,
-          builder: (_, child) {
-            return Opacity(
-              opacity: _fadeIn.value.clamp(0.0, 1.0),
-              child: Transform.translate(
-                offset: Offset(0, _slideUp.value),
-                child: child,
-              ),
-            );
-          },
+        child: FadeTransition(
+          opacity: _fadeIn,
+          child: AnimatedBuilder(
+            animation: _slideUp,
+            builder: (_, child) => Transform.translate(
+              offset: Offset(0, _slideUp.value),
+              child: child,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
 
-          // ⚡ child passed — not rebuilt every frame
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
+                // ── Floating Icon Assembly ───────────
+                AnimatedBuilder(
+                  animation: _floatY,
+                  builder: (_, child) => Transform.translate(
+                    offset: Offset(0, _floatY.value),
+                    child: child,
+                  ),
+                  child: SizedBox(
+                    width: 260,
+                    height: 260,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // Drifting gold particles
+                        _particles(),
 
-              // ── Floating icon assembly ───────────
-              AnimatedBuilder(
-                animation: _floatY,
-                builder: (_, child) => Transform.translate(
-                  offset: Offset(0, _floatY.value),
-                  child: child,
-                ),
-                // ⚡ child passed — heavy widgets not rebuilt
-                child: SizedBox(
-                  width: 260,
-                  height: 260,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
+                        // Outer orbit ring + dot
+                        _orbitDot(),
 
-                      // Static particles
-                      _buildParticles(),
-
-                      // Orbit ring + moving dot
-                      _buildOrbit(),
-
-                      // Icon with elastic entrance
-                      AnimatedBuilder(
-                        animation: _iconScale,
-                        builder: (_, child) => Transform.scale(
-                          scale: _iconScale.value,
-                          child: child,
+                        // Scale-in center icon
+                        AnimatedBuilder(
+                          animation: _iconScale,
+                          builder: (_, child) => Transform.scale(
+                            scale: _iconScale.value,
+                            child: child,
+                          ),
+                          child: _centerIcon(),
                         ),
-                        child: _buildIcon(),
-                      ),
-
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
 
-              const SizedBox(height: 4),
+                const SizedBox(height: 4),
 
-              // ── Title ──────────────────────────
-              const Text(
-                "No Profiles Found",
-                style: TextStyle(
-                  color: _textPrime,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.4,
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              // ── Subtitle ───────────────────────
-              const Text(
-                "Try adjusting your filters\nor check back later",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: _textSub,
-                  fontSize: 13,
-                  height: 1.6,
-                  letterSpacing: 0.3,
-                ),
-              ),
-
-              const SizedBox(height: 32),
-
-              // ── Gold divider ───────────────────
-              Container(
-                width: 40,
-                height: 1.5,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(2),
-                  gradient: const LinearGradient(
-                    colors: [
-                      Colors.transparent,
-                      _goldA,
-                      Colors.transparent,
-                    ],
+                // ── Title ─────────────────────────────
+                Text(
+                  "No Profiles Found",
+                  style: const TextStyle(
+                    color: _textPrime,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.4,
                   ),
                 ),
-              ),
 
-            ],
+                const SizedBox(height: 10),
+
+                // ── Subtitle ──────────────────────────
+                Text(
+                  "Try adjusting your filters\nor check back later",
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: _textSub,
+                    fontSize: 13,
+                    height: 1.6,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+
+                const SizedBox(height: 32),
+
+                // ── Gold divider ──────────────────────
+                Container(
+                  width: 40,
+                  height: 1.5,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(2),
+                    gradient: const LinearGradient(
+                      colors: [
+                        Colors.transparent,
+                        _goldA,
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                ),
+
+              ],
+            ),
           ),
         ),
       ),
@@ -340,28 +369,29 @@ class _DashboardEmptyState extends State<DashboardEmpty>
 }
 
 // ─────────────────────────────────────────────
-//  Particle Data — simple const class
+//  Particle Data
 // ─────────────────────────────────────────────
 
 class _Particle {
   final double dx;
   final double dy;
   final double size;
-
+  final double speed;
   const _Particle({
     required this.dx,
     required this.dy,
     required this.size,
+    required this.speed,
   });
 }
 
 // ─────────────────────────────────────────────
-//  Dashed Circle Painter — same as before
+//  Dashed Circle Painter
 // ─────────────────────────────────────────────
 
 class _DashedCirclePainter extends CustomPainter {
-  final Color color;
-  final int   dashCount;
+  final Color  color;
+  final int    dashCount;
 
   const _DashedCirclePainter({
     required this.color,
@@ -370,21 +400,19 @@ class _DashedCirclePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint  = Paint()..color = color..style = PaintingStyle.fill;
+    final paint = Paint()
+      ..color       = color
+      ..style       = PaintingStyle.fill;
+
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2;
     final step   = (2 * math.pi) / dashCount;
 
     for (int i = 0; i < dashCount; i++) {
       final angle = i * step;
-      canvas.drawCircle(
-        Offset(
-          center.dx + radius * math.cos(angle),
-          center.dy + radius * math.sin(angle),
-        ),
-        1.4,
-        paint,
-      );
+      final x = center.dx + radius * math.cos(angle);
+      final y = center.dy + radius * math.sin(angle);
+      canvas.drawCircle(Offset(x, y), 1.4, paint);
     }
   }
 
