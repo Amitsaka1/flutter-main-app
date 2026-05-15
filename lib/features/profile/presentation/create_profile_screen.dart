@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../core/network/api_client.dart';
+
+import 'widgets/create_profile_text_field.dart';
+import 'widgets/create_profile_dropdown.dart';
+import 'widgets/create_profile_checkbox.dart';
+import 'widgets/create_profile_button.dart';
 
 class CreateProfileScreen extends StatefulWidget {
   const CreateProfileScreen({super.key});
@@ -17,11 +23,13 @@ class _CreateProfileScreenState
 
   final TextEditingController _nameController =
       TextEditingController();
+
   final TextEditingController _ageController =
       TextEditingController();
 
   String? gender;
   String? roleType;
+
   bool havePlace = false;
 
   bool loading = false;
@@ -30,12 +38,17 @@ class _CreateProfileScreenState
   Future<void> _submit() async {
 
     final token = await ApiClient.getToken();
+
     if (token == null) {
-      if (mounted) context.pushReplacement("/login");
+      if (mounted) {
+        context.pushReplacement("/login");
+      }
       return;
     }
 
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
 
     setState(() {
       loading = true;
@@ -45,27 +58,36 @@ class _CreateProfileScreenState
     try {
 
       final response =
-          await ApiClient.post("/profile/create", {
-        "name": _nameController.text.trim(),
-        "gender": gender,
-        "roleType": roleType,
-        "havePlace": havePlace,
-        "age": int.parse(_ageController.text.trim()),
-      });
+          await ApiClient.post(
+        "/profile/create",
+        {
+          "name": _nameController.text.trim(),
+          "gender": gender,
+          "roleType": roleType,
+          "havePlace": havePlace,
+          "age": int.parse(
+            _ageController.text.trim(),
+          ),
+        },
+      );
 
       if (response["success"] == true) {
+
         if (mounted) {
           context.pushReplacement("/dashboard");
         }
+
       } else {
+
         setState(() {
           message =
               response["message"] ??
-                  "Profile creation failed";
+              "Profile creation failed";
         });
       }
 
     } catch (_) {
+
       setState(() {
         message = "Server error";
       });
@@ -86,6 +108,8 @@ class _CreateProfileScreenState
   @override
   Widget build(BuildContext context) {
 
+    // ================= UI START =================
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -98,19 +122,23 @@ class _CreateProfileScreenState
             end: Alignment.bottomRight,
           ),
         ),
+
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
+
             child: Container(
-              padding: const EdgeInsets.all(32),
               width: 350,
+              padding: const EdgeInsets.all(32),
+
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.08),
-                borderRadius:
-                    BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(20),
               ),
+
               child: Form(
                 key: _formKey,
+
                 child: Column(
                   children: [
 
@@ -125,12 +153,9 @@ class _CreateProfileScreenState
 
                     const SizedBox(height: 20),
 
-                    TextFormField(
+                    CreateProfileTextField(
                       controller: _nameController,
-                      style: const TextStyle(
-                          color: Colors.white),
-                      decoration:
-                          _inputDecoration("Name"),
+                      label: "Name",
                       validator: (value) =>
                           value == null ||
                                   value.isEmpty
@@ -140,22 +165,25 @@ class _CreateProfileScreenState
 
                     const SizedBox(height: 12),
 
-                    DropdownButtonFormField<String>(
+                    CreateProfileDropdown<String>(
                       value: gender,
-                      decoration:
-                          _inputDecoration("Select Gender"),
-                      dropdownColor:
-                          const Color(0xFF243B55),
+                      label: "Select Gender",
+
                       items: const [
                         DropdownMenuItem(
-                            value: "Male",
-                            child: Text("Male")),
+                          value: "Male",
+                          child: Text("Male"),
+                        ),
                         DropdownMenuItem(
-                            value: "Female",
-                            child: Text("Female")),
+                          value: "Female",
+                          child: Text("Female"),
+                        ),
                       ],
-                      onChanged: (val) =>
-                          gender = val,
+
+                      onChanged: (val) {
+                        gender = val;
+                      },
+
                       validator: (val) =>
                           val == null
                               ? "Select gender"
@@ -164,28 +192,33 @@ class _CreateProfileScreenState
 
                     const SizedBox(height: 12),
 
-                    DropdownButtonFormField<String>(
+                    CreateProfileDropdown<String>(
                       value: roleType,
-                      decoration:
-                          _inputDecoration("Select Role"),
-                      dropdownColor:
-                          const Color(0xFF243B55),
+                      label: "Select Role",
+
                       items: const [
                         DropdownMenuItem(
-                            value: "Top",
-                            child: Text("Top")),
+                          value: "Top",
+                          child: Text("Top"),
+                        ),
                         DropdownMenuItem(
-                            value: "Bottom",
-                            child: Text("Bottom")),
+                          value: "Bottom",
+                          child: Text("Bottom"),
+                        ),
                         DropdownMenuItem(
-                            value: "Normal",
-                            child: Text("Normal")),
+                          value: "Normal",
+                          child: Text("Normal"),
+                        ),
                         DropdownMenuItem(
-                            value: "Lesbian",
-                            child: Text("Lesbian")),
+                          value: "Lesbian",
+                          child: Text("Lesbian"),
+                        ),
                       ],
-                      onChanged: (val) =>
-                          roleType = val,
+
+                      onChanged: (val) {
+                        roleType = val;
+                      },
+
                       validator: (val) =>
                           val == null
                               ? "Select role"
@@ -194,67 +227,50 @@ class _CreateProfileScreenState
 
                     const SizedBox(height: 12),
 
-                    TextFormField(
+                    CreateProfileTextField(
                       controller: _ageController,
+                      label: "Age",
                       keyboardType:
                           TextInputType.number,
-                      style: const TextStyle(
-                          color: Colors.white),
-                      decoration:
-                          _inputDecoration("Age"),
+
                       validator: (value) {
+
                         if (value == null ||
                             value.isEmpty) {
                           return "Age required";
                         }
+
                         final age =
                             int.tryParse(value);
+
                         if (age == null ||
                             age < 18) {
                           return "Invalid age";
                         }
+
                         return null;
                       },
                     ),
 
                     const SizedBox(height: 12),
 
-                    Row(
-                      children: [
-                        Checkbox(
-                          value: havePlace,
-                          onChanged: (val) {
-                            setState(() {
-                              havePlace =
-                                  val ?? false;
-                            });
-                          },
-                        ),
-                        const Text(
-                          "Have Place",
-                          style: TextStyle(
-                              color: Colors.white),
-                        )
-                      ],
+                    CreateProfileCheckbox(
+                      value: havePlace,
+                      onChanged: (val) {
+                        setState(() {
+                          havePlace =
+                              val ?? false;
+                        });
+                      },
                     ),
 
                     const SizedBox(height: 20),
 
-                    ElevatedButton(
-                      onPressed:
-                          loading ? null : _submit,
-                      style: ElevatedButton
-                          .styleFrom(
-                        minimumSize:
-                            const Size.fromHeight(45),
-                        backgroundColor:
-                            const Color(
-                                0xFF0072ff),
-                      ),
-                      child: Text(
-                        loading
-                            ? "Creating..."
-                            : "Create Profile",
+                    SizedBox(
+                      width: double.infinity,
+                      child: CreateProfileButton(
+                        loading: loading,
+                        onPressed: _submit,
                       ),
                     ),
 
@@ -262,13 +278,15 @@ class _CreateProfileScreenState
                       Padding(
                         padding:
                             const EdgeInsets.only(
-                                top: 10),
+                          top: 10,
+                        ),
                         child: Text(
                           message,
                           style: const TextStyle(
-                              color: Colors.red),
+                            color: Colors.red,
+                          ),
                         ),
-                      )
+                      ),
                   ],
                 ),
               ),
@@ -277,22 +295,7 @@ class _CreateProfileScreenState
         ),
       ),
     );
-  }
 
-  InputDecoration _inputDecoration(
-      String label) {
-    return InputDecoration(
-      labelText: label,
-      labelStyle:
-          const TextStyle(color: Colors.white70),
-      filled: true,
-      fillColor:
-          Colors.white.withOpacity(0.05),
-      border: OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(8),
-        borderSide: BorderSide.none,
-      ),
-    );
+    // ================= UI END =================
   }
 }
