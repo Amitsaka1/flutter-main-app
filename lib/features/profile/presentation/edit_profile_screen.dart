@@ -168,7 +168,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
                 const SizedBox(height: 15),
 
-                ProfileFormSwitchTile(
+                ProfileFormSwitch(
                   title: "Have Place",
                   value: havePlace,
                   onChanged: (v) => setState(() => havePlace = v),
