@@ -1,17 +1,25 @@
 import 'package:flutter/material.dart';
 import '../../../core/network/api_client.dart';
 
+import 'widgets/profile_form_text_field.dart';
+import 'widgets/profile_form_dropdown.dart';
+import 'widgets/profile_form_switch.dart';
+import 'widgets/profile_save_button.dart';
+
 class EditProfileScreen extends StatefulWidget {
   final Map<String, dynamic> profile;
 
-  const EditProfileScreen({super.key, required this.profile});
+  const EditProfileScreen({
+    super.key,
+    required this.profile,
+  });
 
   @override
-  State<EditProfileScreen> createState() => _EditProfileScreenState();
+  State<EditProfileScreen> createState() =>
+      _EditProfileScreenState();
 }
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
-
   final _formKey = GlobalKey<FormState>();
 
   late TextEditingController nameController;
@@ -28,12 +36,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   void initState() {
     super.initState();
 
-    nameController =
-        TextEditingController(text: widget.profile["name"] ?? "");
-    usernameController =
-        TextEditingController(text: widget.profile["username"] ?? "");
-    ageController =
-        TextEditingController(text: widget.profile["age"]?.toString() ?? "");
+    nameController = TextEditingController(
+      text: widget.profile["name"] ?? "",
+    );
+    usernameController = TextEditingController(
+      text: widget.profile["username"] ?? "",
+    );
+    ageController = TextEditingController(
+      text: widget.profile["age"]?.toString() ?? "",
+    );
 
     gender = widget.profile["gender"] ?? "";
     roleType = widget.profile["roleType"] ?? "";
@@ -41,7 +52,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _updateProfile() async {
-
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => loading = true);
@@ -85,6 +95,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // ================= UI START =================
 
     return Scaffold(
       appBar: AppBar(title: const Text("Edit Profile")),
@@ -95,97 +106,87 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           child: SingleChildScrollView(
             child: Column(
               children: [
-
-                TextFormField(
+                ProfileFormTextField(
                   controller: nameController,
-                  decoration: const InputDecoration(labelText: "Name"),
+                  label: "Name",
                   validator: (v) =>
                       v == null || v.isEmpty ? "Enter name" : null,
                 ),
-
                 const SizedBox(height: 15),
 
-                TextFormField(
+                ProfileFormTextField(
                   controller: usernameController,
-                  decoration: const InputDecoration(labelText: "Username"),
+                  label: "Username",
                   validator: (v) =>
                       v == null || v.length < 3
                           ? "Min 3 characters"
                           : null,
                 ),
-
                 const SizedBox(height: 15),
 
-                TextFormField(
+                ProfileFormTextField(
                   controller: ageController,
+                  label: "Age",
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: "Age"),
                   validator: (v) {
                     if (v == null || v.isEmpty) return "Enter age";
                     final age = int.tryParse(v);
-                    if (age == null || age < 18 || age > 100)
+                    if (age == null || age < 18 || age > 100) {
                       return "Invalid age";
+                    }
                     return null;
                   },
                 ),
-
                 const SizedBox(height: 15),
 
-                DropdownButtonFormField<String>(
+                ProfileFormDropdown<String>(
                   value: gender.isEmpty ? null : gender,
-                  decoration: const InputDecoration(labelText: "Gender"),
+                  label: "Gender",
                   items: const [
                     DropdownMenuItem(value: "Male", child: Text("Male")),
-                    DropdownMenuItem(value: "Female", child: Text("Female")),
+                    DropdownMenuItem(
+                        value: "Female", child: Text("Female")),
                   ],
-                  onChanged: (v) => setState(() => gender = v ?? ""),
+                  onChanged: (v) =>
+                      setState(() => gender = v ?? ""),
                 ),
-
                 const SizedBox(height: 15),
 
-                DropdownButtonFormField<String>(
+                ProfileFormDropdown<String>(
                   value: roleType.isEmpty ? null : roleType,
-                  decoration: const InputDecoration(labelText: "Role"),
+                  label: "Role",
                   items: const [
                     DropdownMenuItem(value: "Top", child: Text("Top")),
-                    DropdownMenuItem(value: "Bottom", child: Text("Bottom")),
-                    DropdownMenuItem(value: "Versatile", child: Text("Versatile")),
+                    DropdownMenuItem(
+                        value: "Bottom", child: Text("Bottom")),
+                    DropdownMenuItem(
+                        value: "Versatile",
+                        child: Text("Versatile")),
                   ],
-                  onChanged: (v) => setState(() => roleType = v ?? ""),
+                  onChanged: (v) =>
+                      setState(() => roleType = v ?? ""),
                 ),
-
                 const SizedBox(height: 15),
 
-                SwitchListTile(
-                  title: const Text("Have Place"),
+                ProfileFormSwitchTile(
+                  title: "Have Place",
                   value: havePlace,
                   onChanged: (v) => setState(() => havePlace = v),
                 ),
 
                 const SizedBox(height: 30),
 
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: loading ? null : _updateProfile,
-                    child: loading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Text("Save Changes"),
-                  ),
-                )
+                ProfileSaveButton(
+                  loading: loading,
+                  onPressed: _updateProfile,
+                ),
               ],
             ),
           ),
         ),
       ),
     );
+
+    // ================= UI END =================
   }
 }
