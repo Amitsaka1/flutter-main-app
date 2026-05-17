@@ -1155,4 +1155,51 @@ class _PressableCardState extends State<_PressableCard>
 
 // ─────────────────────────────────────────────
 //  Data classes
-// ─────────────────────────────
+// ─────────────────────────────────────────────
+
+class _TierData {
+  final String       name;
+  final String       label;
+  final String       tagline;
+  final IconData     icon;
+  final List<Color>  colors;
+  final List<_CoinPackage> packages;
+
+  const _TierData({
+    required this.name,
+    required this.label,
+    required this.tagline,
+    required this.icon,
+    required this.colors,
+    required this.packages,
+  });
+}
+
+class _CoinPackage {
+  final String id;
+  final int    coins;
+  final int    price;
+  final int    bonus;
+  final bool   popular;
+
+  const _CoinPackage({
+    required this.id,
+    required this.coins,
+    required this.price,
+    required this.bonus,
+    required this.popular,
+  });
+}
+
+class _Pt {
+  final double dx;
+  final double dy;
+  final double size;
+  final double speed;
+  const _Pt({
+    required this.dx,
+    required this.dy,
+    required this.size,
+    required this.speed,
+  });
+}
