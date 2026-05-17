@@ -136,7 +136,7 @@ class _ChatNavItemState extends State<ChatNavItem>
         : "${widget.unreadCount}";
 
     return GestureDetector(
-      onTap: onTap,
+      onTap: widget.onTap,
       behavior: HitTestBehavior.opaque,
 
       child: AnimatedBuilder(
