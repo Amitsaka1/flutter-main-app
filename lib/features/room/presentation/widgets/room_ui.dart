@@ -1,21 +1,31 @@
 import 'package:flutter/material.dart';
+
 import 'seat_grid.dart';
 import 'chat_panel.dart';
+import 'gift_panel.dart';
+import 'room_header.dart';
 import 'bottom_controls.dart';
-import '../../data/gift_list.dart';
 
 class RoomUI extends StatelessWidget {
 
   final List<Map<String, dynamic>> seats;
+
   final List<String> messages;
+
   final TextEditingController controller;
+
   final VoidCallback onSend;
-  final void Function(Map<String, dynamic>) onSeatTap;
+
+  final void Function(
+    Map<String, dynamic>,
+  ) onSeatTap;
 
   final bool showChat;
+
   final VoidCallback onChatToggle;
 
   final bool showGift;
+
   final VoidCallback onGiftToggle;
 
   const RoomUI({
@@ -34,7 +44,10 @@ class RoomUI extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
+    // ================= UI START =================
+
     return Container(
+
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -55,149 +68,80 @@ class RoomUI extends StatelessWidget {
               children: [
 
                 /// HEADER
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
-                  ),
-                  child: Row(
-                    children: [
-
-                      const Text(
-                        "Voice Party",
-                        style: TextStyle(
-                          fontSize: 20,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-
-                      const Spacer(),
-
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          "LIVE ${seats.length}/12",
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      )
-
-                    ],
-                  ),
+                RoomHeader(
+                  seatCount:
+                      seats.length,
                 ),
 
-                /// SEATS GRID
+                /// SEAT GRID
                 Expanded(
                   child: SeatGrid(
                     seats: seats,
-                    onSeatTap: onSeatTap,
+                    onSeatTap:
+                        onSeatTap,
                   ),
                 ),
 
-                const SizedBox(height: 80),
-
+                const SizedBox(
+                  height: 80,
+                ),
               ],
             ),
 
             /// CHAT PANEL
             AnimatedPositioned(
-              duration: const Duration(milliseconds: 300),
+              duration:
+                  const Duration(
+                milliseconds: 300,
+              ),
 
-              bottom: showChat ? 70 : -400,
+              bottom:
+                  showChat
+                      ? 70
+                      : -400,
 
               left: 0,
               right: 0,
 
-              height: MediaQuery.of(context).size.height / 3,
+              height:
+                  MediaQuery.of(context)
+                          .size
+                          .height /
+                      3,
 
               child: ChatPanel(
                 messages: messages,
-                controller: controller,
+                controller:
+                    controller,
                 onSend: onSend,
-                onClose: onChatToggle,
+                onClose:
+                    onChatToggle,
               ),
             ),
 
             /// GIFT PANEL
             AnimatedPositioned(
-              duration: const Duration(milliseconds: 300),
+              duration:
+                  const Duration(
+                milliseconds: 300,
+              ),
 
-              bottom: showGift ? 70 : -400,
+              bottom:
+                  showGift
+                      ? 70
+                      : -400,
 
               left: 0,
               right: 0,
 
-              height: MediaQuery.of(context).size.height / 3,
+              height:
+                  MediaQuery.of(context)
+                          .size
+                          .height /
+                      3,
 
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.9),
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(20),
-                  ),
-                ),
-
-                child: GridView.builder(
-
-                  itemCount: giftList.length,
-
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 5,
-                    mainAxisSpacing: 10,
-                    crossAxisSpacing: 10,
-                  ),
-
-                  itemBuilder: (context,index){
-     
-                    final gift = giftList[index];
-
-                    return Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-
-                        Container(
-                          width: 40,
-                          height: 40,
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade800,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Image.asset(
-                            gift.image,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-
-                        const SizedBox(height:4),
-
-                        Text(
-                          "${gift.price}",
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                          ),
-                        )
-
-                      ],
-                    );
-
-                  },
-
-                ),
-              ),
+              child:
+                  const GiftPanel(),
             ),
 
             /// BOTTOM BAR
@@ -205,15 +149,20 @@ class RoomUI extends StatelessWidget {
               left: 0,
               right: 0,
               bottom: 10,
+
               child: BottomControls(
-                onChat: onChatToggle,
-                onGift: onGiftToggle,
+                onChat:
+                    onChatToggle,
+
+                onGift:
+                    onGiftToggle,
               ),
             ),
-
           ],
         ),
       ),
     );
+
+    // ================= UI END =================
   }
 }
