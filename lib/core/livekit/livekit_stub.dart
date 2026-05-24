@@ -1,22 +1,23 @@
-class FakeRoom {
-  Stream<dynamic> get events => const Stream.empty();
-}
+// ── Web stub — LiveKit runs on mobile only ──────
 
 class LiveKitService {
-  FakeRoom? room;
+
+  bool get isConnected  => false;
+  bool get isMicEnabled => false;
 
   Future<void> connect({
     required String userId,
     required String roomId,
     required String role,
   }) async {
-    room = FakeRoom();
-    print("❌ LiveKit disabled on Web");
+    // No-op on web
   }
 
-  Future<void> enableMic() async {}
+  Future<void> enableMic()  async {}
   Future<void> disableMic() async {}
-  Future<void> disconnect({String? roomId}) async {
-    room = null;
-  }
+  Future<void> toggleMic()  async {}
+
+  Future<void> disconnect() async {}
+
+  void reset() {}
 }
