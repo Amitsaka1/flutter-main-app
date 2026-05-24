@@ -51,17 +51,6 @@ class GlobalSocketManager with WidgetsBindingObserver {
   Stream<Map<String, dynamic>> get messages =>
       _messageController.stream;
 
-  final StreamController<Map<String, dynamic>>
-      _seatMapController =
-          StreamController.broadcast();
-
-  Stream<Map<String, dynamic>> get seatStream =>
-      _seatMapController.stream;
-
-  final StreamController<void>
-      _roomClosedController =
-          StreamController.broadcast();
-
   // ================= INIT =================
 
   Future<void> init(String userId) async {
@@ -161,28 +150,6 @@ class GlobalSocketManager with WidgetsBindingObserver {
       else if (type == "INCOMING_CALL") {
 
         _handleIncomingCall(event);
-      }
-
-      // ================= SEAT MAP =================
-
-      else if (type == "SEAT_MAP_UPDATE") {
-
-        _seatMapController.add(event);
-      }
-
-      // ================= ROOM CLOSED =================
-
-      else if (type == "ROOM_CLOSED" ||
-          type == "ROOM_KICKED") {
-
-        _roomClosedController.add(null);
-      }
-
-      // ================= DEMOTED =================
-
-      else if (type == "DEMOTED_TO_LISTENER") {
-
-        _messageController.add(event);
       }
 
       // ================= NEW MESSAGE =================
@@ -410,43 +377,6 @@ class GlobalSocketManager with WidgetsBindingObserver {
     _initialized = true;
   }
 
-  // ================= ROOM SOCKET =================
-
-  void joinRoom(String roomId) {
-
-    send({
-      "type": "JOIN_ROOM_SOCKET",
-      "roomId": roomId,
-    });
-  }
-
-  void leaveRoom(String roomId) {
-
-    send({
-      "type": "LEAVE_ROOM_SOCKET",
-      "roomId": roomId,
-    });
-  }
-
-  StreamSubscription onSeatMapUpdate(
-    Function(Map<String, dynamic>) callback,
-  ) {
-
-    return _seatMapController.stream
-        .listen(callback);
-  }
-
-  StreamSubscription onRoomClosed(
-    VoidCallback callback,
-  ) {
-
-    return _roomClosedController.stream
-        .listen((_) {
-
-      callback();
-    });
-  }
-
   // ================= INCOMING CALL =================
 
   void _handleIncomingCall(
@@ -570,10 +500,6 @@ class GlobalSocketManager with WidgetsBindingObserver {
     _reconnectTimer = null;
 
     _messageController.close();
-
-    _seatMapController.close();
-
-    _roomClosedController.close();
 
     globalProviderContainer.read(
           onlineUsersProvider.notifier,
