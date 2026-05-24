@@ -1,18 +1,23 @@
 class Environment {
-  static const String _devApiUrl =
+
+  // ── API (Backend) ─────────────────────────────
+  static const String _apiUrl =
       "https://momo-1etm.onrender.com";
 
-  static const String _prodApiUrl =
-      "https://momo-1etm.onrender.com";
+  static String get baseUrl => _apiUrl;
 
-  // 🔥 Detect production build
+  // ── LiveKit Server ────────────────────────────
+  static const String _livekitUrl =
+      "wss://acceptable-marleen-amitsaka12345-ddc0c198.koyeb.app";
+
+  static String get livekitUrl => _livekitUrl;
+
+  // ── Environment flag ──────────────────────────
   static const bool _isProduction =
       bool.fromEnvironment('dart.vm.product');
 
-  // 🔥 Public getter
-  static String get apiUrl =>
-      _isProduction ? _prodApiUrl : _devApiUrl;
-
-  // 🔥 Optional: expose environment type (future logging use)
   static bool get isProduction => _isProduction;
+
+  // ── Legacy alias (do not remove) ─────────────
+  static String get apiUrl => _apiUrl;
 }
