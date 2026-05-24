@@ -123,18 +123,6 @@ class _AppBottomNavState extends State<AppBottomNav>
             ),
           ),
 
-          // ── Rooms ──────────────────────────────
-          _NavWrapper(
-            active:  false,
-            indicatorScale: _indicatorScale,
-            child: NavItem(
-              label:  "Rooms",
-              icon:   Icons.meeting_room_rounded,
-              active: false,
-              onTap:  () => context.push("/coming-soon"),
-            ),
-          ),
-
           // ── Premium ────────────────────────────
           _NavWrapper(
             active:  widget.route.startsWith("/premium"),
