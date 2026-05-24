@@ -12,8 +12,6 @@ import 'package:app_project/features/profile/presentation/my_profile_screen.dart
 import 'package:app_project/features/profile/presentation/edit_profile_screen.dart';
 import 'package:app_project/features/subscription/presentation/premium_screen.dart';
 import 'main.dart';
-import 'package:app_project/features/room/presentation/room_list_screen.dart';
-import 'package:app_project/features/room/presentation/screens/room_screen.dart';
 import 'core/debug/global_debug_widget.dart';
 
 class MyApp extends StatefulWidget {
@@ -79,14 +77,6 @@ class _MyAppState extends State<MyApp> {
           ),
 
           GoRoute(
-            path: "/rooms",
-            pageBuilder: (context, state) =>
-                const NoTransitionPage(
-               child: RoomListScreen(),
-             ),
-          ),
-
-          GoRoute(
             path: "/profile",
             pageBuilder: (context, state) =>
                 const NoTransitionPage(
@@ -105,20 +95,6 @@ class _MyAppState extends State<MyApp> {
       ),
 
       // ===== CHAT CONVERSATION (OUTSIDE SHELL) =====
-      GoRoute(
-        path: "/room",
-        builder: (context, state) {
-          final data =
-        state.extra as Map<String, dynamic>;
-
-          final roomId = data["roomId"];
-
-          return RoomScreen(
-            roomId: roomId,
-          );
-        },
-      ),
-      
       GoRoute(
         path: "/chat/:id",
         builder: (context, state) {
@@ -157,4 +133,4 @@ class _MyAppState extends State<MyApp> {
       },
     );
    }
- }
+}
