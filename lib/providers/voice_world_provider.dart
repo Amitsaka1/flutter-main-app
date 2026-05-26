@@ -383,7 +383,7 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
         if (p.identity != userId) continue;
         for (final pub in p.audioTrackPublications) {
           final track = pub.track;
-          if (track is RemoteAudioTrack) {
+          if (track != null) {
             mute ? track.disable() : track.enable();
           }
         }
