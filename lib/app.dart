@@ -11,6 +11,10 @@ import 'package:app_project/features/profile/presentation/profile_details_screen
 import 'package:app_project/features/profile/presentation/my_profile_screen.dart';
 import 'package:app_project/features/profile/presentation/edit_profile_screen.dart';
 import 'package:app_project/features/subscription/presentation/premium_screen.dart';
+
+// 🔥 VOICE WORLD — NEW
+import 'package:app_project/features/voice_world/presentation/screens/voice_world_screen.dart';
+
 import 'main.dart';
 import 'core/debug/global_debug_widget.dart';
 
@@ -68,6 +72,15 @@ class _MyAppState extends State<MyApp> {
             ),
           ),
 
+          // 🔥 VOICE WORLD — NEW
+          GoRoute(
+            path: "/voice-world",
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(
+              child: VoiceWorldScreen(),
+            ),
+          ),
+
           GoRoute(
             path: "/premium",
             pageBuilder: (context, state) =>
@@ -91,6 +104,7 @@ class _MyAppState extends State<MyApp> {
               return ProfileDetailsScreen(userId: id);
             },
           ),
+
         ],
       ),
 
@@ -102,6 +116,7 @@ class _MyAppState extends State<MyApp> {
           return ChatConversationScreen(chatUserId: id);
         },
       ),
+
       GoRoute(
         path: "/edit-profile",
         builder: (context, state) {
@@ -110,6 +125,7 @@ class _MyAppState extends State<MyApp> {
           return EditProfileScreen(profile: profile);
         },
       ),
+
     ],
   );
 
@@ -123,14 +139,11 @@ class _MyAppState extends State<MyApp> {
       builder: (context, child) {
         return Stack(
           children: [
-
-            child!, // 🔥 app content
-
-            const GlobalDebugWidget(), // 🔥 debug icon + panel
-
+            child!,                      // app content
+            const GlobalDebugWidget(),   // debug icon + panel
           ],
         );
       },
     );
-   }
+  }
 }
