@@ -292,29 +292,47 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
   // ─────────────────────────────────────────────────────
 
   void _setupRoomListeners() {
+  try {
     final room = _liveKit.room;
     if (room == null) return;
 
     _roomListener?.dispose();
     _roomListener = room.createListener();
 
-    _roomListener!
-      ..on<RoomReconnectingEvent>((_) {
-        state = state.copyWith(isReconnecting: true);
-      })
-      ..on<RoomReconnectedEvent>((_) {
-        state = state.copyWith(isReconnecting: false);
-      })
-      ..on<ParticipantDisconnectedEvent>((event) {
-        final updated = state.members
-            .where((m) => m.userId != event.participant.identity)
-            .toList();
-        state = state.copyWith(members: updated);
-      })
-      ..on<DataReceivedEvent>(_handleDataMessage);
+    _roomListener
+      ..on<dynamic>((event) {
+        final name = event.runtimeType.toString();
+
+        // Reconnecting
+        if (name.contains('RoomReconnectingEvent')) {
+          state = state.copyWith(isReconnecting: true);
+        }
+
+        // Reconnected
+        else if (name.contains('RoomReconnectedEvent')) {
+          state = state.copyWith(isReconnecting: false);
+        }
+
+        // Participant disconnected
+        else if (name.contains('ParticipantDisconnectedEvent')) {
+          final participant = event.participant;
+
+          final updated = state.members
+              .where((m) => m.userId != participant.identity)
+              .toList();
+
+          state = state.copyWith(members: updated);
+        }
+
+        // Data received
+        else if (name.contains('DataReceivedEvent')) {
+          _handleDataMessage(event);
+        }
+      });
+  } catch (_) {}
   }
 
-  void _handleDataMessage(DataReceivedEvent event) {
+  void _handleDataMessage(dynamic event) {
     try {
       final raw   = String.fromCharCodes(event.data);
       // Format: "TYPE:targetUserId"
