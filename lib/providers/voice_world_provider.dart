@@ -1,7 +1,6 @@
 import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:livekit_client/livekit_client.dart';
 
 import '../features/voice_world/data/models/voice_group_model.dart';
 import '../features/voice_world/data/repository/voice_world_repository.dart';
@@ -175,7 +174,7 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
   final VoiceWorldRepository _repo;
   final LiveKitService       _liveKit;
 
-  EventsListener<RoomEvent>? _roomListener;
+  dynamic _roomListener;
 
   VoiceRoomNotifier(this._repo, this._liveKit)
       : super(const VoiceRoomState());
