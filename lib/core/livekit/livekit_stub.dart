@@ -4,14 +4,19 @@ class LiveKitService {
 
   bool get isConnected  => false;
   bool get isMicEnabled => false;
+  dynamic get room      => null;
 
   Future<void> connect({
     required String userId,
     required String roomId,
     required String role,
-  }) async {
-    // No-op on web
-  }
+  }) async {}
+
+  Future<void> connectWithToken({
+    required String token,
+    required String roomId,
+    required String role,
+  }) async {}
 
   Future<void> enableMic()  async {}
   Future<void> disableMic() async {}
