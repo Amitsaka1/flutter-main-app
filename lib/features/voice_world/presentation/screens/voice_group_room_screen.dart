@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/voice_group_model.dart';
-import '../../providers/voice_world_provider.dart';
+import '../../../../providers/voice_world_provider.dart';
 import '../widgets/voice_seat_grid.dart';
 import '../widgets/voice_listener_bar.dart';
 import '../widgets/voice_room_actions.dart';
