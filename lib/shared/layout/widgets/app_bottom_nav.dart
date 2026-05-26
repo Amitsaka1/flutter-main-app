@@ -25,14 +25,12 @@ class AppBottomNav extends StatefulWidget {
 class _AppBottomNavState extends State<AppBottomNav>
     with SingleTickerProviderStateMixin {
 
-  // ── Palette ──────────────────────────────────
   static const _bg      = Color(0xFF0E0E18);
   static const _goldA   = Color(0xFFD4A843);
   static const _goldB   = Color(0xFFE8C86A);
   static const _border  = Color(0xFF1E1E2E);
   static const _surface = Color(0xFF13131F);
 
-  // ── Indicator animation ──────────────────────
   late AnimationController _indicatorCtrl;
   late Animation<double>   _indicatorScale;
 
@@ -41,18 +39,16 @@ class _AppBottomNavState extends State<AppBottomNav>
   @override
   void initState() {
     super.initState();
-
     _prevRoute = widget.route;
-
     _indicatorCtrl = AnimationController(
-      vsync: this,
+      vsync:    this,
       duration: const Duration(milliseconds: 300),
     )..forward();
 
     _indicatorScale = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _indicatorCtrl,
-        curve: Curves.elasticOut,
+        curve:  Curves.elasticOut,
       ),
     );
   }
@@ -77,17 +73,11 @@ class _AppBottomNavState extends State<AppBottomNav>
   @override
   Widget build(BuildContext context) {
 
-    // ===================== LOGIC START =====================
-
     void safeGo(String path) {
       if (widget.route != path) {
         context.pushReplacement(path);
       }
     }
-
-    // ===================== LOGIC END =======================
-
-    // ===================== UI START =====================
 
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -95,14 +85,13 @@ class _AppBottomNavState extends State<AppBottomNav>
         vertical:   10,
       ),
       color: Colors.transparent,
-
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
 
           // ── Home ───────────────────────────────
           _NavWrapper(
-            active:  widget.route.startsWith("/dashboard"),
+            active:         widget.route.startsWith("/dashboard"),
             indicatorScale: _indicatorScale,
             child: NavItem(
               label:  "Home",
@@ -114,7 +103,7 @@ class _AppBottomNavState extends State<AppBottomNav>
 
           // ── Chat ───────────────────────────────
           _NavWrapper(
-            active:  widget.route.startsWith("/chat"),
+            active:         widget.route.startsWith("/chat"),
             indicatorScale: _indicatorScale,
             child: ChatNavItem(
               unreadCount: widget.unreadCount,
@@ -123,11 +112,23 @@ class _AppBottomNavState extends State<AppBottomNav>
             ),
           ),
 
+          // 🔥 Voice World — NEW
+          _NavWrapper(
+            active:         widget.route.startsWith("/voice-world"),
+            indicatorScale: _indicatorScale,
+            child: NavItem(
+              label:  "World",
+              icon:   Icons.language_rounded,
+              active: widget.route.startsWith("/voice-world"),
+              onTap:  () => safeGo("/voice-world"),
+            ),
+          ),
+
           // ── Premium ────────────────────────────
           _NavWrapper(
-            active:  widget.route.startsWith("/premium"),
+            active:         widget.route.startsWith("/premium"),
             indicatorScale: _indicatorScale,
-            isPremium: true,
+            isPremium:      true,
             child: NavItem(
               label:          "Premium",
               icon:           Icons.workspace_premium_rounded,
@@ -139,7 +140,7 @@ class _AppBottomNavState extends State<AppBottomNav>
 
           // ── Profile ────────────────────────────
           _NavWrapper(
-            active:  widget.route == "/profile",
+            active:         widget.route == "/profile",
             indicatorScale: _indicatorScale,
             child: NavItem(
               label:  "Profile",
@@ -152,8 +153,6 @@ class _AppBottomNavState extends State<AppBottomNav>
         ],
       ),
     );
-
-    // ===================== UI END =======================
   }
 }
 
@@ -180,9 +179,8 @@ class _NavWrapper extends StatefulWidget {
 
 class _NavWrapperState extends State<_NavWrapper> {
 
-  static const _goldA  = Color(0xFFD4A843);
-  static const _goldB  = Color(0xFFE8C86A);
-  static const _accent = Color(0xFF6C63FF);
+  static const _goldA = Color(0xFFD4A843);
+  static const _goldB = Color(0xFFE8C86A);
 
   bool _isPressed = false;
 
@@ -193,14 +191,12 @@ class _NavWrapperState extends State<_NavWrapper> {
       onTapUp:     (_) => setState(() => _isPressed = false),
       onTapCancel: ()  => setState(() => _isPressed = false),
       behavior: HitTestBehavior.opaque,
-
       child: AnimatedScale(
         scale:    _isPressed ? 0.88 : 1.0,
         duration: const Duration(milliseconds: 120),
         curve:    Curves.easeOut,
-
         child: SizedBox(
-          width: 60,
+          width: 56,   // 5 items fit karne ke liye 60→56
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
