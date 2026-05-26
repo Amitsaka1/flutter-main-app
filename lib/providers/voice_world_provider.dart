@@ -3,8 +3,9 @@ import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:livekit_client/livekit_client.dart';
 
-import '../data/models/voice_group_model.dart';
-import '../data/repository/voice_world_repository.dart';
+import '../features/voice_world/data/models/voice_group_model.dart';
+import '../features/voice_world/data/repository/voice_world_repository.dart';
+
 import '../../../core/livekit/livekit_service.dart';
 import '../../../core/session/user_session.dart';
 
