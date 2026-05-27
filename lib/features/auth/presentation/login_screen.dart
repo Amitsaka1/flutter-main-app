@@ -63,9 +63,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 "Failed to send OTP");
       }
 
-    } catch (_) {
-      setState(() =>
-          message = "Server error");
+    } catch (e) {
+      setState(() => message = e.toString()); // ✅ actual error dikhega
     }
 
     if (mounted) {
