@@ -49,8 +49,7 @@ class _VoiceWorldScreenState
   }
 
   Future<void> _onJoinTapped(VoiceGroupModel group) async {
-    await Navigator.push(
-      context,
+    await Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute(
         builder: (_) => VoiceGroupRoomScreen(group: group),
       ),
