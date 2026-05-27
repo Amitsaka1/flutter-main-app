@@ -144,25 +144,36 @@ class _MyProfileScreenState extends State<MyProfileScreen>
 
   // ── Fetch profile ─────────────────────────────
   Future<void> _fetchProfile() async {
-    try {
-      final response = await ApiClient.get("/profile/me");
-      if (!mounted) return;
+  try {
+    final response = await ApiClient.get("/profile/me");
+    if (!mounted) return;
 
-      if (response["success"] == true) {
-        _cache = response["data"];
-        setState(() {
-          profile = response["data"];
-          loading = false;
-        });
-        if (!_entranceCtrl.isCompleted) {
-          _entranceCtrl.forward();
-        }
-      } else {
-        setState(() => loading = false);
+    if (response["success"] == true) {
+      _cache = response["data"];
+
+      // ── ADD THESE 3 LINES ──────────────────
+      final user    = response["data"]?["user"];
+      final profile = response["data"]?["profile"];
+      UserSession.setProfile(
+        name:      profile?["name"]      ?? "",
+        avatarUrl: profile?["avatarUrl"],
+        level:     user?["level"]        ?? 1,
+      );
+      // ───────────────────────────────────────
+
+      setState(() {
+        profile = response["data"];
+        loading = false;
+      });
+      if (!_entranceCtrl.isCompleted) {
+        _entranceCtrl.forward();
       }
-    } catch (_) {
-      if (mounted) setState(() => loading = false);
+    } else {
+      setState(() => loading = false);
     }
+  } catch (_) {
+    if (mounted) setState(() => loading = false);
+  }
   }
 
   // ===================== LOGIC END =======================
