@@ -102,8 +102,8 @@ class _VoiceGroupRoomScreenState
     ];
 
     showModalBottomSheet(
-      context:           context,
-      backgroundColor:   Colors.transparent,
+      context:            context,
+      backgroundColor:    Colors.transparent,
       isScrollControlled: true,
       builder: (_) => _ReportSheet(
         member:  member,
@@ -116,7 +116,7 @@ class _VoiceGroupRoomScreenState
           );
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text("Report submitted"),
+              content:  Text("Report submitted"),
               duration: Duration(seconds: 2),
             ),
           );
@@ -167,11 +167,15 @@ class _VoiceGroupRoomScreenState
       return _JoiningLoader(group: widget.group);
     }
 
-    // ── Error ────────────────────────────────────────
+    // ── Error ─────────────────────────────────────── ✅ FIXED
     if (state.joinStatus == VoiceJoinStatus.error) {
       return _JoinError(
         message: state.errorMessage ?? "Failed to join",
-        onBack:  () => Navigator.pop(context),
+        onBack: () async {
+          await _leaveRoom();                        // ✅ cleanup pehle
+          if (mounted) Navigator.pop(context);
+        },
+        onRetry: () => _joinRoom(),                  // ✅ retry button
       );
     }
 
@@ -198,18 +202,16 @@ class _VoiceGroupRoomScreenState
               const SizedBox(height: 10),
 
               // ── 16 Seats Grid ────────────────────
-              // Expanded nahi — intrinsic height use karo
-              // Taki baki sab bottom me fit ho
               VoiceSeatGrid(
-                members:         state.members,
-                activeSpeakers:  _activeSpeakers,
-                localMuted:      state.localMutedUsers,
-                biMuted:         state.biMutedUsers,
-                myUserId:        null, // UserSession.userId
+                members:           state.members,
+                activeSpeakers:    _activeSpeakers,
+                localMuted:        state.localMutedUsers,
+                biMuted:           state.biMutedUsers,
+                myUserId:          null,
                 onMemberLongPress: _showMemberSheet,
               ),
 
-              // ── Spacer flexible — grid aur bottom ke beech ─
+              // ── Spacer flexible ──────────────────
               const Spacer(),
 
               // ── Listener count bar ───────────────
@@ -221,8 +223,8 @@ class _VoiceGroupRoomScreenState
 
               // ── Action buttons ───────────────────
               VoiceRoomActions(
-                onChat:   () {}, // TODO — Step 14
-                onGift:   () {}, // TODO — Step 13
+                onChat:   () {},
+                onGift:   () {},
                 onReport: () {},
               ),
 
@@ -332,8 +334,8 @@ class _RoomAppBar extends StatelessWidget {
             child: Text(
               "🎙️ ${group.speakerCount}/16",
               style: TextStyle(
-                color:    _goldA,
-                fontSize: 11,
+                color:      _goldA,
+                fontSize:   11,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -380,17 +382,22 @@ class _JoiningLoader extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────
-//  JOIN ERROR
+//  JOIN ERROR                                    ✅ FIXED
 // ─────────────────────────────────────────────────────────
 
 class _JoinError extends StatelessWidget {
   final String       message;
   final VoidCallback onBack;
+  final VoidCallback onRetry; // ✅ NEW
 
   static const _bg    = Color(0xFF0A0A0F);
   static const _goldA = Color(0xFFD4A843);
 
-  const _JoinError({required this.message, required this.onBack});
+  const _JoinError({
+    required this.message,
+    required this.onBack,
+    required this.onRetry, // ✅ NEW
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -416,9 +423,39 @@ class _JoinError extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
+
+              // ✅ NEW — Try Again button
+              GestureDetector(
+                onTap: onRetry,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 28, vertical: 12),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    gradient: const LinearGradient(
+                      colors: [_goldA, Color(0xFFE8C86A)],
+                    ),
+                  ),
+                  child: const Text(
+                    "Try Again",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color:      Color(0xFF0A0A0F),
+                      fontWeight: FontWeight.w700,
+                      fontSize:   14,
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              // Go Back button
               GestureDetector(
                 onTap: onBack,
                 child: Container(
+                  width: double.infinity,
                   padding: const EdgeInsets.symmetric(
                       horizontal: 28, vertical: 12),
                   decoration: BoxDecoration(
@@ -430,6 +467,7 @@ class _JoinError extends StatelessWidget {
                   ),
                   child: const Text(
                     "Go Back",
+                    textAlign: TextAlign.center,
                     style: TextStyle(
                       color:      _goldA,
                       fontWeight: FontWeight.w700,
@@ -437,6 +475,7 @@ class _JoinError extends StatelessWidget {
                   ),
                 ),
               ),
+
             ],
           ),
         ),
@@ -450,9 +489,9 @@ class _JoinError extends StatelessWidget {
 // ─────────────────────────────────────────────────────────
 
 class _ReportSheet extends StatelessWidget {
-  final VoiceMemberModel              member;
-  final List<(String, String)>        reasons;
-  final void Function(String) onReport;
+  final VoiceMemberModel       member;
+  final List<(String, String)> reasons;
+  final void Function(String)  onReport;
 
   static const _bg        = Color(0xFF0E0E18);
   static const _surface   = Color(0xFF13131F);
@@ -471,7 +510,7 @@ class _ReportSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        color: _bg,
+        color:        _bg,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       padding: const EdgeInsets.fromLTRB(20, 14, 20, 32),
@@ -481,7 +520,7 @@ class _ReportSheet extends StatelessWidget {
           Container(
             width: 36, height: 4,
             decoration: BoxDecoration(
-              color: _border,
+              color:        _border,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -506,13 +545,13 @@ class _ReportSheet extends StatelessWidget {
               onReport(r.$1);
             },
             child: Container(
-              margin: const EdgeInsets.only(bottom: 8),
+              margin:  const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.symmetric(
                   horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
                 color:        _surface,
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: _border),
+                border:       Border.all(color: _border),
               ),
               child: Row(
                 children: [
