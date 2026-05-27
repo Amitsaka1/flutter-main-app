@@ -417,7 +417,7 @@ final voiceWorldRepositoryProvider =
 });
 
 final voiceLiveKitProvider =
-    Provider.autoDispose<LiveKitService>((ref) {
+    Provider<LiveKitService>((ref) {
   final service = LiveKitService();
   ref.onDispose(() => service.disconnect());
   return service;
