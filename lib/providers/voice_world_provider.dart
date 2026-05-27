@@ -210,11 +210,29 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
       // 4. Room listeners
       _setupRoomListeners();
 
+      // 5. Current user ka model banao aur members mein add karo
+      final me = VoiceMemberModel(
+        userId:    UserSession.userId ?? "",
+        role:      result.role,
+        isMuted:   false,
+        name:      UserSession.name,
+        avatarUrl: UserSession.avatarUrl,
+        level:     UserSession.level,
+      );
+
+      // Duplicate avoid karo — agar pehle se hai toh mat add karo
+      final alreadyIn = group.members
+          .any((m) => m.userId == UserSession.userId);
+
+      final updatedMembers = alreadyIn
+          ? group.members
+          : [me, ...group.members];
+
       state = state.copyWith(
         joinStatus: VoiceJoinStatus.joined,
         myRole:     result.role,
         isMicOn:    result.isSpeaker,
-        members:    group.members,
+        members:    updatedMembers,
       );
 
     } catch (e) {
