@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/voice_group_model.dart';
 import '../../../../providers/voice_world_provider.dart';
+import '../../../../core/session/user_session.dart';
 import '../widgets/voice_seat_grid.dart';
 import '../widgets/voice_listener_bar.dart';
 import '../widgets/voice_room_actions.dart';
@@ -186,7 +187,7 @@ class _VoiceGroupRoomScreenState
                 activeSpeakers:    _activeSpeakers,
                 localMuted:        state.localMutedUsers,
                 biMuted:           state.biMutedUsers,
-                myUserId:          null,
+                myUserId:          UserSession.userId,
                 onMemberLongPress: _showMemberSheet,
               ),
 
