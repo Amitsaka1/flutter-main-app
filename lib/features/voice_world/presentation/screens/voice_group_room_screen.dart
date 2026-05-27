@@ -11,12 +11,6 @@ import '../widgets/voice_mic_button.dart';
 import '../widgets/voice_member_sheet.dart';
 import '../widgets/voice_reconnecting_banner.dart';
 
-// ─────────────────────────────────────────────────────────
-//  VOICE GROUP ROOM SCREEN
-//  Path: lib/features/voice_world/presentation/screens/voice_group_room_screen.dart
-//  Sab kuch ek screen mein fit — zero scroll
-// ─────────────────────────────────────────────────────────
-
 class VoiceGroupRoomScreen extends ConsumerStatefulWidget {
   final VoiceGroupModel group;
 
@@ -39,7 +33,6 @@ class _VoiceGroupRoomScreenState
   static const _surface   = Color(0xFF0E0E18);
   static const _textMuted = Color(0xFF55556A);
 
-  // Active speakers — LiveKit se aata hai
   final Set<String> _activeSpeakers = {};
 
   @override
@@ -67,7 +60,6 @@ class _VoiceGroupRoomScreenState
         .leaveGroup(widget.group.id);
   }
 
-  // ── Member long press → bottom sheet ─────────────────
   void _showMemberSheet(VoiceMemberModel member) {
     final state    = ref.read(voiceRoomProvider);
     final notifier = ref.read(voiceRoomProvider.notifier);
@@ -125,7 +117,6 @@ class _VoiceGroupRoomScreenState
     );
   }
 
-  // ── Promoted to speaker banner ────────────────────────
   void _checkPromotion(VoiceRoomState state) {
     if (state.justPromoted) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -145,10 +136,6 @@ class _VoiceGroupRoomScreenState
     }
   }
 
-  // ─────────────────────────────────────────────────────
-  //  BUILD
-  // ─────────────────────────────────────────────────────
-
   @override
   Widget build(BuildContext context) {
 
@@ -162,20 +149,16 @@ class _VoiceGroupRoomScreenState
       statusBarIconBrightness: Brightness.light,
     ));
 
-    // ── Joining loader ────────────────────────────────
     if (state.joinStatus == VoiceJoinStatus.joining) {
       return _JoiningLoader(group: widget.group);
     }
 
-    // ── Error ─────────────────────────────────────── ✅ FIXED
+    // ── Error ────────────────────────────────────────
     if (state.joinStatus == VoiceJoinStatus.error) {
       return _JoinError(
-        message: state.errorMessage ?? "Failed to join",
-        onBack: () async {
-          await _leaveRoom();                        // ✅ cleanup pehle
-          if (mounted) Navigator.pop(context);
-        },
-        onRetry: () => _joinRoom(),                  // ✅ retry button
+        message:  state.errorMessage ?? "Failed to join",
+        onBack:   () => Navigator.pop(context), // ✅ FIXED — sirf pop
+        onRetry:  () => _joinRoom(),
       );
     }
 
@@ -187,21 +170,17 @@ class _VoiceGroupRoomScreenState
           child: Column(
             children: [
 
-              // ── Reconnecting banner — top ─────────
               VoiceReconnectingBanner(
                 isVisible: state.isReconnecting,
               ),
 
-              // ── AppBar ───────────────────────────
               _RoomAppBar(
                 group:   widget.group,
                 onLeave: _leaveRoom,
               ),
 
-              // ── Spacer top ───────────────────────
               const SizedBox(height: 10),
 
-              // ── 16 Seats Grid ────────────────────
               VoiceSeatGrid(
                 members:           state.members,
                 activeSpeakers:    _activeSpeakers,
@@ -211,17 +190,14 @@ class _VoiceGroupRoomScreenState
                 onMemberLongPress: _showMemberSheet,
               ),
 
-              // ── Spacer flexible ──────────────────
               const Spacer(),
 
-              // ── Listener count bar ───────────────
               VoiceListenerBar(
                 listenerCount: widget.group.listenerCount,
               ),
 
               const SizedBox(height: 10),
 
-              // ── Action buttons ───────────────────
               VoiceRoomActions(
                 onChat:   () {},
                 onGift:   () {},
@@ -230,7 +206,6 @@ class _VoiceGroupRoomScreenState
 
               const SizedBox(height: 14),
 
-              // ── Mic button + Leave ───────────────
               VoiceMicButton(
                 isSpeaker: state.isSpeaker,
                 isMicOn:   state.isMicOn,
@@ -319,7 +294,6 @@ class _RoomAppBar extends StatelessWidget {
             ),
           ),
 
-          // Seats counter badge
           Container(
             padding: const EdgeInsets.symmetric(
                 horizontal: 10, vertical: 5),
@@ -382,13 +356,13 @@ class _JoiningLoader extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────
-//  JOIN ERROR                                    ✅ FIXED
+//  JOIN ERROR
 // ─────────────────────────────────────────────────────────
 
 class _JoinError extends StatelessWidget {
   final String       message;
   final VoidCallback onBack;
-  final VoidCallback onRetry; // ✅ NEW
+  final VoidCallback onRetry;
 
   static const _bg    = Color(0xFF0A0A0F);
   static const _goldA = Color(0xFFD4A843);
@@ -396,7 +370,7 @@ class _JoinError extends StatelessWidget {
   const _JoinError({
     required this.message,
     required this.onBack,
-    required this.onRetry, // ✅ NEW
+    required this.onRetry,
   });
 
   @override
@@ -409,8 +383,10 @@ class _JoinError extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+
               const Text("😔", style: TextStyle(fontSize: 48)),
               const SizedBox(height: 16),
+
               Text(
                 message == "PERMANENTLY_BANNED"
                     ? "Your account has been suspended"
@@ -422,9 +398,21 @@ class _JoinError extends StatelessWidget {
                 ),
                 textAlign: TextAlign.center,
               ),
+
+              // ✅ Actual error neeche dikhao — debug ke liye
+              const SizedBox(height: 8),
+              Text(
+                message,
+                style: const TextStyle(
+                  color:    Colors.red,
+                  fontSize: 11,
+                ),
+                textAlign: TextAlign.center,
+              ),
+
               const SizedBox(height: 24),
 
-              // ✅ NEW — Try Again button
+              // Try Again button
               GestureDetector(
                 onTap: onRetry,
                 child: Container(
