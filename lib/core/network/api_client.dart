@@ -2,15 +2,15 @@ import 'dart:convert';
 import 'dart:async';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:app_project/core/config/environment.dart';
 
 class ApiClient {
-  static const String baseUrl =
-      "https://momo-qd13.onrender.com";
+  static String get baseUrl => Environment.baseUrl;
 
   static String? _token;
 
   static const Duration _timeout =
-      Duration(seconds: 40);
+      Duration(seconds: 70);
 
   // ================= TOKEN =================
 
