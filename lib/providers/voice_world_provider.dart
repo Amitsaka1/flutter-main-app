@@ -174,7 +174,9 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
   final VoiceWorldRepository _repo;
   final LiveKitService       _liveKit;
 
-  dynamic _roomListener;
+  dynamic  _roomListener;
+  String?  _currentGroupId; // Abhi kis room mein hai
+  bool     _cleanedUp = false; // Double cleanup prevent karo
 
   VoiceRoomNotifier(this._repo, this._liveKit)
       : super(const VoiceRoomState());
