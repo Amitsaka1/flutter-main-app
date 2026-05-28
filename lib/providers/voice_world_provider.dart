@@ -428,9 +428,21 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
 
         case "PROMOTED_TO_SPEAKER":
           if (target == myId) {
+            final updatedMembers = state.members.map((m) {
+              if (m.userId != myId) return m;
+              return VoiceMemberModel(
+                userId:    m.userId,
+                role:      "speaker",
+                isMuted:   m.isMuted,
+                name:      m.name,
+                avatarUrl: m.avatarUrl,
+                level:     m.level,
+              );
+            }).toList();
             state = state.copyWith(
               myRole:       "speaker",
               justPromoted: true,
+              members:      updatedMembers,
             );
             _liveKit.enableMic();
           }
