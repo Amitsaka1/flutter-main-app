@@ -34,7 +34,6 @@ class _VoiceGroupRoomScreenState
   static const _surface   = Color(0xFF0E0E18);
   static const _textMuted = Color(0xFF55556A);
 
-  final Set<String> _activeSpeakers = {};
 
   @override
   void initState() {
@@ -185,7 +184,7 @@ class _VoiceGroupRoomScreenState
 
               VoiceSeatGrid(
                 members:           state.members,
-                activeSpeakers:    _activeSpeakers,
+                activeSpeakers:    state.activeSpeakers,
                 localMuted:        state.localMutedUsers,
                 biMuted:           state.biMutedUsers,
                 myUserId:          UserSession.userId,
