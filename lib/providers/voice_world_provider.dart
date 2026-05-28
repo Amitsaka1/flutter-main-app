@@ -267,8 +267,9 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
   // ── SELF MIC TOGGLE ──────────────────────────────────
   Future<void> toggleMic() async {
     if (!state.isSpeaker) return;
+    final newMicState = !state.isMicOn;
     await _liveKit.toggleMic();
-    state = state.copyWith(isMicOn: _liveKit.isMicEnabled);
+    state = state.copyWith(isMicOn: newMicState);
   }
 
   // ── LOCAL MUTE — sirf apne liye, doosre ko pata nahi ─
