@@ -193,14 +193,20 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
     try {
       // 1. Ban check
       final ban = await _repo.getBanStatus();
-      if (ban.banned && ban.permanent) {
-        state = state.copyWith(
-          joinStatus:   VoiceJoinStatus.error,
-          errorMessage: "PERMANENTLY_BANNED",
-        );
+      if (ban.banned) {
+        if (ban.permanent) {
+          state = state.copyWith(
+            joinStatus:   VoiceJoinStatus.error,
+            errorMessage: "PERMANENTLY_BANNED",
+          );
+        } else {
+          state = state.copyWith(
+            joinStatus:   VoiceJoinStatus.error,
+            errorMessage: "TEMPORARILY_BANNED",
+          );
+        }
         return;
       }
-
       // 2. Join API — backend se token + role milega
       final result = await _repo.joinGroup(group.id);
 
