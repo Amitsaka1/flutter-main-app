@@ -209,7 +209,10 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
         role:   result.role,
       );
 
-      // 4. Room listeners
+      // 4. Current group track karo (cleanup ke liye)
+      _currentGroupId = group.id;
+
+      // 5. Room listeners
       _setupRoomListeners();
 
       // 5. Current user ka model banao aur members mein add karo
