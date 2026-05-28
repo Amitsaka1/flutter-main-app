@@ -256,7 +256,6 @@ class _RoomAppBar extends StatelessWidget {
                   .findAncestorStateOfType<
                       _VoiceGroupRoomScreenState>()
                   ?._leaveRoom());
-              Navigator.pop(context);
             },
             child: Container(
               width:  36,
