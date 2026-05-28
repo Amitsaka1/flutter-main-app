@@ -176,10 +176,11 @@ class _VoiceGroupRoomScreenState
               ),
 
               _RoomAppBar(
-                group:   widget.group,
-                onLeave: _leaveRoom,
+                group:        widget.group,
+                onLeave:      _leaveRoom,
+                speakerCount: state.speakerCount,
               ),
-
+              
               const SizedBox(height: 10),
 
               VoiceSeatGrid(
