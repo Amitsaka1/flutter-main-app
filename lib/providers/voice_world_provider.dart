@@ -247,10 +247,12 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
           : [me, ...group.members];
 
       state = state.copyWith(
-        joinStatus: VoiceJoinStatus.joined,
-        myRole:     result.role,
-        isMicOn:    result.isSpeaker,
-        members:    updatedMembers,
+        joinStatus:    VoiceJoinStatus.joined,
+        myRole:        result.role,
+        isMicOn:       result.isSpeaker,
+        members:       updatedMembers,
+        speakerCount:  group.speakerCount,
+        listenerCount: group.listenerCount,
       );
 
     } catch (e) {
