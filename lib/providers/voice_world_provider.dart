@@ -250,17 +250,20 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
 
   // ── LEAVE ────────────────────────────────────────────
   Future<void> leaveGroup(String groupId) async {
+    if (_cleanedUp) return;
+    _cleanedUp = true;
+
     state = state.copyWith(joinStatus: VoiceJoinStatus.leaving);
 
     await _liveKit.disconnect();
-    await _repo.leaveGroup(groupId);   // silent fail
+    await _repo.leaveGroup(groupId);
 
     _roomListener?.dispose();
     _roomListener = null;
+    _currentGroupId = null;
 
     state = const VoiceRoomState();
   }
-
   // ── SELF MIC TOGGLE ──────────────────────────────────
   Future<void> toggleMic() async {
     if (!state.isSpeaker) return;
