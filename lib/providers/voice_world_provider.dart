@@ -116,6 +116,7 @@ class VoiceRoomState {
 
   final bool                   isReconnecting;
   final bool                   justPromoted;
+  final Set<String>            activeSpeakers;
 
   const VoiceRoomState({
     this.joinStatus       = VoiceJoinStatus.idle,
@@ -127,8 +128,9 @@ class VoiceRoomState {
     this.biMutedUsers     = const {},
     this.isReconnecting   = false,
     this.justPromoted     = false,
+    this.activeSpeakers   = const {},
   });
-
+  
   bool get isSpeaker  => myRole == "speaker";
   bool get isListener => myRole == "listener";
   bool get isJoined   => joinStatus == VoiceJoinStatus.joined;
