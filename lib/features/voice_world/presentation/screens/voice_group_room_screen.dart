@@ -312,7 +312,7 @@ class _RoomAppBar extends StatelessWidget {
               ),
             ),
             child: Text(
-              "🎙️ ${state.speakerCount}/16",
+              "🎙️ $speakerCount/16",
               style: TextStyle(
                 color:      _goldA,
                 fontSize:   11,
