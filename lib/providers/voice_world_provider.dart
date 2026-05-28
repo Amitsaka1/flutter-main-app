@@ -333,8 +333,18 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
       ..on<dynamic>((event) {
         final name = event.runtimeType.toString();
 
+        // Active speakers — speaking glow animation
+        if (name.contains('ActiveSpeakersChangedEvent')) {
+          try {
+            final speakers = (event.speakers as List)
+                .map<String>((s) => s.identity as String)
+                .toSet();
+            state = state.copyWith(activeSpeakers: speakers);
+          } catch (_) {}
+        }
+
         // Reconnecting
-        if (name.contains('RoomReconnectingEvent')) {
+        else if (name.contains('RoomReconnectingEvent')) {
           state = state.copyWith(isReconnecting: true);
         }
 
