@@ -51,7 +51,7 @@ class _VoiceGroupRoomScreenState
 
   Future<bool> _onWillPop() async {
     await _leaveRoom();
-    return true;
+    return false;
   }
 
   Future<void> _leaveRoom() async {
