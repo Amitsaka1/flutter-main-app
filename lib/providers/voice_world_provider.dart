@@ -129,6 +129,8 @@ class VoiceRoomState {
     this.isReconnecting   = false,
     this.justPromoted     = false,
     this.activeSpeakers   = const {},
+    this.speakerCount     = 0,
+    this.listenerCount    = 0,
   });
   
   bool get isSpeaker  => myRole == "speaker";
