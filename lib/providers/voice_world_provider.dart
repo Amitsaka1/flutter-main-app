@@ -165,6 +165,8 @@ class VoiceRoomState {
       isReconnecting:  isReconnecting  ?? this.isReconnecting,
       justPromoted:    justPromoted    ?? this.justPromoted,
       activeSpeakers:  activeSpeakers  ?? this.activeSpeakers,
+      speakerCount:    speakerCount    ?? this.speakerCount,
+      listenerCount:   listenerCount   ?? this.listenerCount,
     );
   }
 }
