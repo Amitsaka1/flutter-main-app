@@ -334,6 +334,26 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
         }
 
         // Participant disconnected
+        // Participant connected — naya member add karo
+        else if (name.contains('ParticipantConnectedEvent')) {
+          try {
+            final userId = event.participant.identity as String;
+            final alreadyIn =
+                state.members.any((m) => m.userId == userId);
+            if (!alreadyIn) {
+              final newMember = VoiceMemberModel(
+                userId:  userId,
+                role:    'speaker',
+                isMuted: false,
+              );
+              state = state.copyWith(
+                members: [...state.members, newMember],
+              );
+            }
+          } catch (_) {}
+        }
+
+        // Participant disconnected
         else if (name.contains('ParticipantDisconnectedEvent')) {
           final participant = event.participant;
 
@@ -343,7 +363,6 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
 
           state = state.copyWith(members: updated);
         }
-
         // Data received
         else if (name.contains('DataReceivedEvent')) {
           _handleDataMessage(event);
