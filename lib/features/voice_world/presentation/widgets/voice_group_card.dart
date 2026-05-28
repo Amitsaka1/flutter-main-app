@@ -320,35 +320,38 @@ class _JoinButton extends StatelessWidget {
   Widget build(BuildContext context) {
     if (isFull) {
       // Full — listener join option
-      return Container(
-        width:  double.infinity,
-        height: 34,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(9),
-          color:        Colors.red.withOpacity(0.08),
-          border: Border.all(
-            color: Colors.red.withOpacity(0.25),
-            width: 1,
+      return GestureDetector(
+        onTap: onJoin,
+        child: Container(
+          width:  double.infinity,
+          height: 34,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(9),
+            color:        Colors.red.withOpacity(0.08),
+            border: Border.all(
+              color: Colors.red.withOpacity(0.25),
+              width: 1,
+            ),
           ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.headphones_rounded,
-              size:  13,
-              color: Colors.red.withOpacity(0.6),
-            ),
-            const SizedBox(width: 5),
-            Text(
-              "Listen Only",
-              style: TextStyle(
-                color:       Colors.red.withOpacity(0.7),
-                fontSize:    12,
-                fontWeight:  FontWeight.w600,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.headphones_rounded,
+                size:  13,
+                color: Colors.red.withOpacity(0.6),
               ),
-            ),
-          ],
+              const SizedBox(width: 5),
+              Text(
+                "Listen Only",
+                style: TextStyle(
+                  color:       Colors.red.withOpacity(0.7),
+                  fontSize:    12,
+                  fontWeight:  FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
