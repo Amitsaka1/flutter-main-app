@@ -447,6 +447,13 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
 
   @override
   void dispose() {
+    if (!_cleanedUp) {
+      _cleanedUp = true;
+      _liveKit.disconnect();
+      if (_currentGroupId != null) {
+        _repo.leaveGroup(_currentGroupId!);
+      }
+    }
     _roomListener?.dispose();
     super.dispose();
   }
