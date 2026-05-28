@@ -388,13 +388,20 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
 
         // Participant disconnected
         else if (name.contains('ParticipantDisconnectedEvent')) {
-          final participant = event.participant;
+          final participant  = event.participant;
+          final wasInMembers = state.members
+              .any((m) => m.userId == participant.identity);
 
           final updated = state.members
               .where((m) => m.userId != participant.identity)
               .toList();
 
-          state = state.copyWith(members: updated);
+          state = state.copyWith(
+            members:      updated,
+            speakerCount: wasInMembers
+                ? (state.speakerCount - 1).clamp(0, 999)
+                : state.speakerCount,
+          );
         }
         // Data received
         else if (name.contains('DataReceivedEvent')) {
