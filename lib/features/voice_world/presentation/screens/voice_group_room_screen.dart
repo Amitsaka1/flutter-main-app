@@ -59,6 +59,7 @@ class _VoiceGroupRoomScreenState
     await ref
         .read(voiceRoomProvider.notifier)
         .leaveGroup(widget.group.id);
+    if (mounted) Navigator.pop(context);
   }
 
   void _showMemberSheet(VoiceMemberModel member) {
