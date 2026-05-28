@@ -194,9 +194,8 @@ class _VoiceGroupRoomScreenState
               const Spacer(),
 
               VoiceListenerBar(
-                listenerCount: widget.group.listenerCount,
+                listenerCount: state.listenerCount,
               ),
-
               const SizedBox(height: 10),
 
               VoiceRoomActions(
@@ -307,7 +306,7 @@ class _RoomAppBar extends StatelessWidget {
               ),
             ),
             child: Text(
-              "🎙️ ${group.speakerCount}/16",
+              "🎙️ ${state.speakerCount}/16",
               style: TextStyle(
                 color:      _goldA,
                 fontSize:   11,
