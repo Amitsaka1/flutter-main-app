@@ -162,6 +162,7 @@ class VoiceRoomState {
       biMutedUsers:    biMutedUsers    ?? this.biMutedUsers,
       isReconnecting:  isReconnecting  ?? this.isReconnecting,
       justPromoted:    justPromoted    ?? this.justPromoted,
+      activeSpeakers:  activeSpeakers  ?? this.activeSpeakers,
     );
   }
 }
