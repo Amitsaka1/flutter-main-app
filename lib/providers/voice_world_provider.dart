@@ -155,6 +155,9 @@ class VoiceRoomState {
     Set<String>?             biMutedUsers,
     bool?                    isReconnecting,
     bool?                    justPromoted,
+    Set<String>?             activeSpeakers,
+    int?                     speakerCount,
+    int?                     listenerCount,
   }) {
     return VoiceRoomState(
       joinStatus:      joinStatus      ?? this.joinStatus,
