@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/session/user_session.dart';
 import '../../../core/socket/global_socket_manager.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:async';
@@ -152,12 +153,12 @@ class _MyProfileScreenState extends State<MyProfileScreen>
       _cache = response["data"];
 
       // ── ADD THESE 3 LINES ──────────────────
-      final user    = response["data"]?["user"];
-      final profile = response["data"]?["profile"];
+      final user        = response["data"]?["user"];
+      final userProfile = response["data"]?["profile"];
       UserSession.setProfile(
-        name:      profile?["name"]      ?? "",
-        avatarUrl: profile?["avatarUrl"],
-        level:     user?["level"]        ?? 1,
+        name:      userProfile?["name"]      ?? "",
+        avatarUrl: userProfile?["avatarUrl"],
+        level:     user?["level"]            ?? 1,
       );
       // ───────────────────────────────────────
 
