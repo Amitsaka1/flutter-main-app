@@ -379,7 +379,8 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
                 isMuted: false,
               );
               state = state.copyWith(
-                members: [...state.members, newMember],
+                members:      [...state.members, newMember],
+                speakerCount: state.speakerCount + 1,
               );
             }
           } catch (_) {}
