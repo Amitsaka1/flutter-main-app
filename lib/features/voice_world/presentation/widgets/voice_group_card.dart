@@ -66,10 +66,7 @@ class _VoiceGroupCardState extends State<VoiceGroupCard>
       ),
       child: GestureDetector(
         onTapDown:   (_) => _pressCtrl.forward(),
-        onTapUp:     (_) {
-          _pressCtrl.reverse();
-          if (!isFull) widget.onJoin();
-        },
+        onTapUp:     (_) => _pressCtrl.reverse(),
         onTapCancel: () => _pressCtrl.reverse(),
         child: Container(
           decoration: BoxDecoration(
