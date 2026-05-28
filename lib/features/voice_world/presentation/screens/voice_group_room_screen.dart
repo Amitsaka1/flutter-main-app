@@ -231,12 +231,17 @@ class _VoiceGroupRoomScreenState
 class _RoomAppBar extends StatelessWidget {
   final VoiceGroupModel group;
   final VoidCallback    onLeave;
+  final int             speakerCount;
 
   static const _goldA     = Color(0xFFD4A843);
   static const _textMuted = Color(0xFF55556A);
   static const _border    = Color(0xFF1E1E2E);
 
-  const _RoomAppBar({required this.group, required this.onLeave});
+  const _RoomAppBar({
+    required this.group,
+    required this.onLeave,
+    required this.speakerCount,
+  });
 
   @override
   Widget build(BuildContext context) {
