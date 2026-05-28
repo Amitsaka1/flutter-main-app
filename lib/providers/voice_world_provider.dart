@@ -117,6 +117,8 @@ class VoiceRoomState {
   final bool                   isReconnecting;
   final bool                   justPromoted;
   final Set<String>            activeSpeakers;
+  final int                    speakerCount;
+  final int                    listenerCount;
 
   const VoiceRoomState({
     this.joinStatus       = VoiceJoinStatus.idle,
