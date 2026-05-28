@@ -391,7 +391,9 @@ class _JoinError extends StatelessWidget {
               Text(
                 message == "PERMANENTLY_BANNED"
                     ? "Your account has been suspended"
-                    : "Could not join room",
+                    : message == "TEMPORARILY_BANNED"
+                        ? "You are temporarily banned"
+                        : "Could not join room",
                 style: const TextStyle(
                   color:      Colors.white,
                   fontSize:   16,
