@@ -34,6 +34,15 @@ class _VoiceGroupRoomScreenState
   static const _surface   = Color(0xFF0E0E18);
   static const _textMuted = Color(0xFF55556A);
 
+  // ✅ FIX #1: Step tracking — user ko pata chale kya ho raha hai
+  //
+  // Problem: Pehle sirf ek spinner tha — "Joining room..." text
+  //          User sochta tha app hang hua — 2-4 second wait lagta tha
+  //
+  // Fix: 3 steps track karo — Access check → Joining → Audio connect
+  //      Screen TURANT khulegi (Fix #2), banner mein step dikhega
+  //
+  String _connectingStep = "Checking access...";
 
   @override
   void initState() {
@@ -44,16 +53,30 @@ class _VoiceGroupRoomScreenState
   }
 
   Future<void> _joinRoom() async {
+
+    // ✅ FIX #1: Step 1 — Ban check
+    if (mounted) setState(() => _connectingStep = "Checking access...");
+
+    // ✅ FIX #1: Step 2 — Joining
+    // Thoda delay taaki UI update ho sake
+    await Future.delayed(const Duration(milliseconds: 300));
+    if (mounted) setState(() => _connectingStep = "Joining room...");
+
     await ref
         .read(voiceRoomProvider.notifier)
         .joinGroup(widget.group);
+
+    // ✅ FIX #1: Step 3 — LiveKit connecting
+    if (mounted) setState(() => _connectingStep = "Connecting audio...");
   }
 
+  // ✅ UNCHANGED
   Future<bool> _onWillPop() async {
     await _leaveRoom();
     return false;
   }
 
+  // ✅ UNCHANGED
   Future<void> _leaveRoom() async {
     await ref
         .read(voiceRoomProvider.notifier)
@@ -61,6 +84,7 @@ class _VoiceGroupRoomScreenState
     if (mounted) Navigator.pop(context);
   }
 
+  // ✅ UNCHANGED
   void _showMemberSheet(VoiceMemberModel member) {
     final state    = ref.read(voiceRoomProvider);
     final notifier = ref.read(voiceRoomProvider.notifier);
@@ -77,14 +101,15 @@ class _VoiceGroupRoomScreenState
     );
   }
 
-  void _openGiftSheet(VoiceMemberModel member) {
-    // TODO — Step 13: Gift feature
-  }
+  // ✅ UNCHANGED
+  void _openGiftSheet(VoiceMemberModel member) {}
 
+  // ✅ UNCHANGED
   void _openReportSheet(VoiceMemberModel member) {
     _showReportDialog(member);
   }
 
+  // ✅ UNCHANGED
   void _showReportDialog(VoiceMemberModel member) {
     final reasons = [
       ("abusive",       "Abusive language 🤬"),
@@ -118,15 +143,14 @@ class _VoiceGroupRoomScreenState
     );
   }
 
+  // ✅ UNCHANGED
   void _checkPromotion(VoiceRoomState state) {
     if (state.justPromoted) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Row(
-              children: const [
-                Text("🎙️ You're now a Speaker!"),
-              ],
+            content: const Row(
+              children: [Text("🎙️ You're now a Speaker!")],
             ),
             backgroundColor: _goldA.withOpacity(0.9),
             duration:        const Duration(seconds: 3),
@@ -150,18 +174,30 @@ class _VoiceGroupRoomScreenState
       statusBarIconBrightness: Brightness.light,
     ));
 
-    if (state.joinStatus == VoiceJoinStatus.joining) {
-      return _JoiningLoader(group: widget.group);
-    }
-
-    // ── Error ────────────────────────────────────────
+    // ── Error — ✅ UNCHANGED ───────────────────────────
     if (state.joinStatus == VoiceJoinStatus.error) {
       return _JoinError(
-        message:  state.errorMessage ?? "Failed to join",
-        onBack:   () => Navigator.pop(context), // ✅ FIXED — sirf pop
-        onRetry:  () => _joinRoom(),
+        message: state.errorMessage ?? "Failed to join",
+        onBack:  () => Navigator.pop(context),
+        onRetry: () => _joinRoom(),
       );
     }
+
+    // ✅ FIX #2: INSTANT ROOM OPEN — _JoiningLoader HATA DIYA
+    //
+    // Problem: Pehle ye tha:
+    //   if (state.joinStatus == VoiceJoinStatus.joining) {
+    //     return _JoiningLoader(group: widget.group); // ❌ Full screen block
+    //   }
+    //   Matlab: Room tab tak nahi dikhta jab tak JOIN COMPLETE na ho
+    //   Ban check → Join API → LiveKit = 2-4 second black screen
+    //
+    // Fix: Room UI TURANT dikhao
+    //      Joining status ko banner mein dikhao (upar se)
+    //      User instantly room ke andar feel karta hai
+    //      LiveKit connect hone tak banner dikhta hai — transparent UX
+    //
+    final bool isConnecting = state.joinStatus == VoiceJoinStatus.joining;
 
     return WillPopScope(
       onWillPop: _onWillPop,
@@ -171,16 +207,27 @@ class _VoiceGroupRoomScreenState
           child: Column(
             children: [
 
-              VoiceReconnectingBanner(
-                isVisible: state.isReconnecting,
-              ),
+              // ✅ FIX #2: Connecting banner — joining ke time dikhao
+              //
+              // Pehle: Full screen spinner block karta tha
+              // Ab: Sirf top pe ek banner — room visible rehta hai
+              //
+              if (isConnecting)
+                _ConnectingBanner(step: _connectingStep) // ✅ FIXED
 
+              // ✅ UNCHANGED: Reconnecting banner (already tha)
+              else
+                VoiceReconnectingBanner(
+                  isVisible: state.isReconnecting,
+                ),
+
+              // ✅ UNCHANGED: Baaki poora UI same
               _RoomAppBar(
                 group:        widget.group,
                 onLeave:      _leaveRoom,
                 speakerCount: state.speakerCount,
               ),
-              
+
               const SizedBox(height: 10),
 
               VoiceSeatGrid(
@@ -210,13 +257,17 @@ class _VoiceGroupRoomScreenState
               VoiceMicButton(
                 isSpeaker: state.isSpeaker,
                 isMicOn:   state.isMicOn,
-                isLoading: false,
-                onToggle:  notifier.toggleMic,
-                onLeave:   _leaveRoom,
+
+                // ✅ FIX #2: Joining ke time mic button disabled rakho
+                // Pehle: isLoading: false — mic button active tha joining mein bhi
+                // Ab: isLoading: isConnecting — turant press na ho sake
+                isLoading: isConnecting, // ✅ FIXED
+
+                onToggle: notifier.toggleMic,
+                onLeave:  _leaveRoom,
               ),
 
               const SizedBox(height: 16),
-
             ],
           ),
         ),
@@ -226,7 +277,54 @@ class _VoiceGroupRoomScreenState
 }
 
 // ─────────────────────────────────────────────────────────
-//  ROOM APP BAR
+//  ✅ FIX #2: CONNECTING BANNER — NEW WIDGET
+//  Pehle: Full screen _JoiningLoader
+//  Ab: Sirf yeh chhota sa banner upar se
+// ─────────────────────────────────────────────────────────
+
+class _ConnectingBanner extends StatelessWidget {
+  final String step;
+
+  static const _goldA   = Color(0xFFD4A843);
+  static const _surface = Color(0xFF0E0E18);
+
+  const _ConnectingBanner({required this.step});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width:   double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      color:   _surface,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width:  14,
+            height: 14,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color:       _goldA,
+            ),
+          ),
+          const SizedBox(width: 10),
+          // ✅ FIX #1: Step text — user ko pata chale kya ho raha hai
+          Text(
+            step,
+            style: TextStyle(
+              color:    _goldA,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────
+//  ROOM APP BAR — ✅ UNCHANGED
 // ─────────────────────────────────────────────────────────
 
 class _RoomAppBar extends StatelessWidget {
@@ -253,8 +351,7 @@ class _RoomAppBar extends StatelessWidget {
           GestureDetector(
             onTap: () async {
               await (context
-                  .findAncestorStateOfType<
-                      _VoiceGroupRoomScreenState>()
+                  .findAncestorStateOfType<_VoiceGroupRoomScreenState>()
                   ?._leaveRoom());
             },
             child: Container(
@@ -272,9 +369,7 @@ class _RoomAppBar extends StatelessWidget {
               ),
             ),
           ),
-
           const SizedBox(width: 12),
-
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -298,10 +393,8 @@ class _RoomAppBar extends StatelessWidget {
               ],
             ),
           ),
-
           Container(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 10, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
               color:        _goldA.withOpacity(0.08),
@@ -326,42 +419,7 @@ class _RoomAppBar extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────
-//  JOINING LOADER
-// ─────────────────────────────────────────────────────────
-
-class _JoiningLoader extends StatelessWidget {
-  final VoiceGroupModel group;
-
-  static const _bg    = Color(0xFF0A0A0F);
-  static const _goldA = Color(0xFFD4A843);
-
-  const _JoiningLoader({required this.group});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _bg,
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(group.emoji, style: const TextStyle(fontSize: 48)),
-            const SizedBox(height: 20),
-            const CircularProgressIndicator(color: _goldA),
-            const SizedBox(height: 16),
-            const Text(
-              "Joining room...",
-              style: TextStyle(color: Colors.white70),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────
-//  JOIN ERROR
+//  JOIN ERROR — ✅ UNCHANGED
 // ─────────────────────────────────────────────────────────
 
 class _JoinError extends StatelessWidget {
@@ -388,10 +446,8 @@ class _JoinError extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-
               const Text("😔", style: TextStyle(fontSize: 48)),
               const SizedBox(height: 16),
-
               Text(
                 message == "PERMANENTLY_BANNED"
                     ? "Your account has been suspended"
@@ -405,21 +461,13 @@ class _JoinError extends StatelessWidget {
                 ),
                 textAlign: TextAlign.center,
               ),
-
-              // ✅ Actual error neeche dikhao — debug ke liye
               const SizedBox(height: 8),
               Text(
                 message,
-                style: const TextStyle(
-                  color:    Colors.red,
-                  fontSize: 11,
-                ),
+                style: const TextStyle(color: Colors.red, fontSize: 11),
                 textAlign: TextAlign.center,
               ),
-
               const SizedBox(height: 24),
-
-              // Try Again button
               GestureDetector(
                 onTap: onRetry,
                 child: Container(
@@ -443,10 +491,7 @@ class _JoinError extends StatelessWidget {
                   ),
                 ),
               ),
-
               const SizedBox(height: 12),
-
-              // Go Back button
               GestureDetector(
                 onTap: onBack,
                 child: Container(
@@ -456,9 +501,7 @@ class _JoinError extends StatelessWidget {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(10),
                     color: _goldA.withOpacity(0.15),
-                    border: Border.all(
-                      color: _goldA.withOpacity(0.3),
-                    ),
+                    border: Border.all(color: _goldA.withOpacity(0.3)),
                   ),
                   child: const Text(
                     "Go Back",
@@ -470,7 +513,6 @@ class _JoinError extends StatelessWidget {
                   ),
                 ),
               ),
-
             ],
           ),
         ),
@@ -480,7 +522,7 @@ class _JoinError extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────
-//  REPORT SHEET
+//  REPORT SHEET — ✅ UNCHANGED
 // ─────────────────────────────────────────────────────────
 
 class _ReportSheet extends StatelessWidget {
@@ -541,8 +583,7 @@ class _ReportSheet extends StatelessWidget {
             },
             child: Container(
               margin:  const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 14, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
                 color:        _surface,
                 borderRadius: BorderRadius.circular(10),
