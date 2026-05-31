@@ -51003,37 +51003,37 @@ r=s==null
 if((r?null:s.c)!==!0&&!q.r){q.r=!0
 if(!r)s.oL().fA(new A.acX(q))}}}}
 A.ad0.prototype={
-$1(a5){var s,r,q,p,o,n,m,l,k,j,i,h,g,f,e,d,c,b,a=this,a0=null,a1="unreadCount",a2=J.ap(a5),a3=a2.i(a5,"type"),a4=J.ih(a3)
-if(a4.l(a3,"ONLINE_USERS_LIST")){a2=a2.i(a5,"users")
-if(a2==null)a2=[]
-a4=t.N
-s=A.eb(a2,!0,a4)
-a2=$.Mp()
-r=$.Mq().gfu().nL(0,a2)
-a4=A.f7(A.eJ.prototype.gcs.call(r,0),a4)
-a4.O(0,A.ov(s,A.a3(s).c))
-r.o9(0,a4)
-a.a.x.G(0,a5)}else if(a4.l(a3,"USER_ONLINE")){a2=a2.i(a5,"userId")
-q=a2==null?a0:J.bY(a2)
-if(q!=null){a2=$.Mp()
-r=$.Mq().gfu().nL(0,a2)
-a2=A.f7(A.eJ.prototype.gcs.call(r,0),t.N)
-a2.G(0,q)
-r.o9(0,a2)}a.a.x.G(0,a5)}else if(a4.l(a3,"USER_OFFLINE")){a2=a2.i(a5,"userId")
-q=a2==null?a0:J.bY(a2)
-if(q!=null){a2=$.Mp()
-r=$.Mq().gfu().nL(0,a2)
-a2=A.f7(A.eJ.prototype.gcs.call(r,0),t.N)
-a2.E(0,q)
-r.o9(0,a2)}a.a.x.G(0,a5)}else if(a4.l(a3,"INCOMING_CALL"))a.a.aej(a5)
-else if(a4.l(a3,"NEW_MESSAGE")){p=a2.i(a5,"data")
-a2=J.ap(p)
-a4=a2.i(p,"senderId")
-o=a4==null?a0:J.bY(a4)
-a4=a.a
-n=a4.c
-if(o==(n==null?a0:n)){a4.x.G(0,a5)
-return}m=a2.i(p,"receiverId")
+$1(a7){var s,r,q,p,o,n,m,l,k,j,i,h,g,f,e,d,c,b,a=this,a0="type",a1=null,a2="\ud83d\udcf7 Image",a3="unreadCount",a4=J.ap(a7),a5=a4.i(a7,a0),a6=J.ih(a5)
+if(a6.l(a5,"ONLINE_USERS_LIST")){a4=a4.i(a7,"users")
+if(a4==null)a4=[]
+a6=t.N
+s=A.eb(a4,!0,a6)
+a4=$.Mp()
+r=$.Mq().gfu().nL(0,a4)
+a6=A.f7(A.eJ.prototype.gcs.call(r,0),a6)
+a6.O(0,A.ov(s,A.a3(s).c))
+r.o9(0,a6)
+a.a.x.G(0,a7)}else if(a6.l(a5,"USER_ONLINE")){a4=a4.i(a7,"userId")
+q=a4==null?a1:J.bY(a4)
+if(q!=null){a4=$.Mp()
+r=$.Mq().gfu().nL(0,a4)
+a4=A.f7(A.eJ.prototype.gcs.call(r,0),t.N)
+a4.G(0,q)
+r.o9(0,a4)}a.a.x.G(0,a7)}else if(a6.l(a5,"USER_OFFLINE")){a4=a4.i(a7,"userId")
+q=a4==null?a1:J.bY(a4)
+if(q!=null){a4=$.Mp()
+r=$.Mq().gfu().nL(0,a4)
+a4=A.f7(A.eJ.prototype.gcs.call(r,0),t.N)
+a4.E(0,q)
+r.o9(0,a4)}a.a.x.G(0,a7)}else if(a6.l(a5,"INCOMING_CALL"))a.a.aej(a7)
+else if(a6.l(a5,"NEW_MESSAGE")){p=a4.i(a7,"data")
+a4=J.ap(p)
+a6=a4.i(p,"senderId")
+o=a6==null?a1:J.bY(a6)
+a6=a.a
+n=a6.c
+if(o==(n==null?a1:n)){a6.x.G(0,a7)
+return}m=a4.i(p,"receiverId")
 if(m!=null)J.bY(m)
 m=o==null
 if(!m){l=$.FT.i(0,o)
@@ -51060,25 +51060,32 @@ d=A.eb(A.eJ.prototype.gcs.call(e,0),!0,m)
 c=B.b.YY(d,new A.ad_(i))
 if(c!==-1){b=B.b.eR(d,c)
 m=A.mv(b,m,m)
-m.n(0,"lastMessage",a2.i(p,"content"))
-m.n(0,"updatedAt",new A.fE(Date.now(),!1).a09())
-a2=J.a4(b,a1)
-a2=J.Mt(a2==null?0:a2,1)
-m.n(0,a1,a2)
-B.b.eN(d,0,m)}else{l=a2.i(p,"senderPhone")
-if(l==null)l=a2.i(p,"receiverPhone")
+l=a4.i(p,"content")
+if(l==null)a4=J.c(a4.i(p,a0),"image")?a2:""
+else a4=l
+m.n(0,"lastMessage",a4)
+m.n(0,"time",new A.fE(Date.now(),!1).a09())
+a4=J.a4(b,a3)
+a4=J.Mt(a4==null?0:a4,1)
+m.n(0,a3,a4)
+B.b.eN(d,0,m)}else{l=a4.i(p,"senderPhone")
+if(l==null)l=a4.i(p,"receiverPhone")
 l=A.aH(["id",i,"phone",l==null?"Unknown":l],k,m)
-a2=a2.i(p,"content")
+j=a4.i(p,"content")
+if(j==null)a4=J.c(a4.i(p,a0),"image")?a2:""
+else a4=j
 j=new A.fE(Date.now(),!1).a09()
-B.b.eN(d,0,A.aH(["userId",i,"user",l,"lastMessage",a2,"updatedAt",j,"unreadCount",1],k,m))}a2=d.length
-if(a2>200)B.b.xc(d,200,a2)
-e.o9(0,d)}a4.x.G(0,a5)}},
+B.b.eN(d,0,A.aH(["user",l,"lastMessage",a4,"time",j,"unreadCount",1],k,m))}a4=d.length
+if(a4>200)B.b.xc(d,200,a4)
+e.o9(0,d)}a6.x.G(0,a7)}else a.a.x.G(0,a7)},
 $S:73}
 A.acZ.prototype={
 $1(a){return J.c(J.a4(a,"id"),J.a4(this.a,"id"))},
 $S:32}
 A.ad_.prototype={
-$1(a){return J.c(J.a4(a,"userId"),this.a)},
+$1(a){var s=J.a4(a,"user")
+s=s==null?null:J.a4(s,"id")
+return J.c(s,this.a)},
 $S:32}
 A.ad2.prototype={
 $1(a){A.nM().$1("\u274c Socket stream error: "+A.j(a))},
