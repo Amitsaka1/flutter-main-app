@@ -12,8 +12,7 @@ class ConversationController {
 
   final Map<String, List<dynamic>> _conversationCache = {};
 
-  final Map<String, StreamController<List<dynamic>>>
-      _streams = {};
+  final Map<String, StreamController<List<dynamic>>> _streams = {};
 
   String? _myId;
 
@@ -21,10 +20,19 @@ class ConversationController {
 
   StreamSubscription? _socketSub;
 
-  /// 🔥 track loaded conversations
+  // ✅ UNCHANGED: track loaded conversations
   final Set<String> _loadedConversations = {};
 
-  // ================= INIT =================
+  // ✅ FIX #2 (NEW): Pagination state per conversation
+  // Problem: Backend ab { data, hasMore, nextCursor } bhejta hai
+  //          Flutter sirf response["data"] padhta tha — baaki ignore
+  //          User scroll up kare toh purane messages load nahi hote the
+  // Fix: Har conversation ka cursor aur hasMore track karo
+  final Map<String, String?> _nextCursor  = {};
+  final Map<String, bool>    _hasMore     = {};
+  final Map<String, bool>    _loadingMore = {}; // Double load prevent karo
+
+  // ================= INIT — ✅ UNCHANGED =================
 
   void init(String myId) {
     if (_socketInitialized && _myId == myId) return;
@@ -33,70 +41,66 @@ class ConversationController {
 
     _socketSub?.cancel();
 
-    _socketSub =
-        GlobalSocketManager.instance.messages
-            .listen(_handleSocket);
+    _socketSub = GlobalSocketManager.instance.messages
+        .listen(_handleSocket);
 
     _socketInitialized = true;
   }
 
-  // ================= STREAM =================
+  // ================= STREAM — ✅ UNCHANGED =================
 
   Stream<List<dynamic>> stream(String userId) {
-    _streams[userId] ??=
-        StreamController.broadcast();
-
+    _streams[userId] ??= StreamController.broadcast();
     return _streams[userId]!.stream;
   }
 
   List<dynamic> getMessages(String userId) {
-    return List.from(
-      _conversationCache[userId] ?? [],
-    );
+    return List.from(_conversationCache[userId] ?? []);
   }
 
-  /// 🔥 check cache
+  // ✅ UNCHANGED: Cache check
   bool hasMessages(String userId) {
     return _conversationCache.containsKey(userId) &&
         _conversationCache[userId]!.isNotEmpty;
   }
 
-  // ================= LOAD =================
+  // ✅ FIX #2 (NEW): Scroll up pe aur messages hain ya nahi
+  bool canLoadMore(String userId) => _hasMore[userId] ?? false;
+
+  // ================= LOAD — FIXED =================
 
   Future<void> loadMessages(String userId) async {
 
-    /// 🔥 INSTANT SHOW (CACHE)
+    // ✅ UNCHANGED: Cache se turant dikhao
     if (_conversationCache.containsKey(userId)) {
-
-      /// 🔥 avoid unnecessary emit
       if (!_loadedConversations.contains(userId)) {
         _emit(userId);
       }
     }
 
-    /// 🔥 ALREADY LOADED → SKIP API
+    // ✅ UNCHANGED: Already loaded — skip API
     if (_loadedConversations.contains(userId)) {
-
       _emit(userId);
-      
       return;
     }
 
     try {
 
-      final response =
-          await ApiClient.get(
-        "/chat/messages/$userId",
-      );
+      final response = await ApiClient.get("/chat/messages/$userId");
 
       if (response["success"] == true) {
 
-        _conversationCache[userId] =
-            List.from(response["data"]);
+        _conversationCache[userId] = List.from(response["data"]);
+
+        // ✅ FIX #2: Pagination state save karo
+        // Problem: Pehle ye lines nahi thin — cursor hamesha null tha
+        // Fix: Backend se aayi pagination info store karo
+        _nextCursor[userId] = response["nextCursor"];     // ✅ FIXED
+        _hasMore[userId]    = response["hasMore"] ?? false; // ✅ FIXED
 
         _loadedConversations.add(userId);
 
-        /// 🔥 mark read
+        // ✅ UNCHANGED: Mark read
         ApiClient.post("/chat/mark-read", {
           "senderId": userId,
         });
@@ -107,182 +111,185 @@ class ConversationController {
     } catch (_) {}
   }
 
-  // ================= SEND =================
+  // ✅ FIX #2 (NEW): Load more — scroll up pe call karo
+  //
+  // Problem: Pehle ye function exist hi nahi karta tha
+  //          User scroll up karta tha — kuch nahi hota tha
+  //
+  // Fix: cursor-based pagination — backend se agle 30 messages lo
+  //      Existing messages ke UPAR prepend karo (purane messages upar hote hain)
+  //
+  // Flutter mein use karo:
+  //   if (ConversationController.instance.canLoadMore(userId)) {
+  //     await ConversationController.instance.loadMore(userId);
+  //   }
+  //
+  Future<void> loadMore(String userId) async {
 
-  Future<void> sendMessage(
-    String userId,
-    String content,
-  ) async {
+    // ✅ Already loading hai ya aur messages nahi hain — skip
+    if (_loadingMore[userId] == true) return;
+    if (_hasMore[userId] != true)     return;
+
+    final cursor = _nextCursor[userId];
+    if (cursor == null) return;
+
+    _loadingMore[userId] = true;
+
+    try {
+
+      final response = await ApiClient.get(
+        "/chat/messages/$userId",
+        queryParams: { "cursor": cursor, "limit": "30" },
+      );
+
+      if (response["success"] == true) {
+
+        final older = List.from(response["data"]);
+
+        // ✅ Purane messages UPAR lagao — naye neeche hain
+        final existing = _conversationCache[userId] ?? [];
+        _conversationCache[userId] = [...older, ...existing];
+
+        // ✅ Agla cursor update karo
+        _nextCursor[userId] = response["nextCursor"];
+        _hasMore[userId]    = response["hasMore"] ?? false;
+
+        _emit(userId);
+      }
+
+    } catch (_) {
+    } finally {
+      _loadingMore[userId] = false;
+    }
+  }
+
+  // ================= SEND — ✅ UNCHANGED =================
+
+  Future<void> sendMessage(String userId, String content) async {
 
     if (_myId == null) return;
 
     final tempMessage = {
-      "id":
-          DateTime.now()
-              .millisecondsSinceEpoch
-              .toString(),
-
-      "senderId": _myId,
+      "id":         DateTime.now().millisecondsSinceEpoch.toString(),
+      "senderId":   _myId,
       "receiverId": userId,
-      "content": content,
-      "isRead": false,
+      "content":    content,
+      "isRead":     false,
     };
 
-    /// 🔥 Skip local append if
-    /// Riverpod already handling UI
+    // ✅ UNCHANGED: Provider handles realtime UI
     if (_loadedConversations.contains(userId)) {
-
       // provider handles realtime UI
-
     } else {
 
       _conversationCache[userId] ??= [];
 
-      final updated =
-          List<dynamic>.from(
-        _conversationCache[userId]!,
-      );
-
+      final updated = List<dynamic>.from(_conversationCache[userId]!);
       updated.add(tempMessage);
 
-      /// 🔥 keep latest 100
-      if (updated.length > 100) {
-        updated.removeAt(0);
-      }
+      // ✅ UNCHANGED: Keep latest 100
+      if (updated.length > 100) updated.removeAt(0);
 
       _conversationCache[userId] = updated;
-
       _emit(userId);
     }
 
     try {
-
       await ApiClient.post("/chat/send", {
         "receiverId": userId,
-        "content": content,
+        "content":    content,
       });
-
     } catch (_) {}
   }
 
-  // ================= SOCKET =================
+  // ================= SOCKET — FIXED =================
 
   void _handleSocket(dynamic data) {
 
-  if (_myId == null) return;
+    if (_myId == null) return;
 
-  // ================= NEW MESSAGE =================
+    // ================= NEW MESSAGE — ✅ UNCHANGED =================
 
-  if (data["type"] == "NEW_MESSAGE") {
+    if (data["type"] == "NEW_MESSAGE") {
 
-    final msg = data["data"];
+      final msg      = data["data"];
+      final sender   = msg["senderId"];
+      final receiver = msg["receiverId"];
+      final chatUser = sender == _myId ? receiver : sender;
 
-    final sender = msg["senderId"];
+      _conversationCache[chatUser] ??= [];
 
-    final receiver = msg["receiverId"];
+      final updated = List<dynamic>.from(_conversationCache[chatUser]!);
 
-    final chatUser =
-        sender == _myId
-            ? receiver
-            : sender;
+      // ✅ UNCHANGED: Duplicate prevention
+      if (!updated.any((m) => m["id"] == msg["id"])) {
 
-    _conversationCache[chatUser] ??= [];
+        updated.add(msg);
 
-    final updated =
-        List<dynamic>.from(
-      _conversationCache[chatUser]!,
-    );
+        // ✅ UNCHANGED: Keep latest 100
+        if (updated.length > 100) updated.removeAt(0);
 
-    /// 🔥 DUPLICATE PREVENTION
-    if (!updated.any(
-      (m) => m["id"] == msg["id"],
-    )) {
+        _conversationCache[chatUser] = updated;
+        _loadedConversations.add(chatUser);
 
-      updated.add(msg);
-
-      /// 🔥 keep latest 100
-      if (updated.length > 100) {
-        updated.removeAt(0);
+        _emit(chatUser);
       }
-
-      _conversationCache[chatUser] =
-          updated;
-
-      _loadedConversations.add(chatUser);
-
-      /// 🔥 ALWAYS EMIT
-      _emit(chatUser);
     }
-  }
 
-    // ================= MESSAGES READ =================
+    // ================= MESSAGES READ — FIXED =================
 
     if (data["type"] == "MESSAGES_READ") {
 
-      final userId = data["userId"];
+      // ✅ FIX #1: "userId" → "by"
+      //
+      // Problem: Backend bhejta hai: { type: "MESSAGES_READ", by: "userId123" }
+      //          Flutter padhta tha:  data["userId"]  ← ALWAYS NULL
+      //          Isliye double tick marks kabhi nahi aate the
+      //
+      // Fix: data["by"] — ye sahi field naam hai
+      //
+      final userId = data["by"]; // ❌ PEHLE: data["userId"]  ✅ AB: data["by"]
 
       if (userId != null &&
-          _conversationCache.containsKey(
-            userId,
-          )) {
+          _conversationCache.containsKey(userId)) {
 
-        final updated =
-            List<dynamic>.from(
-          _conversationCache[userId]!,
-        );
+        final updated = List<dynamic>.from(_conversationCache[userId]!);
 
-        for (
-          int i = 0;
-          i < updated.length;
-          i++
-        ) {
-
-          if (updated[i]["senderId"] ==
-              _myId) {
-
-            updated[i] = {
-              ...updated[i],
-              "isRead": true,
-            };
+        // ✅ UNCHANGED: Saare apne messages ko isRead: true karo
+        for (int i = 0; i < updated.length; i++) {
+          if (updated[i]["senderId"] == _myId) {
+            updated[i] = { ...updated[i], "isRead": true };
           }
         }
 
-        _conversationCache[userId] =
-            updated;
-
+        _conversationCache[userId] = updated;
         _emit(userId);
       }
     }
   }
 
-  // ================= EMIT =================
+  // ================= EMIT — ✅ UNCHANGED =================
 
   void _emit(String userId) {
-
-    _streams[userId] ??=
-        StreamController.broadcast();
-
-    _streams[userId]!.add(
-      List.from(
-        _conversationCache[userId]!,
-      ),
-    );
+    _streams[userId] ??= StreamController.broadcast();
+    _streams[userId]!.add(List.from(_conversationCache[userId]!));
   }
 
-  // ================= DISPOSE =================
+  // ================= DISPOSE — FIXED =================
 
   void dispose() {
 
     _socketSub?.cancel();
 
-    for (var s in _streams.values) {
-      s.close();
-    }
+    for (var s in _streams.values) s.close();
 
     _streams.clear();
-
     _conversationCache.clear();
-
     _loadedConversations.clear();
+
+    // ✅ FIX #2: Naye pagination maps bhi clear karo
+    _nextCursor.clear();  // ✅ FIXED
+    _hasMore.clear();     // ✅ FIXED
+    _loadingMore.clear(); // ✅ FIXED
   }
 }
