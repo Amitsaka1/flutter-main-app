@@ -23,7 +23,7 @@ class ChatListScreen extends ConsumerStatefulWidget {
 class _ChatListScreenState extends ConsumerState<ChatListScreen>
     with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
 
-  // ── Palette ──────────────────────────────────
+  // ── Palette — ✅ UNCHANGED ────────────────────
   static const _bg        = Color(0xFF0A0A0F);
   static const _surface   = Color(0xFF0E0E18);
   static const _surfaceHi = Color(0xFF13131F);
@@ -36,16 +36,25 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
 
   final ChatController _controller = ChatController.instance;
 
-  List<dynamic> fallbackChats = [];
+  // ✅ FIX #1: fallbackChats hata diya — single source of truth
+  //
+  // Problem: Pehle 2 data sources the — fallbackChats (local state) aur
+  //          recentChatsProvider (Riverpod). Screen confuse hoti thi kaunsa
+  //          use kare — baar baar loading isliye dikhti thi
+  //
+  // Fix: Sirf recentChatsProvider use karo — GlobalSocketManager already
+  //      isko real-time update karta hai (Fix #1 ke baad)
+  //      fallbackChats completely remove kiya
+  //
   bool loading = true;
 
-  // ── Search ───────────────────────────────────
-  bool   _searchOpen = false;
+  // ── Search — ✅ UNCHANGED ─────────────────────
+  bool   _searchOpen  = false;
   String _searchQuery = '';
-  final TextEditingController _searchCtrl = TextEditingController();
+  final TextEditingController _searchCtrl  = TextEditingController();
   final FocusNode             _searchFocus = FocusNode();
 
-  // ── Animations ───────────────────────────────
+  // ── Animations — ✅ UNCHANGED ─────────────────
   late AnimationController _headerCtrl;
   late AnimationController _listCtrl;
   late AnimationController _searchCtrlAnim;
@@ -62,9 +71,9 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
   void initState() {
     super.initState();
 
-    // Header entrance
+    // ✅ UNCHANGED: Header entrance animation
     _headerCtrl = AnimationController(
-      vsync: this,
+      vsync:    this,
       duration: const Duration(milliseconds: 650),
     )..forward();
 
@@ -80,15 +89,15 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
       ),
     );
 
-    // List stagger
+    // ✅ UNCHANGED: List stagger animation
     _listCtrl = AnimationController(
-      vsync: this,
+      vsync:    this,
       duration: const Duration(milliseconds: 600),
     );
 
-    // Search dropdown
+    // ✅ UNCHANGED: Search dropdown animation
     _searchCtrlAnim = AnimationController(
-      vsync: this,
+      vsync:    this,
       duration: const Duration(milliseconds: 320),
     );
 
@@ -119,54 +128,71 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
     super.dispose();
   }
 
-  // ===================== LOGIC START =====================
+  // ===================== LOGIC — FIXED =====================
 
   Future<void> _initialize() async {
-    final token = await ApiClient.getToken();
 
+    final token = await ApiClient.getToken();
     if (token == null) {
       if (mounted) context.go("/login");
       return;
     }
 
-    // 🔥 CACHE
+    // ✅ FIX #2: Cache check — isFresh use karo
+    //
+    // Problem: Pehle HAMESHA API call hoti thi — chahe 2 second pehle
+    //          hi data load hua ho. Tab tab loading dikhti thi
+    //
+    // Fix: ChatController.isFresh check karo (20 second window)
+    //      Fresh data hai toh sirf provider update karo, API mat maaro
+    //      Baar baar loading band ho jaayegi
+    //
     if (_controller.hasData) {
+
+      // ✅ FIX #2: Cached data turant provider mein daal do
       final cachedChats = List<dynamic>.from(_controller.chats);
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        ref.read(recentChatsProvider.notifier).state = cachedChats;
+        if (mounted) {
+          ref.read(recentChatsProvider.notifier).state = cachedChats;
+        }
       });
 
-      setState(() {
-        fallbackChats = cachedChats;
-        loading       = false;
-      });
-
+      setState(() => loading = false);
       _listCtrl..reset()..forward();
+
+      // ✅ FIX #2: isFresh = true → API call mat karo, return karo
+      // isFresh = false → Cache dikhaya, background mein refresh karo
+      if (_controller.isFresh) return; // ✅ FIXED — pehle ye check nahi tha
     }
 
-    // 🔥 API REFRESH
+    // ✅ API REFRESH — cache nahi tha ya stale tha
     try {
       final response = await ApiClient.get("/chat/recent");
 
       if (response["success"] == true) {
         final data = List<dynamic>.from(response["data"]);
 
-        ref.read(recentChatsProvider.notifier).state = data;
+        // ✅ FIX #1: Sirf recentChatsProvider update karo
+        // fallbackChats set karna hata diya — single source of truth
+        if (mounted) {
+          ref.read(recentChatsProvider.notifier).state = data;
 
-        if (mounted && loading) {
-          setState(() => loading = false);
-          _listCtrl..reset()..forward();
+          if (loading) {
+            setState(() => loading = false);
+            _listCtrl..reset()..forward();
+          }
         }
       }
     } catch (_) {}
   }
 
+  // ✅ UNCHANGED: Pull-to-refresh
   Future<void> _onRefresh() async {
     await _initialize();
   }
 
-  // ── Toggle search ─────────────────────────────
+  // ✅ UNCHANGED: Search toggle
   void _toggleSearch() {
     setState(() => _searchOpen = !_searchOpen);
 
@@ -184,7 +210,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
     }
   }
 
-  // ── Filter chats by name ──────────────────────
+  // ✅ UNCHANGED: Filter
   List<dynamic> _filterChats(List<dynamic> chats) {
     if (_searchQuery.isEmpty) return chats;
     return chats.where((chat) {
@@ -195,7 +221,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
 
   // ===================== LOGIC END =======================
 
-  // ── Per item stagger ──────────────────────────
+  // ✅ UNCHANGED: Item animation
   Animation<double> _itemAnim(int index) {
     final start = (index / 10 * 0.6).clamp(0.0, 0.7);
     final end   = (start + 0.4).clamp(0.0, 1.0);
@@ -205,7 +231,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
     );
   }
 
-  // ── Header ────────────────────────────────────
+  // ✅ UNCHANGED: Header widget
   Widget _buildHeader() {
     return FadeTransition(
       opacity: _headerFade,
@@ -219,8 +245,6 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
           padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
           child: Row(
             children: [
-
-              // ── Title block ────────────────────
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
@@ -244,17 +268,14 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
                   Text(
                     "Your conversations",
                     style: TextStyle(
-                      color:    _textMuted,
-                      fontSize: 11,
+                      color:         _textMuted,
+                      fontSize:      11,
                       letterSpacing: 0.3,
                     ),
                   ),
                 ],
               ),
-
               const Spacer(),
-
-              // ── Search icon button ─────────────
               GestureDetector(
                 onTap: _toggleSearch,
                 child: AnimatedContainer(
@@ -273,13 +294,11 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
                       width: 1,
                     ),
                     boxShadow: _searchOpen
-                        ? [
-                            BoxShadow(
-                              color:      _goldA.withOpacity(0.15),
-                              blurRadius: 14,
-                              spreadRadius: 1,
-                            ),
-                          ]
+                        ? [BoxShadow(
+                            color:      _goldA.withOpacity(0.15),
+                            blurRadius: 14,
+                            spreadRadius: 1,
+                          )]
                         : [],
                   ),
                   child: Icon(
@@ -291,7 +310,6 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
                   ),
                 ),
               ),
-
             ],
           ),
         ),
@@ -299,14 +317,12 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
     );
   }
 
-  // ── Search dropdown ───────────────────────────
+  // ✅ UNCHANGED: Search dropdown widget
   Widget _buildSearchDropdown() {
     return AnimatedBuilder(
       animation: _searchExpand,
       builder: (_, __) {
-
         if (_searchCtrlAnim.value == 0) return const SizedBox.shrink();
-
         return ClipRect(
           child: Align(
             heightFactor: _searchExpand.value,
@@ -318,8 +334,6 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
                   height: 48,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
-
-                    // ── Gradient border ─────────────
                     gradient: LinearGradient(
                       colors: [
                         _goldA.withOpacity(0.5),
@@ -329,18 +343,16 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
                       begin: Alignment.topLeft,
                       end:   Alignment.bottomRight,
                     ),
-
                     boxShadow: [
                       BoxShadow(
-                        color:      _goldA.withOpacity(0.10),
-                        blurRadius: 16,
+                        color:        _goldA.withOpacity(0.10),
+                        blurRadius:   16,
                         spreadRadius: -1,
                         offset: const Offset(0, 4),
                       ),
                     ],
                   ),
                   padding: const EdgeInsets.all(1.2),
-
                   child: Container(
                     decoration: BoxDecoration(
                       color:        _surfaceHi,
@@ -349,17 +361,12 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
                     padding: const EdgeInsets.symmetric(horizontal: 14),
                     child: Row(
                       children: [
-
-                        // Search icon
                         Icon(
                           Icons.search_rounded,
                           size:  18,
                           color: _goldA.withOpacity(0.7),
                         ),
-
                         const SizedBox(width: 10),
-
-                        // TextField
                         Expanded(
                           child: TextField(
                             controller:  _searchCtrl,
@@ -378,14 +385,12 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
                                 color:    _textMuted,
                                 fontSize: 13.5,
                               ),
-                              border:        InputBorder.none,
-                              isDense:       true,
+                              border:         InputBorder.none,
+                              isDense:        true,
                               contentPadding: EdgeInsets.zero,
                             ),
                           ),
                         ),
-
-                        // Clear button
                         if (_searchQuery.isNotEmpty)
                           GestureDetector(
                             onTap: () {
@@ -406,7 +411,6 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
                               ),
                             ),
                           ),
-
                       ],
                     ),
                   ),
@@ -419,7 +423,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
     );
   }
 
-  // ── Gold divider ──────────────────────────────
+  // ✅ UNCHANGED: Divider widget
   Widget _buildDivider() {
     return Container(
       height: 1,
@@ -445,22 +449,22 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
       statusBarIconBrightness: Brightness.light,
     ));
 
-    final providerChats = ref.watch(recentChatsProvider);
-    final allChats      = providerChats.isNotEmpty
-        ? providerChats
-        : fallbackChats;
-    final displayChats  = _filterChats(allChats);
+    // ✅ FIX #1: Sirf recentChatsProvider — single source of truth
+    // fallbackChats remove kar diya — dual source confusion khatam
+    // GlobalSocketManager real-time mein isko update karta hai (Fix #1)
+    final allChats     = ref.watch(recentChatsProvider); // ✅ FIXED
+    final displayChats = _filterChats(allChats);
 
     // ── Loading / Empty ───────────────────────
-    if (loading && fallbackChats.isEmpty && providerChats.isEmpty) {
+    if (loading && allChats.isEmpty) {
       return const ChatListEmpty(loading: true);
     }
 
-    if (providerChats.isEmpty && fallbackChats.isEmpty) {
+    if (allChats.isEmpty) {
       return const ChatListEmpty(loading: false);
     }
 
-    // ===================== UI START =====================
+    // ===================== UI — ✅ UNCHANGED =====================
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
@@ -469,23 +473,12 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
         child: SafeArea(
           child: Column(
             children: [
-
-              // ── Header ─────────────────────────
               _buildHeader(),
-
-              // ── Search dropdown ────────────────
               _buildSearchDropdown(),
-
-              // ── Divider ────────────────────────
               _buildDivider(),
-
               const SizedBox(height: 8),
-
-              // ── Chat list ──────────────────────
               Expanded(
                 child: displayChats.isEmpty && _searchQuery.isNotEmpty
-
-                    // ── No results ─────────────────
                     ? Center(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
@@ -508,18 +501,13 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
                           ],
                         ),
                       )
-
-                    // ── Chat list ──────────────────
                     : RefreshIndicator(
                         onRefresh:       _onRefresh,
                         color:           _goldA,
                         backgroundColor: _surface,
                         strokeWidth:     2,
                         child: ListView.builder(
-                          padding: const EdgeInsets.only(
-                            top: 6,
-                            bottom: 24,
-                          ),
+                          padding: const EdgeInsets.only(top: 6, bottom: 24),
                           physics: const BouncingScrollPhysics(
                             parent: AlwaysScrollableScrollPhysics(),
                           ),
@@ -551,13 +539,10 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
                         ),
                       ),
               ),
-
             ],
           ),
         ),
       ),
     );
-
-    // ===================== UI END =======================
   }
 }
