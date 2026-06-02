@@ -11,7 +11,7 @@ import 'package:app_project/features/profile/presentation/profile_details_screen
 import 'package:app_project/features/profile/presentation/my_profile_screen.dart';
 import 'package:app_project/features/profile/presentation/edit_profile_screen.dart';
 import 'package:app_project/features/subscription/presentation/premium_screen.dart';
-
+import 'package:flutter/foundation.dart';
 // 🔥 VOICE WORLD — NEW
 import 'package:app_project/features/voice_world/presentation/screens/voice_world_screen.dart';
 
@@ -140,7 +140,7 @@ class _MyAppState extends State<MyApp> {
         return Stack(
           children: [
             child!,                      // app content
-            const GlobalDebugWidget(),   // debug icon + panel
+            if (!kReleaseMode) const GlobalDebugWidget(),   // debug icon + panel
           ],
         );
       },
