@@ -360,23 +360,40 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
         // Participant disconnected
         // Participant connected — naya member add karo
         else if (name.contains('ParticipantConnectedEvent')) {
-          try {
-            final userId = event.participant.identity as String;
-            final alreadyIn =
-                state.members.any((m) => m.userId == userId);
-            if (!alreadyIn) {
-              final newMember = VoiceMemberModel(
-                userId:  userId,
-                role:    'speaker',
-                isMuted: false,
-              );
-              state = state.copyWith(
-                members:      [...state.members, newMember],
-                speakerCount: state.speakerCount + 1,
-              );
-            }
-          } catch (_) {}
-        }
+                  try {
+                    final userId = event.participant.identity as String;
+                    final alreadyIn =
+                        state.members.any((m) => m.userId == userId);
+                    if (!alreadyIn) {
+
+                      // new: Pehle placeholder dikhao — turant seat fill ho
+                      final placeholder = VoiceMemberModel(
+                        userId:  userId,
+                        role:    'speaker',
+                        isMuted: false,
+                      );
+                      state = state.copyWith(
+                        members:      [...state.members, placeholder],
+                        speakerCount: state.speakerCount + 1,
+                      );
+
+                      // new: Background mein real profile fetch karo
+                      // Seat turant fill hogi — phir name/avatar/level update hoga
+                      _repo.fetchMemberProfile(userId).then((profile) {
+                        if (profile == null) return;
+                        if (!mounted) return;
+
+                        // Placeholder ko real profile se replace karo
+                        final updated = state.members.map((m) {
+                          if (m.userId != userId) return m;
+                          return profile;
+                        }).toList();
+
+                        state = state.copyWith(members: updated);
+                      });
+                    }
+                  } catch (_) {}
+                }
 
         // Participant disconnected
         else if (name.contains('ParticipantDisconnectedEvent')) {
