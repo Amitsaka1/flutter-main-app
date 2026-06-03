@@ -220,9 +220,11 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
       // 5. Room listeners
       _setupRoomListeners();
 
-      // 5. Current user ka model banao aur members mein add karo
-      final me = VoiceMemberModel(
-        userId:    UserSession.userId ?? "",
+      // fix: Pehle placeholder se turant seat fill karo
+      final myId = UserSession.userId ?? "";
+
+      final placeholder = VoiceMemberModel(
+        userId:    myId,
         role:      result.role,
         isMuted:   false,
         name:      UserSession.name,
@@ -230,13 +232,12 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
         level:     UserSession.level,
       );
 
-      // Duplicate avoid karo — agar pehle se hai toh mat add karo
       final alreadyIn = group.members
-          .any((m) => m.userId == UserSession.userId);
+          .any((m) => m.userId == myId);
 
       final updatedMembers = alreadyIn
           ? group.members
-          : [me, ...group.members];
+          : [placeholder, ...group.members];
 
       state = state.copyWith(
         joinStatus:    VoiceJoinStatus.joined,
@@ -246,6 +247,32 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
         speakerCount:  group.speakerCount,
         listenerCount: group.listenerCount,
       );
+
+      // fix: Hamesha apna real profile fetch karo — UserSession pe depend mat karo
+      // Baar baar leave/join pe bhi sahi profile dikhegi
+      if (myId.isNotEmpty) {
+        _repo.fetchMemberProfile(myId).then((myProfile) {
+          if (myProfile == null) return;
+          if (!mounted) return;
+
+          // Role aur mic state preserve karo — sirf name/avatar/level update
+          final withRole = VoiceMemberModel(
+            userId:    myId,
+            role:      result.role,
+            isMuted:   false,
+            name:      myProfile.name,
+            avatarUrl: myProfile.avatarUrl,
+            level:     myProfile.level,
+          );
+
+          final refreshed = state.members.map((m) {
+            if (m.userId != myId) return m;
+            return withRole;
+          }).toList();
+
+          state = state.copyWith(members: refreshed);
+        });
+      }
 
     } catch (e) {
       state = state.copyWith(
