@@ -607,7 +607,7 @@ class _ChatConversationScreenState
 
     return Scaffold(
       backgroundColor: _C.bg,
-      appBar: _buildAppBar(),
+      appBar: _buildAppBar(isOnline: isOnline),
       body: Column(
         children: [
           Expanded(child: _buildList(displayMsgs)),
