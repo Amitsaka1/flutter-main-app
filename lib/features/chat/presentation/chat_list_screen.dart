@@ -529,10 +529,25 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
                               ),
                               child: RepaintBoundary(
                                 child: ChatCard(
-                                  chat:  chat,
+                                  chat:     chat,
+                                  isOnline: onlineUsers.contains(
+                                    chat["user"]["id"],
+                                  ),
                                   onTap: () {
-                                    final userId = chat["user"]["id"];
-                                    context.push("/chat/$userId");
+                                    final userId   = chat["user"]["id"];
+                                    final name     = chat["user"]["name"]      ?? chat["user"]["phone"] ?? "";
+                                    final avatar   = chat["user"]["avatarUrl"] ?? "";
+                                    final lastSeen = chat["user"]["lastSeen"];
+
+                                    context.push(
+                                      "/chat/$userId",
+                                      extra: {
+                                        "name":     name,
+                                        "avatar":   avatar,
+                                        "lastSeen": lastSeen,
+                                        "isOnline": onlineUsers.contains(userId),
+                                      },
+                                    );
                                   },
                                 ),
                               ),
