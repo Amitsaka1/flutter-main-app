@@ -542,6 +542,25 @@ class _ChatConversationScreenState
 
   // ── Open profile image (WhatsApp style) ──────────────────
 
+  String _formatLastSeen(dynamic lastSeen) {
+      if (lastSeen == null) return "Offline";
+      try {
+        final dt   = DateTime.parse(lastSeen.toString()).toLocal();
+        final now  = DateTime.now();
+        final diff = now.difference(dt);
+        if (diff.inMinutes < 1)  return "just now";
+        if (diff.inMinutes < 60) return "${diff.inMinutes}m ago";
+        if (diff.inHours   < 24) {
+          final h = dt.hour.toString().padLeft(2, '0');
+          final m = dt.minute.toString().padLeft(2, '0');
+          return "last seen $h:$m";
+        }
+        return "last seen ${diff.inDays}d ago";
+      } catch (_) {
+        return "Offline";
+      }
+    }
+
   void _openProfileViewer() {
     Navigator.of(context).push(
       PageRouteBuilder<void>(
