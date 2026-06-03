@@ -124,6 +124,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     _fetchProfiles();
     _fetchUnread();
     _listenSocket();
+    ChatController.instance.loadChats();
 
     ApiClient.get("/profile/me").then((profileRes) {
       if (!mounted) return;
