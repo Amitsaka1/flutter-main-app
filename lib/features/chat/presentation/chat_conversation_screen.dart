@@ -621,7 +621,7 @@ class _ChatConversationScreenState
   //  APP BAR
   // ──────────────────────────────────────────────────────────
 
-  PreferredSizeWidget _buildAppBar() {
+  PreferredSizeWidget _buildAppBar({ required bool isOnline }) {
     final name     = widget.chatUserName     ?? 'Chat';
     final photoUrl = widget.chatUserPhotoUrl;
 
