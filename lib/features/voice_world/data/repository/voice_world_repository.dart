@@ -97,6 +97,27 @@ class VoiceWorldRepository {
     }
   }
 
+  // new: Room mein join hone wale member ka profile fetch
+  // voice_world_provider.dart mein ParticipantConnectedEvent pe call hoga
+  Future<VoiceMemberModel?> fetchMemberProfile(String userId) async {
+    try {
+      final res = await ApiClient.get("/voice/member/$userId");
+
+      if (res["success"] != true) return null;
+
+      return VoiceMemberModel(
+        userId:    res["userId"]    as String,
+        role:      "speaker",
+        isMuted:   false,
+        name:      res["name"]      as String?,
+        avatarUrl: res["avatarUrl"] as String?,
+        level:     res["level"]     as int? ?? 1,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
   // ─────────────────────────────────────────────────────
   //  REPORT USER
   //  POST /voice/report
