@@ -112,8 +112,16 @@ class _MyAppState extends State<MyApp> {
       GoRoute(
         path: "/chat/:id",
         builder: (context, state) {
-          final id = state.pathParameters["id"]!;
-          return ChatConversationScreen(chatUserId: id);
+          final id     = state.pathParameters["id"]!;
+          final extras = state.extra as Map<String, dynamic>?;
+
+          return ChatConversationScreen(
+            chatUserId:        id,
+            chatUserName:      extras?["name"],
+            chatUserPhotoUrl:  extras?["avatar"],
+            chatUserLastSeen:  extras?["lastSeen"],
+            initialIsOnline:   extras?["isOnline"] ?? false,
+          );
         },
       ),
 
