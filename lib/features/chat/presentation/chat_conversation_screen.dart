@@ -386,15 +386,8 @@ class _ChatConversationScreenState
       return;
     }
 
-    final payload = jsonDecode(
-      utf8.decode(
-        base64Url.decode(
-          base64Url.normalize(token.split('.')[1]),
-        ),
-      ),
-    ) as Map<String, dynamic>;
-
-    _myId = payload['id'] as String?;
+    _myId = UserSession.userId;
+    
     if (_myId == null) return;
 
     _logic.init(_myId!);
