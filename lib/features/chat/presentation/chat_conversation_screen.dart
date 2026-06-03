@@ -698,21 +698,23 @@ class _ChatConversationScreenState
                                 height: 7,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: _C.online,
-                                  boxShadow: [
+                                  color: isOnline ? _C.online : _C.muted,
+                                  boxShadow: isOnline ? [
                                     BoxShadow(
                                       color: _C.online.withOpacity(0.55),
                                       blurRadius: 6,
                                       spreadRadius: 1,
                                     ),
-                                  ],
+                                  ] : [],
                                 ),
                               ),
                               const SizedBox(width: 5),
-                              const Text(
-                                'Online',
+                              Text(
+                                isOnline
+                                    ? 'Online'
+                                    : _formatLastSeen(widget.chatUserLastSeen),
                                 style: TextStyle(
-                                  color: _C.online,
+                                  color: isOnline ? _C.online : _C.muted,
                                   fontSize: 11,
                                   fontWeight: FontWeight.w500,
                                   letterSpacing: 0.2,
