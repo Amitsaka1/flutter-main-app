@@ -462,7 +462,6 @@ class _ChatConversationScreenState
     if (_myId == null) return;
 
     final response = await ApiClient.post('/call/start', {
-      'callerId':   _myId,
       'receiverId': widget.chatUserId,
       'type':       type,
     });
