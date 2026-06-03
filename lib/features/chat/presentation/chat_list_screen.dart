@@ -133,60 +133,40 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
 
   Future<void> _initialize() async {
 
-    final token = await ApiClient.getToken();
-    if (token == null) {
-      if (mounted) context.go("/login");
-      return;
-    }
+      // fix: Cache turant dikhao — koi await nahi
+      if (_controller.hasData) {
+        ref.read(recentChatsProvider.notifier).state = _controller.chats;
+        setState(() => loading = false);
+        _listCtrl..reset()..forward();
 
-    // ✅ FIX #2: Cache check — isFresh use karo
-    //
-    // Problem: Pehle HAMESHA API call hoti thi — chahe 2 second pehle
-    //          hi data load hua ho. Tab tab loading dikhti thi
-    //
-    // Fix: ChatController.isFresh check karo (20 second window)
-    //      Fresh data hai toh sirf provider update karo, API mat maaro
-    //      Baar baar loading band ho jaayegi
-    //
-    if (_controller.hasData) {
+        // fix: Fresh hai toh API mat maaro
+        if (_controller.isFresh) return;
+      }
 
-      // ✅ FIX #2: Cached data turant provider mein daal do
-      final cachedChats = List<dynamic>.from(_controller.chats);
+      // fix: Token check cache ke baad
+      final token = await ApiClient.getToken();
+      if (token == null) {
+        if (mounted) context.go("/login");
+        return;
+      }
+  
+      // Background API refresh
+      try {
+        final response = await ApiClient.get("/chat/recent");
 
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          ref.read(recentChatsProvider.notifier).state = cachedChats;
-        }
-      });
+        if (response["success"] == true) {
+          final data = List<dynamic>.from(response["data"]);
 
-      setState(() => loading = false);
-      _listCtrl..reset()..forward();
-
-      // ✅ FIX #2: isFresh = true → API call mat karo, return karo
-      // isFresh = false → Cache dikhaya, background mein refresh karo
-      if (_controller.isFresh) return; // ✅ FIXED — pehle ye check nahi tha
-    }
-
-    // ✅ API REFRESH — cache nahi tha ya stale tha
-    try {
-      final response = await ApiClient.get("/chat/recent");
-
-      if (response["success"] == true) {
-        final data = List<dynamic>.from(response["data"]);
-
-        // ✅ FIX #1: Sirf recentChatsProvider update karo
-        // fallbackChats set karna hata diya — single source of truth
-        if (mounted) {
-          ref.read(recentChatsProvider.notifier).state = data;
-
-          if (loading) {
-            setState(() => loading = false);
-            _listCtrl..reset()..forward();
+          if (mounted) {
+            ref.read(recentChatsProvider.notifier).state = data;
+            if (loading) {
+              setState(() => loading = false);
+              _listCtrl..reset()..forward();
+            }
           }
         }
-      }
-    } catch (_) {}
-  }
+      } catch (_) {}
+    }
 
   // ✅ UNCHANGED: Pull-to-refresh
   Future<void> _onRefresh() async {
