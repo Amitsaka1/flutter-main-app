@@ -51613,31 +51613,30 @@ TD(){$.ad.p4$.push(new A.asf(this))},
 v_(a){return this.alL(a)},
 alL(a){var s=0,r=A.K(t.H),q,p=this,o,n,m,l,k,j
 var $async$v_=A.F(function(b,c){if(b===1)return A.H(c,r)
-while(true)switch(s){case 0:j=p.CW
-if(j==null){s=1
+while(true)switch(s){case 0:if(p.CW==null){s=1
 break}o=t.z
 s=3
-return A.M(A.fY("/call/start",A.aH(["callerId",j,"receiverId",p.a.d,"type",a],t.N,o)),$async$v_)
+return A.M(A.fY("/call/start",A.aH(["receiverId",p.a.d,"type",a],t.N,o)),$async$v_)
 case 3:n=c
 if(p.c==null){s=1
-break}j=J.ar(n)
-if(!J.c(j.i(n,"success"),!0)){if(J.c(j.i(n,"status"),"OFFLINE")){j=p.c
-j.toString
-m=A.QI(new A.asg(a),null,o)
-A.d5(j,!1).nI(m,o)
+break}m=J.ar(n)
+if(!J.c(m.i(n,"success"),!0)){if(J.c(m.i(n,"status"),"OFFLINE")){m=p.c
+m.toString
+l=A.QI(new A.asg(a),null,o)
+A.d5(m,!1).nI(l,o)
 s=1
-break}l=A.cL(j.i(n,"message"))
-if(l==null)l="Call failed"
-if(l==="Insufficient balance")l="Low balance. Please recharge."
-j=p.c.ak(t.Pu)
-j.toString
-j.f.pZ(A.EV(null,null,null,B.pB,B.eQ,B.v,null,A.ap(l,null,null,null,null,null,null),null,B.em,null,null,null,B.i3,null,null,new A.d6(A.al(14),B.z),null,null))
+break}k=A.cL(m.i(n,"message"))
+if(k==null)k="Call failed"
+if(k==="Insufficient balance")k="Low balance. Please recharge."
+o=p.c.ak(t.Pu)
+o.toString
+o.f.pZ(A.EV(null,null,null,B.pB,B.eQ,B.v,null,A.ap(k,null,null,null,null,null,null),null,B.em,null,null,null,B.i3,null,null,new A.d6(A.al(14),B.z),null,null))
 s=1
-break}k=A.bp(j.i(n,"sessionId"))
-j=p.c
-j.toString
-m=A.QI(new A.ash(k,a),null,o)
-A.d5(j,!1).nI(m,o)
+break}j=A.bp(m.i(n,"sessionId"))
+m=p.c
+m.toString
+l=A.QI(new A.ash(j,a),null,o)
+A.d5(m,!1).nI(l,o)
 case 1:return A.I(q,r)}})
 return A.J($async$v_,r)},
 zr(){var s=0,r=A.K(t.H),q,p=this,o,n
