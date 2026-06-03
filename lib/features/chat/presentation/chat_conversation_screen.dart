@@ -580,20 +580,18 @@ class _ChatConversationScreenState
 
   @override
   Widget build(BuildContext context) {
-    final provMap      = ref.watch(messagesProvider);
-    final provMsgs     = provMap[widget.chatUserId] ?? [];
-    final allMessages = [
-      ..._messages,
-      ...provMsgs,
-    ];
+    final provMap  = ref.watch(messagesProvider);
+        final provMsgs = provMap[widget.chatUserId] ?? [];
 
-    final uniqueMessages = {
-      for (final msg in allMessages)
-        msg["id"].toString(): msg,
-    };
+        final seen        = <String>{};
+        final displayMsgs = <dynamic>[];
+        for (final msg in [..._messages, ...provMsgs]) {
+          final id = msg["id"]?.toString() ?? "";
+          if (id.isNotEmpty && seen.add(id)) displayMsgs.add(msg);
+        }
 
-    final displayMsgs =
-        uniqueMessages.values.toList();
+        final onlineUsers = ref.watch(onlineUsersProvider);
+        final isOnline    = onlineUsers.contains(widget.chatUserId);
     
     if (_loading && _messages.isEmpty && displayMsgs.isEmpty) {
       return const Scaffold(
