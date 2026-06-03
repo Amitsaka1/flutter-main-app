@@ -200,22 +200,9 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
     state = state.copyWith(joinStatus: VoiceJoinStatus.joining);
 
     try {
-      // 1. Ban check
-      final ban = await _repo.getBanStatus();
-      if (ban.banned) {
-        if (ban.permanent) {
-          state = state.copyWith(
-            joinStatus:   VoiceJoinStatus.error,
-            errorMessage: "PERMANENTLY_BANNED",
-          );
-        } else {
-          state = state.copyWith(
-            joinStatus:   VoiceJoinStatus.error,
-            errorMessage: "TEMPORARILY_BANNED",
-          );
-        }
-        return;
-      }
+      // fix: Ban check remove kiya — backend joinGroup andar hi check karta hai
+      // Agar banned hai toh backend PERMANENTLY_BANNED error throw karega
+      // jo catch block handle kar lega — 1 API call ki jagah ab 1 hi hogi
       // 2. Join API — backend se token + role milega
       final result = await _repo.joinGroup(group.id);
 
