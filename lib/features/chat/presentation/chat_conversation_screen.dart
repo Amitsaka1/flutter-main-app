@@ -306,12 +306,16 @@ class ChatConversationScreen extends ConsumerStatefulWidget {
   final String  chatUserId;
   final String? chatUserName;     // pass from navigation extras
   final String? chatUserPhotoUrl; // pass from navigation extras
+  final dynamic chatUserLastSeen;
+  final bool    initialIsOnline;
 
   const ChatConversationScreen({
     super.key,
     required this.chatUserId,
     this.chatUserName,
     this.chatUserPhotoUrl,
+    this.chatUserLastSeen,
+    this.initialIsOnline = false,
   });
 
   @override
