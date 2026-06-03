@@ -18,6 +18,8 @@ import '../../../core/controllers/conversation_controller.dart';
 import '../../../core/controllers/chat_controller.dart';
 import '../../../core/chat/unread_counter_service.dart';
 import 'package:app_project/providers/messages_provider.dart';
+import 'package:app_project/providers/online_users_provider.dart';
+import 'package:app_project/core/session/user_session.dart';
 import 'package:app_project/features/call/presentation/call_screen.dart';
 
 // ──────────────────────────────────────────────────────────────
