@@ -9,6 +9,7 @@ import '../../../core/network/api_client.dart';
 import '../../../core/controllers/chat_controller.dart';
 
 import 'package:app_project/providers/recent_chats_provider.dart';
+import 'package:app_project/providers/online_users_provider.dart';
 
 import 'widgets/chat_card.dart';
 import 'widgets/chat_list_empty.dart';
@@ -452,7 +453,8 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
     // ✅ FIX #1: Sirf recentChatsProvider — single source of truth
     // fallbackChats remove kar diya — dual source confusion khatam
     // GlobalSocketManager real-time mein isko update karta hai (Fix #1)
-    final allChats     = ref.watch(recentChatsProvider); // ✅ FIXED
+    final allChats    = ref.watch(recentChatsProvider);
+    final onlineUsers = ref.watch(onlineUsersProvider);
     final displayChats = _filterChats(allChats);
 
     // ── Loading / Empty ───────────────────────
