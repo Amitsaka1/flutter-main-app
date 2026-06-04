@@ -31,7 +31,6 @@ class _VoiceRoomChatSheetState
     super.dispose();
   }
 
-  // new: Message bhejo aur scroll bottom pe karo
   void _send() {
     final text = _ctrl.text.trim();
     if (text.isEmpty) return;
@@ -39,8 +38,8 @@ class _VoiceRoomChatSheetState
     ref.read(voiceRoomProvider.notifier).sendChatMessage(text);
     _ctrl.clear();
 
-    // new: Naya message aane pe scroll bottom pe
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // fix: Naya message aane pe scroll bottom pe
+    Future.delayed(const Duration(milliseconds: 100), () {
       if (_scroll.hasClients) {
         _scroll.animateTo(
           _scroll.position.maxScrollExtent,
@@ -141,9 +140,9 @@ class _VoiceRoomChatSheetState
                     ),
                   )
                 : ListView.builder(
-                    controller:  _scroll,
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                    itemCount:   messages.length,
+                    controller: _scroll,
+                    padding:    const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                    itemCount:  messages.length,
                     itemBuilder: (_, i) =>
                         _MessageTile(msg: messages[i]),
                   ),
@@ -153,31 +152,28 @@ class _VoiceRoomChatSheetState
           Container(
             color:   _surface,
             padding: EdgeInsets.fromLTRB(
-              12,
-              10,
-              12,
+              12, 10, 12,
               MediaQuery.of(context).viewInsets.bottom + 10,
             ),
             child: Row(
               children: [
 
-                // TextField
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
                       color:        _surfaceHi,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: _border),
+                      border:       Border.all(color: _border),
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 14),
                     child: TextField(
-                      controller:  _ctrl,
+                      controller:     _ctrl,
                       style: const TextStyle(
                         color:    _textPrime,
                         fontSize: 14,
                       ),
                       decoration: InputDecoration(
-                        hintText:       "Type a message...",
+                        hintText:  "Type a message...",
                         hintStyle: TextStyle(
                           color:    _textMuted,
                           fontSize: 14,
@@ -188,7 +184,7 @@ class _VoiceRoomChatSheetState
                           vertical: 12,
                         ),
                       ),
-                      onSubmitted: (_) => _send(),
+                      onSubmitted:    (_) => _send(),
                       textInputAction: TextInputAction.send,
                       maxLines: 1,
                     ),
@@ -197,7 +193,6 @@ class _VoiceRoomChatSheetState
 
                 const SizedBox(width: 8),
 
-                // Send button
                 GestureDetector(
                   onTap: _send,
                   child: Container(
@@ -206,12 +201,9 @@ class _VoiceRoomChatSheetState
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
                       gradient: const LinearGradient(
-                        colors: [
-                          Color(0xFFD4A843),
-                          Color(0xFFE8C86A),
-                        ],
-                        begin: Alignment.topLeft,
-                        end:   Alignment.bottomRight,
+                        colors: [Color(0xFFD4A843), Color(0xFFE8C86A)],
+                        begin:  Alignment.topLeft,
+                        end:    Alignment.bottomRight,
                       ),
                     ),
                     child: const Icon(
@@ -233,7 +225,7 @@ class _VoiceRoomChatSheetState
 }
 
 // ─────────────────────────────────────────────────────────
-//  MESSAGE TILE
+//  MESSAGE TILE — fix: isMe right, others left
 // ─────────────────────────────────────────────────────────
 
 class _MessageTile extends StatelessWidget {
@@ -257,76 +249,81 @@ class _MessageTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasAvatar = msg.avatarUrl?.isNotEmpty == true;
 
+    final avatar = CircleAvatar(
+      radius:          18,
+      backgroundColor: _goldA.withOpacity(0.15),
+      backgroundImage: hasAvatar
+          ? NetworkImage(msg.avatarUrl!)
+          : null,
+      child: hasAvatar
+          ? null
+          : Text(
+              msg.name.isNotEmpty
+                  ? msg.name[0].toUpperCase()
+                  : "?",
+              style: const TextStyle(
+                color:      Colors.white,
+                fontSize:   12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+    );
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        // fix: isMe → right, others → left
+        mainAxisAlignment: msg.isMe
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
         children: [
 
-          // ── Avatar ───────────────────────────────
-          CircleAvatar(
-            radius:          18,
-            backgroundColor: _goldA.withOpacity(0.15),
-            backgroundImage: hasAvatar
-                ? NetworkImage(msg.avatarUrl!)
-                : null,
-            child: hasAvatar
-                ? null
-                : Text(
-                    msg.name.isNotEmpty
-                        ? msg.name[0].toUpperCase()
-                        : "?",
-                    style: const TextStyle(
-                      color:      Colors.white,
-                      fontSize:   12,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-          ),
+          // fix: Avatar left side pe sirf doosre ka
+          if (!msg.isMe) ...[
+            avatar,
+            const SizedBox(width: 8),
+          ],
 
-          const SizedBox(width: 10),
-
-          // ── Name + Message ───────────────────────
-          Expanded(
+          // ── Bubble ───────────────────────────────
+          Flexible(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: msg.isMe
+                  ? CrossAxisAlignment.end
+                  : CrossAxisAlignment.start,
               children: [
 
-                // Name + time
-                Row(
-                  children: [
-                    Text(
-                      msg.isMe ? "You" : msg.name,
+                // fix: Name sirf doosre ka dikhao
+                if (!msg.isMe)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 3, left: 2),
+                    child: Text(
+                      msg.name,
                       style: TextStyle(
-                        color:      msg.isMe ? _goldA : _textPrime,
-                        fontSize:   12,
+                        color:      _textMuted,
+                        fontSize:   11,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(width: 6),
-                    Text(
-                      _timeText(msg.time),
-                      style: TextStyle(
-                        color:    _textMuted,
-                        fontSize: 10,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
 
-                const SizedBox(height: 4),
-
-                // Message bubble
+                // Bubble
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
                     vertical:   8,
                   ),
                   decoration: BoxDecoration(
-                    color:        msg.isMe
-                        ? _goldA.withOpacity(0.12)
+                    color: msg.isMe
+                        ? _goldA.withOpacity(0.15)
                         : _surfaceHi,
-                    borderRadius: BorderRadius.circular(10),
+                    // fix: Bubble corner shape
+                    borderRadius: BorderRadius.only(
+                      topLeft:     const Radius.circular(12),
+                      topRight:    const Radius.circular(12),
+                      bottomLeft:  Radius.circular(msg.isMe ? 12 : 2),
+                      bottomRight: Radius.circular(msg.isMe ? 2 : 12),
+                    ),
                     border: Border.all(
                       color: msg.isMe
                           ? _goldA.withOpacity(0.3)
@@ -344,9 +341,25 @@ class _MessageTile extends StatelessWidget {
                   ),
                 ),
 
+                // Time
+                const SizedBox(height: 3),
+                Text(
+                  _timeText(msg.time),
+                  style: TextStyle(
+                    color:    _textMuted,
+                    fontSize: 10,
+                  ),
+                ),
+
               ],
             ),
           ),
+
+          // fix: Avatar right side pe sirf apna
+          if (msg.isMe) ...[
+            const SizedBox(width: 8),
+            avatar,
+          ],
 
         ],
       ),
