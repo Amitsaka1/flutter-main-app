@@ -130,6 +130,19 @@ class _DashboardScreenState extends State<DashboardScreen>
       if (!mounted) return;
       if (profileRes["success"] != true) {
         context.pushReplacement("/create-profile");
+        return;
+      }
+
+      // fix: UserSession mein profile cache karo
+      // Voice World join pe hamesha sahi name/avatar/level milega
+      // Zero extra API call — ye call pehle se ho rahi thi
+      final data = profileRes["data"] as Map<String, dynamic>?;
+      if (data != null) {
+        UserSession.setProfile(
+          name:      data["name"]             as String? ?? "",
+          avatarUrl: data["avatarUrl"]        as String?,
+          level:     (data["user"]?["level"]) as int?    ?? 1,
+        );
       }
     });
   }
