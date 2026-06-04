@@ -141,6 +141,7 @@ class VoiceRoomState {
   final Set<String>            activeSpeakers;
   final int                    speakerCount;
   final int                    listenerCount;
+  final List<VoiceChatMessage> chatMessages;
 
   const VoiceRoomState({
     this.joinStatus       = VoiceJoinStatus.idle,
@@ -155,6 +156,7 @@ class VoiceRoomState {
     this.activeSpeakers   = const {},
     this.speakerCount     = 0,
     this.listenerCount    = 0,
+    this.chatMessages     = const [],
   });
   
   bool get isSpeaker  => myRole == "speaker";
@@ -180,6 +182,7 @@ class VoiceRoomState {
     Set<String>?             activeSpeakers,
     int?                     speakerCount,
     int?                     listenerCount,
+    List<VoiceChatMessage>?  chatMessages,
   }) {
     return VoiceRoomState(
       joinStatus:      joinStatus      ?? this.joinStatus,
@@ -194,6 +197,7 @@ class VoiceRoomState {
       activeSpeakers:  activeSpeakers  ?? this.activeSpeakers,
       speakerCount:    speakerCount    ?? this.speakerCount,
       listenerCount:   listenerCount   ?? this.listenerCount,
+      chatMessages:    chatMessages    ?? this.chatMessages,
     );
   }
 }
