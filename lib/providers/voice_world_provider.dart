@@ -10,6 +10,27 @@ import '../../../core/livekit/livekit_service.dart';
 import '../../../core/session/user_session.dart';
 
 // ─────────────────────────────────────────────────────────
+//  VOICE CHAT MESSAGE MODEL
+// ─────────────────────────────────────────────────────────
+
+class VoiceChatMessage {
+  final String   userId;
+  final String   name;
+  final String?  avatarUrl;
+  final String   message;
+  final DateTime time;
+  final bool     isMe;
+
+  const VoiceChatMessage({
+    required this.userId,
+    required this.name,
+    this.avatarUrl,
+    required this.message,
+    required this.time,
+    required this.isMe,
+  });
+}
+// ─────────────────────────────────────────────────────────
 //  VOICE WORLD STATE
 //  World screen ka state — fetch, search
 // ─────────────────────────────────────────────────────────
