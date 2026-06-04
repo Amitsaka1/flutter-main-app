@@ -11,6 +11,7 @@ import '../widgets/voice_room_actions.dart';
 import '../widgets/voice_mic_button.dart';
 import '../widgets/voice_member_sheet.dart';
 import '../widgets/voice_reconnecting_banner.dart';
+import '../widgets/voice_room_chat_sheet.dart';
 
 class VoiceGroupRoomScreen extends ConsumerStatefulWidget {
   final VoiceGroupModel group;
