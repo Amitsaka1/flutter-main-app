@@ -274,32 +274,6 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
         listenerCount: group.listenerCount,
       );
 
-      // fix: Hamesha apna real profile fetch karo — UserSession pe depend mat karo
-      // Baar baar leave/join pe bhi sahi profile dikhegi
-      if (myId.isNotEmpty) {
-        _repo.fetchMemberProfile(myId).then((myProfile) {
-          if (myProfile == null) return;
-          if (!mounted) return;
-
-          // Role aur mic state preserve karo — sirf name/avatar/level update
-          final withRole = VoiceMemberModel(
-            userId:    myId,
-            role:      result.role,
-            isMuted:   false,
-            name:      myProfile.name,
-            avatarUrl: myProfile.avatarUrl,
-            level:     myProfile.level,
-          );
-
-          final refreshed = state.members.map((m) {
-            if (m.userId != myId) return m;
-            return withRole;
-          }).toList();
-
-          state = state.copyWith(members: refreshed);
-        });
-      }
-
     } catch (e) {
       state = state.copyWith(
         joinStatus:   VoiceJoinStatus.error,
