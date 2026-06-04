@@ -8,6 +8,7 @@ import '../../../core/network/api_client.dart';
 import '../../../core/socket/global_socket_manager.dart';
 import '../../../core/controllers/chat_controller.dart';
 import '../../../core/data/global_data_manager.dart';
+import '../../../core/session/user_session.dart';
 
 import 'widgets/dashboard_search_bar.dart';
 import 'widgets/dashboard_grid.dart';
