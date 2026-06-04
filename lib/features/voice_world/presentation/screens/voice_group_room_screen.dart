@@ -248,7 +248,14 @@ class _VoiceGroupRoomScreenState
               const SizedBox(height: 10),
 
               VoiceRoomActions(
-                onChat:   () {},
+                onChat: () {
+                  showModalBottomSheet(
+                    context:            context,
+                    backgroundColor:    Colors.transparent,
+                    isScrollControlled: true,
+                    builder: (_) => const VoiceRoomChatSheet(),
+                  );
+                },
                 onGift:   () {},
                 onReport: () {},
               ),
