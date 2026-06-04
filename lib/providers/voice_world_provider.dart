@@ -374,6 +374,53 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
   void clearPromoted() =>
       state = state.copyWith(justPromoted: false);
 
+  // new: Live room chat message bhejo via LiveKit Data Channel
+  // Backend involve nahi — zero server load
+  void sendChatMessage(String message) {
+    if (message.trim().isEmpty) return;
+
+    final myId = UserSession.userId ?? "";
+
+    // Apni info members list se lo
+    final me = state.members.firstWhere(
+      (m) => m.userId == myId,
+      orElse: () => VoiceMemberModel(
+        userId:  myId,
+        role:    'listener',
+        isMuted: false,
+      ),
+    );
+
+    // new: Local mein turant add karo — apna message dikhao
+    final chatMsg = VoiceChatMessage(
+      userId:    myId,
+      name:      me.name ?? "User",
+      avatarUrl: me.avatarUrl,
+      message:   message.trim(),
+      time:      DateTime.now(),
+      isMe:      true,
+    );
+
+    // new: Max 100 messages rakho — memory leak prevent
+    final updated = [...state.chatMessages, chatMsg];
+    if (updated.length > 100) updated.removeAt(0);
+
+    state = state.copyWith(chatMessages: updated);
+
+    // new: Sab room members ko LiveKit Data Channel se bhejo
+    // Backend ka koi kaam nahi — LiveKit directly deliver karta hai
+    final payload = jsonEncode({
+      "type":      "ROOM_CHAT",
+      "userId":    myId,
+      "name":      me.name      ?? "User",
+      "avatarUrl": me.avatarUrl,
+      "message":   message.trim(),
+      "time":      DateTime.now().toIso8601String(),
+    });
+
+    _sendData("ROOM_CHAT:$payload");
+  }
+
   // ─────────────────────────────────────────────────────
   //  PRIVATE HELPERS
   // ─────────────────────────────────────────────────────
@@ -500,6 +547,35 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
             state = state.copyWith(isMicOn: true);
           }
           _applyTrackMute(sender, false);
+          break;
+
+          // new: Live room chat message receive karo
+        case "ROOM_CHAT":
+          try {
+            final data     = jsonDecode(target) as Map<String, dynamic>;
+            final myId     = UserSession.userId ?? "";
+            final senderId = data["userId"] as String? ?? "";
+
+            // new: Apna hi message dobara add mat karo
+            if (senderId == myId) break;
+
+            final chatMsg = VoiceChatMessage(
+              userId:    senderId,
+              name:      data["name"]      as String? ?? "User",
+              avatarUrl: data["avatarUrl"] as String?,
+              message:   data["message"]   as String?  ?? "",
+              time:      DateTime.tryParse(
+                           data["time"] as String? ?? ""
+                         ) ?? DateTime.now(),
+              isMe:      false,
+            );
+
+            // new: Max 100 messages
+            final msgs = [...state.chatMessages, chatMsg];
+            if (msgs.length > 100) msgs.removeAt(0);
+
+            state = state.copyWith(chatMessages: msgs);
+          } catch (_) {}
           break;
 
         case "PROMOTED_TO_SPEAKER":
