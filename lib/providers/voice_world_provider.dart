@@ -473,19 +473,34 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
 
         // Participant disconnected
         else if (name.contains('ParticipantDisconnectedEvent')) {
-          final participant  = event.participant;
+          final identity = event.participant.identity as String;
+
+          // FIX: Leaving member ka role pehle lo — count sahi update ke liye
+          final leaving = state.members.firstWhere(
+            (m) => m.userId == identity,
+            orElse: () => VoiceMemberModel(
+              userId:  identity,
+              role:    'listener',
+              isMuted: false,
+            ),
+          );
+
           final wasInMembers = state.members
-              .any((m) => m.userId == participant.identity);
+              .any((m) => m.userId == identity);
 
           final updated = state.members
-              .where((m) => m.userId != participant.identity)
+              .where((m) => m.userId != identity)
               .toList();
 
+          // FIX: Speaker aur listener dono ka count sahi se update karo
           state = state.copyWith(
-            members:      updated,
-            speakerCount: wasInMembers
-                ? (state.speakerCount - 1).clamp(0, 999)
+            members:       updated,
+            speakerCount:  (leaving.role == 'speaker' && wasInMembers)
+                ? (state.speakerCount  - 1).clamp(0, 999)
                 : state.speakerCount,
+            listenerCount: (leaving.role == 'listener' && wasInMembers)
+                ? (state.listenerCount - 1).clamp(0, 999)
+                : state.listenerCount,
           );
         }
         // Data received
