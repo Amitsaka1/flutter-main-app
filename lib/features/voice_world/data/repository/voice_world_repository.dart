@@ -1,6 +1,25 @@
 import '../../../../core/network/api_client.dart';
 import '../models/voice_group_model.dart';
 
+
+// ─────────────────────────────────────────────────────
+//  VOICE GROUP MEMBERS RESULT
+//  fetchGroupMembers ka return type
+// ─────────────────────────────────────────────────────
+
+class VoiceGroupMembersResult {
+  final List<VoiceMemberModel> speakers;
+  final List<VoiceMemberModel> listeners;
+  final int                    speakerCount;
+  final int                    listenerCount;
+
+  const VoiceGroupMembersResult({
+    required this.speakers,
+    required this.listeners,
+    required this.speakerCount,
+    required this.listenerCount,
+  });
+}
 // ─────────────────────────────────────────────────────────
 //  VOICE WORLD REPOSITORY
 //  Sirf API calls — koi logic nahi, koi UI nahi
@@ -111,7 +130,8 @@ class VoiceWorldRepository {
 
       return VoiceMemberModel(
         userId:    res["userId"]    as String,
-        role:      "speaker",
+        // FIX: Backend se real role lo — hardcoded speaker nahi
+        role:      res["role"]      as String? ?? "speaker",
         isMuted:   false,
         name:      res["name"]      as String?,
         avatarUrl: res["avatarUrl"] as String?,
@@ -120,6 +140,65 @@ class VoiceWorldRepository {
     } catch (_) {
       return null;
     }
+  }
+
+  // ─────────────────────────────────────────────────────
+  //  FETCH GROUP MEMBERS
+  //  GET /voice/group/:groupId/members
+  //  Reconnect ke baad fresh list — internet fix ke liye
+  // ─────────────────────────────────────────────────────
+
+  Future<VoiceGroupMembersResult?> fetchGroupMembers(String groupId) async {
+    try {
+      final res = await ApiClient.get("/voice/group/$groupId/members")
+          .timeout(const Duration(seconds: 5), onTimeout: () => {});
+
+      if (res.isEmpty) return null;
+      if (res["success"] != true) return null;
+
+      final rawSpeakers  = res["speakers"]  as List<dynamic>? ?? [];
+      final rawListeners = res["listeners"] as List<dynamic>? ?? [];
+
+      return VoiceGroupMembersResult(
+        speakers: rawSpeakers.map((m) =>
+            VoiceMemberModel.fromFlatJson(m as Map<String, dynamic>)
+        ).toList(),
+        listeners: rawListeners.map((m) =>
+            VoiceMemberModel.fromFlatJson(m as Map<String, dynamic>)
+        ).toList(),
+        speakerCount:  res["speakerCount"]  as int? ?? 0,
+        listenerCount: res["listenerCount"] as int? ?? 0,
+      );
+
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // ─────────────────────────────────────────────────────
+  //  LEAVE GROUP WITH RETRY
+  //  Internet cut pe fail hone pe retry karo
+  // ─────────────────────────────────────────────────────
+
+  Future<void> leaveGroupWithRetry(String groupId) async {
+    int attempts = 0;
+
+    while (attempts < 3) {
+      try {
+        await ApiClient.post(
+          "/voice/leave",
+          {"groupId": groupId},
+        ).timeout(const Duration(seconds: 5));
+        return; // Success — bahar niklo
+      } catch (_) {
+        attempts++;
+        if (attempts < 3) {
+          // Retry se pehle thoda wait karo
+          await Future.delayed(Duration(seconds: attempts * 2));
+        }
+      }
+    }
+    // 3 baar fail — silently ignore (LiveKit webhook backup hai)
   }
 
   // ─────────────────────────────────────────────────────
