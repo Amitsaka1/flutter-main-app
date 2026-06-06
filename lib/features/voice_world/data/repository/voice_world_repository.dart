@@ -101,8 +101,12 @@ class VoiceWorldRepository {
   // voice_world_provider.dart mein ParticipantConnectedEvent pe call hoga
   Future<VoiceMemberModel?> fetchMemberProfile(String userId) async {
     try {
-      final res = await ApiClient.get("/voice/member/$userId");
+      // FIX: Timeout add kiya — slow network pe 5s baad null return karo
+      // Pehle koi timeout nahi tha — indefinitely hang hota tha
+      final res = await ApiClient.get("/voice/member/$userId")
+          .timeout(const Duration(seconds: 5), onTimeout: () => {});
 
+      if (res.isEmpty) return null;
       if (res["success"] != true) return null;
 
       return VoiceMemberModel(
