@@ -75,8 +75,9 @@ class ProfileCard extends ConsumerWidget {
     // ===================== UI START =====================
 
     final onlineUsers = ref.watch(onlineUsersProvider);
-    final online      = onlineUsers.contains(profile["userId"]?.toString());
-    final String? userId = profile["userId"]?.toString();
+    // FIX: Dono keys try karo — backend kabhi "userId" kabhi "id" bhejta hai
+    final String? userId = (profile["userId"] ?? profile["id"])?.toString();
+    final online      = userId != null && onlineUsers.contains(userId);
 
     final String name      = profile["name"]     ?? "";
     final String gender    = profile["gender"]   ?? "";
