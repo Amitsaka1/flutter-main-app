@@ -451,11 +451,13 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
                         speakerCount: state.speakerCount + 1,
                       );
 
-                      // new: Background mein real profile fetch karo
+                      // Background mein real profile fetch karo
                       // Seat turant fill hogi — phir name/avatar/level update hoga
                       _repo.fetchMemberProfile(userId).then((profile) {
                         if (profile == null) return;
-                        if (!mounted) return;
+                        // FIX: mounted StateNotifier mein exist nahi karta — hata diya
+                        // Instead: check karo userId abhi bhi members mein hai ya nahi
+                        if (!state.members.any((m) => m.userId == userId)) return;
 
                         // Placeholder ko real profile se replace karo
                         final updated = state.members.map((m) {
@@ -464,7 +466,7 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
                         }).toList();
 
                         state = state.copyWith(members: updated);
-                      });
+                      }).catchError((_) {});
                     }
                   } catch (_) {}
                 }
