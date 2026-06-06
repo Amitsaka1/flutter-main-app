@@ -75,7 +75,9 @@ class GlobalSocketManager with WidgetsBindingObserver {
             onlineUsersProvider.notifier,
           );
 
-          notifier.state = { ...notifier.state, ...users.toSet() };
+          // FIX: Merge nahi, fresh replace karo
+          // Pehle spread karta tha jo stale users hatata nahi tha
+          notifier.state = users.toSet();
 
           _messageController.add(event);
         }
