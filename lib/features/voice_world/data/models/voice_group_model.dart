@@ -23,17 +23,33 @@ class VoiceMemberModel {
 
   bool get isSpeaker => role == "speaker";
 
+  // Nested format — /voice/worlds se aata hai
+  // { userId, role, isMuted, user: { level, profile: { name, avatarUrl } } }
   factory VoiceMemberModel.fromJson(Map<String, dynamic> json) {
     final user    = json["user"] as Map<String, dynamic>?;
     final profile = user?["profile"] as Map<String, dynamic>?;
 
     return VoiceMemberModel(
-      userId:    json["userId"] as String,
-      role:      json["role"]   as String? ?? "listener",
-      isMuted:   json["isMuted"] as bool?  ?? false,
+      userId:    json["userId"]  as String,
+      role:      json["role"]    as String? ?? "listener",
+      isMuted:   json["isMuted"] as bool?   ?? false,
       name:      profile?["name"]      as String?,
       avatarUrl: profile?["avatarUrl"] as String?,
       level:     user?["level"]        as int? ?? 1,
+    );
+  }
+
+  // FIX: Flat format — /voice/group/:groupId/members se aata hai
+  // { userId, role, isMuted, name, avatarUrl, level } — seedha flat
+  // Reconnect ke baad fresh fetch isi format mein aata hai
+  factory VoiceMemberModel.fromFlatJson(Map<String, dynamic> json) {
+    return VoiceMemberModel(
+      userId:    json["userId"]    as String,
+      role:      json["role"]      as String? ?? "listener",
+      isMuted:   json["isMuted"]   as bool?   ?? false,
+      name:      json["name"]      as String?,
+      avatarUrl: json["avatarUrl"] as String?,
+      level:     json["level"]     as int?    ?? 1,
     );
   }
 
