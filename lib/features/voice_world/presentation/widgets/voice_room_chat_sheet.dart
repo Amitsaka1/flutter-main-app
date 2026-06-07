@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/voice_constants.dart';
 import '../../../../providers/voice_world_provider.dart';
 
 class VoiceRoomChatSheet extends ConsumerStatefulWidget {
@@ -35,7 +36,7 @@ class _VoiceRoomChatSheetState
   void _send() {
     final text = _ctrl.text.trim();
     if (text.isEmpty) return;
-    if (text.length > 200) return; // FIX: Max 200 chars
+    if (text.length > VoiceConstants.maxMessageLength) return; // FIX: Max 200 chars
 
     ref.read(voiceRoomProvider.notifier).sendChatMessage(text);
     _ctrl.clear();
@@ -190,7 +191,7 @@ class _VoiceRoomChatSheetState
                       onSubmitted:     (_) => _send(),
                       textInputAction: TextInputAction.send,
                       maxLines:  1,
-                      maxLength: 200, // FIX: Max 200 characters
+                      maxLength: VoiceConstants.maxMessageLength, // FIX: Max 200 characters
                     ),
                   ),
                 ),
