@@ -375,13 +375,19 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
 
     final myId = UserSession.userId ?? "";
 
-    // Apni info members list se lo
+    // FIX: Dono lists check karo — speaker state.members mein, listener state.listeners mein
     final me = state.members.firstWhere(
       (m) => m.userId == myId,
-      orElse: () => VoiceMemberModel(
-        userId:  myId,
-        role:    'listener',
-        isMuted: false,
+      orElse: () => state.listeners.firstWhere(
+        (m) => m.userId == myId,
+        orElse: () => VoiceMemberModel(
+          userId:    myId,
+          role:      'listener',
+          isMuted:   false,
+          name:      UserSession.name,      // ✅ Session se fallback
+          avatarUrl: UserSession.avatarUrl,
+          level:     UserSession.level,
+        ),
       ),
     );
 
