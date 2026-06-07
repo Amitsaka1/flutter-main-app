@@ -71,23 +71,31 @@ class _VoiceMicButtonState extends State<VoiceMicButton>
       children: [
 
         // ── Leave button ─────────────────────────
-        GestureDetector(
-          onTap: widget.onLeave,
-          child: Container(
-            width:  48,
-            height: 48,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.red.withOpacity(0.12),
-              border: Border.all(
-                color: Colors.red.withOpacity(0.3),
-                width: 1.5,
+        // FIX: Tooltip + Semantics — accessibility ke liye
+        Tooltip(
+          message: "Leave Room",
+          child: Semantics(
+            label:  "Leave voice room",
+            button: true,
+            child: GestureDetector(
+              onTap: widget.onLeave,
+              child: Container(
+                width:  48,
+                height: 48,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.red.withOpacity(0.12),
+                  border: Border.all(
+                    color: Colors.red.withOpacity(0.3),
+                    width: 1.5,
+                  ),
+                ),
+                child: const Icon(
+                  Icons.call_end_rounded,
+                  color: Colors.red,
+                  size:  20,
+                ),
               ),
-            ),
-            child: const Icon(
-              Icons.call_end_rounded,
-              color: Colors.red,
-              size:  20,
             ),
           ),
         ),
@@ -103,9 +111,18 @@ class _VoiceMicButtonState extends State<VoiceMicButton>
             animation: _pulseAnim,
             builder: (_, __) => Transform.scale(
               scale: widget.isMicOn ? _pulseAnim.value : 1.0,
-              child: GestureDetector(
-                onTap: widget.isLoading ? null : widget.onToggle,
-                child: Container(
+              // FIX: Tooltip + Semantics — mic state bhi batao
+              child: Tooltip(
+                message: widget.isMicOn ? "Mute Mic" : "Unmute Mic",
+                child: Semantics(
+                  label:   widget.isMicOn
+                      ? "Microphone on, tap to mute"
+                      : "Microphone off, tap to unmute",
+                  button:  true,
+                  enabled: !widget.isLoading,
+                  child: GestureDetector(
+                    onTap: widget.isLoading ? null : widget.onToggle,
+                    child: Container(
                   width:  64,
                   height: 64,
                   decoration: BoxDecoration(
@@ -154,6 +171,8 @@ class _VoiceMicButtonState extends State<VoiceMicButton>
               ),
             ),
           ),
+        ),
+      ),
 
         const SizedBox(width: 24),
 
