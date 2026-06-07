@@ -508,9 +508,11 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
                           );
                         }
                       }).catchError((_) {});
-                    }
-                    
-        // Participant disconnected
+          }
+        } catch (_) {}
+      }
+
+        // Participant connected — end
         // Participant disconnected
         else if (name.contains('ParticipantDisconnectedEvent')) {
           final identity = event.participant.identity as String;
