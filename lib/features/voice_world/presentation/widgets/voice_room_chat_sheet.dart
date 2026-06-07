@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../providers/voice_world_provider.dart';
@@ -256,7 +257,7 @@ class _MessageTile extends StatelessWidget {
       radius:          18,
       backgroundColor: _goldA.withOpacity(0.15),
       backgroundImage: hasAvatar
-          ? NetworkImage(msg.avatarUrl!)
+          ? CachedNetworkImageProvider(msg.avatarUrl!)
           : null,
       child: hasAvatar
           ? null
