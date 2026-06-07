@@ -307,10 +307,10 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
       listeners:  [],
     );
 
-    await _liveKit.disconnect();
-
-    // FIX: Retry logic — internet cut pe bhi leave backend pe ho
-    await _repo.leaveGroupWithRetry(groupId);
+    // FIX: await hatao — background mein karo
+    // Screen turant close hogi — cleanup peeche chalega
+    _liveKit.disconnect().catchError((_) {});
+    _repo.leaveGroupWithRetry(groupId);
 
     _roomListener?.dispose();
     _roomListener = null;
