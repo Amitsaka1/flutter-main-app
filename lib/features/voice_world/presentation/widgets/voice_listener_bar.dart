@@ -1,6 +1,6 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../data/models/voice_group_model.dart';
-
 // ─────────────────────────────────────────────────────────
 //  VOICE LISTENER BAR
 //  Niche ki bar — listener count + mini avatars
@@ -119,8 +119,8 @@ class _MiniAvatarRow extends StatelessWidget {
                 radius:          12,
                 backgroundColor: _surface,
                 backgroundImage: hasAvatar
-                    ? NetworkImage(m.avatarUrl!)
-                    : null,
+                  ? CachedNetworkImageProvider(m.avatarUrl!)
+                  : null,
                 child: hasAvatar
                     ? null
                     : Text(
@@ -286,7 +286,7 @@ class _ListenerTile extends StatelessWidget {
             radius:          20,
             backgroundColor: _border,
             backgroundImage: hasAvatar
-                ? NetworkImage(member.avatarUrl!)
+                ? CachedNetworkImageProvider(member.avatarUrl!)
                 : null,
             child: hasAvatar
                 ? null
