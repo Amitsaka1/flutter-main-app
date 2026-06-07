@@ -229,7 +229,7 @@ class _FilledSeat extends StatelessWidget {
               radius:          size * 0.44,
               backgroundColor: _goldA.withOpacity(0.15),
               backgroundImage: hasAvatar
-                  ? NetworkImage(member.avatarUrl!)
+                  ? CachedNetworkImageProvider(member.avatarUrl!)
                   : null,
               child: hasAvatar
                   ? null
