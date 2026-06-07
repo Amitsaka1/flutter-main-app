@@ -727,8 +727,10 @@ final voiceWorldRepositoryProvider =
   return VoiceWorldRepository.instance;
 });
 
+// FIX: autoDispose add kiya — screen close hone pe LiveKitService free ho
+// Pehle Provider tha — memory mein hamesha pada rehta tha
 final voiceLiveKitProvider =
-    Provider<LiveKitService>((ref) {
+    Provider.autoDispose<LiveKitService>((ref) {
   final service = LiveKitService();
   ref.onDispose(() => service.disconnect());
   return service;
