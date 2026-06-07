@@ -116,13 +116,18 @@ class VoiceWorldRepository {
     }
   }
 
-  // new: Room mein join hone wale member ka profile fetch
-  // voice_world_provider.dart mein ParticipantConnectedEvent pe call hoga
-  Future<VoiceMemberModel?> fetchMemberProfile(String userId) async {
+  // FIX: groupId optional param add kiya — backend real role dega
+  Future<VoiceMemberModel?> fetchMemberProfile(
+    String userId, {
+    String? groupId,
+  }) async {
     try {
-      // FIX: Timeout add kiya — slow network pe 5s baad null return karo
-      // Pehle koi timeout nahi tha — indefinitely hang hota tha
-      final res = await ApiClient.get("/voice/member/$userId")
+      // groupId diya hai toh query param mein bhejo
+      final path = groupId != null
+          ? "/voice/member/$userId?groupId=$groupId"
+          : "/voice/member/$userId";
+
+      final res = await ApiClient.get(path)
           .timeout(const Duration(seconds: 5), onTimeout: () => {});
 
       if (res.isEmpty) return null;
@@ -130,7 +135,6 @@ class VoiceWorldRepository {
 
       return VoiceMemberModel(
         userId:    res["userId"]    as String,
-        // FIX: Backend se real role lo — hardcoded speaker nahi
         role:      res["role"]      as String? ?? "speaker",
         isMuted:   false,
         name:      res["name"]      as String?,
