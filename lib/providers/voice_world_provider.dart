@@ -475,14 +475,17 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
                     final alreadyInListeners = state.listeners.any((m) => m.userId == userId);
 
                     if (!alreadyInSpeakers && !alreadyInListeners) {
-                      // FIX: Role pata nahi — placeholder nahi, seedha profile fetch
-                      // Profile mein real role aayega — phir sahi list mein daalo
-                      _repo.fetchMemberProfile(userId).then((profile) {
+                      // FIX: groupId pass karo — backend real role dega
+                      _repo.fetchMemberProfile(
+                        userId,
+                        groupId: _currentGroupId,
+                      ).then((profile) {
                         if (profile == null) return;
 
                         // Abhi bhi absent hai? Tab hi add karo
-                        final stillAbsent = !state.members.any((m) => m.userId == userId) &&
-                                            !state.listeners.any((m) => m.userId == userId);
+                        final stillAbsent =
+                            !state.members.any((m) => m.userId == userId) &&
+                            !state.listeners.any((m) => m.userId == userId);
                         if (!stillAbsent) return;
 
                         if (profile.role == 'speaker') {
@@ -500,9 +503,7 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
                         }
                       }).catchError((_) {});
                     }
-                  } catch (_) {}
-        }
-
+                    
         // Participant disconnected
         // Participant disconnected
         else if (name.contains('ParticipantDisconnectedEvent')) {
