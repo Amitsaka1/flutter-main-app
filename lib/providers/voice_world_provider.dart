@@ -708,7 +708,9 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
       _cleanedUp = true;
       _liveKit.disconnect();
       if (_currentGroupId != null) {
-        _repo.leaveGroup(_currentGroupId!);
+        // FIX: Retry wala use karo — internet cut pe bhi leave backend pe ho
+        // Pehle leaveGroup tha — network fail pe seat backend pe stuck rehti thi
+        _repo.leaveGroupWithRetry(_currentGroupId!);
       }
     }
     _roomListener?.dispose();
