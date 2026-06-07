@@ -244,6 +244,12 @@ class _VoiceGroupRoomScreenState
 
               VoiceListenerBar(
                 listenerCount: state.listenerCount,
+                listeners:     state.listeners,
+                onTap: () => VoiceListenerSheet.show(
+                  context:       context,
+                  listeners:     state.listeners,
+                  listenerCount: state.listenerCount,
+                ),
               ),
               const SizedBox(height: 10),
 
