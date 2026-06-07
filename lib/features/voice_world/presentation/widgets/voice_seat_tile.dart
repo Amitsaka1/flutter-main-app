@@ -81,7 +81,7 @@ class _VoiceSeatTileState extends State<VoiceSeatTile>
         final size = constraints.maxWidth;
 
         return GestureDetector(
-          onLongPress: widget.isEmpty ? null : widget.onLongPress,
+          onLongPress: (widget.isEmpty || widget.isMe) ? null : widget.onLongPress,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
