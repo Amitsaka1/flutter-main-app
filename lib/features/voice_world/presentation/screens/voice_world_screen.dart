@@ -48,14 +48,24 @@ class _VoiceWorldScreenState
     });
   }
 
+  // FIX: Double tap protection — fast tap pe 2 rooms join hone se bachao
+  bool _isNavigating = false;
+
   Future<void> _onJoinTapped(VoiceGroupModel group) async {
-    await Navigator.of(context, rootNavigator: true).push(
-      MaterialPageRoute(
-        builder: (_) => VoiceGroupRoomScreen(group: group),
-      ),
-    );
-    // Room se wapas aaye — counts refresh
-    ref.read(voiceWorldProvider.notifier).refresh();
+    if (_isNavigating) return; // Double tap block
+    _isNavigating = true;
+
+    try {
+      await Navigator.of(context, rootNavigator: true).push(
+        MaterialPageRoute(
+          builder: (_) => VoiceGroupRoomScreen(group: group),
+        ),
+      );
+      ref.read(voiceWorldProvider.notifier).refresh();
+    } finally {
+      // Room se wapas aane pe ya error pe flag reset karo
+      _isNavigating = false;
+    }
   }
 
   @override
