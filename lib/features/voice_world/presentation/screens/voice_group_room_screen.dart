@@ -79,12 +79,11 @@ class _VoiceGroupRoomScreenState
 
   // ✅ UNCHANGED
   Future<void> _leaveRoom() async {
-    await ref
-        .read(voiceRoomProvider.notifier)
-        .leaveGroup(widget.group.id);
+    // FIX: await mat karo — turant screen close karo
+    // Cleanup background mein hoga
+    ref.read(voiceRoomProvider.notifier).leaveGroup(_groupId);
     if (mounted) Navigator.pop(context);
   }
-
   // ✅ UNCHANGED
   void _showMemberSheet(VoiceMemberModel member) {
     final state    = ref.read(voiceRoomProvider);
