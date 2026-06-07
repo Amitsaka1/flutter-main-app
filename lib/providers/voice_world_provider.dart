@@ -602,21 +602,66 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
 
         case "PROMOTED_TO_SPEAKER":
           if (target == myId) {
-            final updatedMembers = state.members.map((m) {
-              if (m.userId != myId) return m;
-              return VoiceMemberModel(
-                userId:    m.userId,
-                role:      "speaker",
-                isMuted:   m.isMuted,
-                name:      m.name,
-                avatarUrl: m.avatarUrl,
-                level:     m.level,
-              );
-            }).toList();
+            // FIX: Pehle listeners mein dhundo — promoted user wahan hoga
+            final meInListeners = state.listeners
+                .where((m) => m.userId == myId)
+                .toList();
+
+            // Listeners se remove karo
+            final updatedListeners = state.listeners
+                .where((m) => m.userId != myId)
+                .toList();
+
+            // Members mein already hai toh update, nahi hai toh add
+            final alreadyInMembers =
+                state.members.any((m) => m.userId == myId);
+
+            final List<VoiceMemberModel> updatedMembers;
+
+            if (alreadyInMembers) {
+              // Update existing entry
+              updatedMembers = state.members.map((m) {
+                if (m.userId != myId) return m;
+                return VoiceMemberModel(
+                  userId:    m.userId,
+                  role:      "speaker",
+                  isMuted:   m.isMuted,
+                  name:      m.name,
+                  avatarUrl: m.avatarUrl,
+                  level:     m.level,
+                );
+              }).toList();
+            } else {
+              // Listener se promote hua — members mein add karo
+              final promoted = meInListeners.isNotEmpty
+                  ? VoiceMemberModel(
+                      userId:    myId,
+                      role:      "speaker",
+                      isMuted:   false,
+                      name:      meInListeners.first.name,
+                      avatarUrl: meInListeners.first.avatarUrl,
+                      level:     meInListeners.first.level,
+                    )
+                  : VoiceMemberModel(
+                      userId:  myId,
+                      role:    "speaker",
+                      isMuted: false,
+                      name:    UserSession.name,
+                      avatarUrl: UserSession.avatarUrl,
+                      level:   UserSession.level,
+                    );
+              updatedMembers = [...state.members, promoted];
+            }
+
             state = state.copyWith(
-              myRole:       "speaker",
-              justPromoted: true,
-              members:      updatedMembers,
+              myRole:        "speaker",
+              justPromoted:  true,
+              members:       updatedMembers,
+              listeners:     updatedListeners,      // ✅ Remove from listeners
+              speakerCount:  state.speakerCount  + 1,
+              listenerCount: meInListeners.isNotEmpty
+                  ? (state.listenerCount - 1).clamp(0, 999)
+                  : state.listenerCount,
             );
             _liveKit.enableMic();
           }
