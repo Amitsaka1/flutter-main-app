@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import '../../core/voice_constants.dart';
 import '../../data/models/voice_group_model.dart';
 // ─────────────────────────────────────────────────────────
 //  VOICE LISTENER BAR
@@ -62,7 +63,9 @@ class VoiceListenerBar extends StatelessWidget {
             // ── Mini avatars — pehle 5 ─────────────
             if (listeners.isNotEmpty)
               _MiniAvatarRow(
-                listeners: listeners.take(5).toList(),
+                listeners: listeners
+                    .take(VoiceConstants.listenerAvatarPreviewCount)
+                    .toList(),
               ),
 
             // ── Tap hint arrow ─────────────────────
