@@ -34,6 +34,7 @@ class _VoiceRoomChatSheetState
   void _send() {
     final text = _ctrl.text.trim();
     if (text.isEmpty) return;
+    if (text.length > 200) return; // FIX: Max 200 chars
 
     ref.read(voiceRoomProvider.notifier).sendChatMessage(text);
     _ctrl.clear();
@@ -183,10 +184,12 @@ class _VoiceRoomChatSheetState
                         contentPadding: const EdgeInsets.symmetric(
                           vertical: 12,
                         ),
+                        counterText: "", // FIX: Counter hide karo
                       ),
-                      onSubmitted:    (_) => _send(),
+                      onSubmitted:     (_) => _send(),
                       textInputAction: TextInputAction.send,
-                      maxLines: 1,
+                      maxLines:  1,
+                      maxLength: 200, // FIX: Max 200 characters
                     ),
                   ),
                 ),
