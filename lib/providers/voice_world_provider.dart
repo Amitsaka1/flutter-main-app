@@ -262,18 +262,27 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
         level:     UserSession.level,
       );
 
-      final alreadyIn = group.members
-          .any((m) => m.userId == myId);
+      // FIX: Speakers aur listeners alag karo join pe
+      final existingSpeakers  = group.members.where((m) => m.isSpeaker).toList();
+      final existingListeners = group.members.where((m) => !m.isSpeaker).toList();
 
-      final updatedMembers = alreadyIn
-          ? group.members
-          : [placeholder, ...group.members];
+      final alreadyIn = group.members.any((m) => m.userId == myId);
+
+      // Placeholder sahi list mein daalo role ke hisaab se
+      final updatedSpeakers = (result.role == 'speaker' && !alreadyIn)
+          ? [placeholder, ...existingSpeakers]
+          : existingSpeakers;
+
+      final updatedListeners = (result.role == 'listener' && !alreadyIn)
+          ? [placeholder, ...existingListeners]
+          : existingListeners;
 
       state = state.copyWith(
         joinStatus:    VoiceJoinStatus.joined,
         myRole:        result.role,
         isMicOn:       result.isSpeaker,
-        members:       updatedMembers,
+        members:       updatedSpeakers,
+        listeners:     updatedListeners,
         speakerCount:  group.speakerCount,
         listenerCount: group.listenerCount,
       );
@@ -291,10 +300,17 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
     if (_cleanedUp) return;
     _cleanedUp = true;
 
-    state = state.copyWith(joinStatus: VoiceJoinStatus.leaving);
+    // FIX: Turant UI clear karo — user ko instant feedback
+    state = state.copyWith(
+      joinStatus: VoiceJoinStatus.leaving,
+      members:    [],
+      listeners:  [],
+    );
 
     await _liveKit.disconnect();
-    await _repo.leaveGroup(groupId);
+
+    // FIX: Retry logic — internet cut pe bhi leave backend pe ho
+    await _repo.leaveGroupWithRetry(groupId);
 
     _roomListener?.dispose();
     _roomListener = null;
@@ -430,79 +446,89 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
           state = state.copyWith(isReconnecting: true);
         }
 
-        // Reconnected
+        // Reconnected — fresh member list fetch karo
         else if (name.contains('RoomReconnectedEvent')) {
           state = state.copyWith(isReconnecting: false);
+
+          // FIX: Internet cut ke dauran jo join/leave hue unka record nahi tha
+          // Fresh fetch se seat grid + listener list dono ek saath update hongi
+          if (_currentGroupId != null) {
+            _repo.fetchGroupMembers(_currentGroupId!).then((result) {
+              if (result == null) return;
+              state = state.copyWith(
+                members:       result.speakers,
+                listeners:     result.listeners,
+                speakerCount:  result.speakerCount,
+                listenerCount: result.listenerCount,
+              );
+            }).catchError((_) {});
+          }
         }
 
         // Participant disconnected
-        // Participant connected — naya member add karo
         else if (name.contains('ParticipantConnectedEvent')) {
                   try {
                     final userId = event.participant.identity as String;
-                    final alreadyIn =
-                        state.members.any((m) => m.userId == userId);
-                    if (!alreadyIn) {
 
-                      // new: Pehle placeholder dikhao — turant seat fill ho
-                      final placeholder = VoiceMemberModel(
-                        userId:  userId,
-                        role:    'speaker',
-                        isMuted: false,
-                      );
-                      state = state.copyWith(
-                        members:      [...state.members, placeholder],
-                        speakerCount: state.speakerCount + 1,
-                      );
+                    // FIX: Dono lists mein check karo
+                    final alreadyInSpeakers  = state.members.any((m) => m.userId == userId);
+                    final alreadyInListeners = state.listeners.any((m) => m.userId == userId);
 
-                      // Background mein real profile fetch karo
-                      // Seat turant fill hogi — phir name/avatar/level update hoga
+                    if (!alreadyInSpeakers && !alreadyInListeners) {
+                      // FIX: Role pata nahi — placeholder nahi, seedha profile fetch
+                      // Profile mein real role aayega — phir sahi list mein daalo
                       _repo.fetchMemberProfile(userId).then((profile) {
                         if (profile == null) return;
-                        // FIX: mounted StateNotifier mein exist nahi karta — hata diya
-                        // Instead: check karo userId abhi bhi members mein hai ya nahi
-                        if (!state.members.any((m) => m.userId == userId)) return;
 
-                        // Placeholder ko real profile se replace karo
-                        final updated = state.members.map((m) {
-                          if (m.userId != userId) return m;
-                          return profile;
-                        }).toList();
+                        // Abhi bhi absent hai? Tab hi add karo
+                        final stillAbsent = !state.members.any((m) => m.userId == userId) &&
+                                            !state.listeners.any((m) => m.userId == userId);
+                        if (!stillAbsent) return;
 
-                        state = state.copyWith(members: updated);
+                        if (profile.role == 'speaker') {
+                          // Speaker — seat grid mein
+                          state = state.copyWith(
+                            members:      [...state.members, profile],
+                            speakerCount: state.speakerCount + 1,
+                          );
+                        } else {
+                          // Listener — listener list mein
+                          state = state.copyWith(
+                            listeners:     [...state.listeners, profile],
+                            listenerCount: state.listenerCount + 1,
+                          );
+                        }
                       }).catchError((_) {});
                     }
                   } catch (_) {}
-                }
+        }
 
+        // Participant disconnected
         // Participant disconnected
         else if (name.contains('ParticipantDisconnectedEvent')) {
           final identity = event.participant.identity as String;
 
-          // FIX: Leaving member ka role pehle lo — count sahi update ke liye
-          final leaving = state.members.firstWhere(
-            (m) => m.userId == identity,
-            orElse: () => VoiceMemberModel(
-              userId:  identity,
-              role:    'listener',
-              isMuted: false,
-            ),
-          );
+          // FIX: Dono lists mein check karo
+          final inSpeakers  = state.members.any((m) => m.userId == identity);
+          final inListeners = state.listeners.any((m) => m.userId == identity);
 
-          final wasInMembers = state.members
-              .any((m) => m.userId == identity);
+          final leaving = inSpeakers
+              ? state.members.firstWhere((m) => m.userId == identity)
+              : inListeners
+                  ? state.listeners.firstWhere((m) => m.userId == identity)
+                  : VoiceMemberModel(userId: identity, role: 'listener', isMuted: false);
 
-          final updated = state.members
-              .where((m) => m.userId != identity)
-              .toList();
+          // Dono lists se remove karo
+          final updatedSpeakers  = state.members.where((m) => m.userId != identity).toList();
+          final updatedListeners = state.listeners.where((m) => m.userId != identity).toList();
 
-          // FIX: Speaker aur listener dono ka count sahi se update karo
           state = state.copyWith(
-            members:       updated,
-            speakerCount:  (leaving.role == 'speaker' && wasInMembers)
+            members:       updatedSpeakers,
+            listeners:     updatedListeners,
+            speakerCount:  (leaving.role == 'speaker' && inSpeakers)
                 ? (state.speakerCount  - 1).clamp(0, 999)
                 : state.speakerCount,
-            listenerCount: (leaving.role == 'listener' && wasInMembers)
+            listenerCount: (leaving.role == 'listener' && inListeners)
                 ? (state.listenerCount - 1).clamp(0, 999)
                 : state.listenerCount,
           );
