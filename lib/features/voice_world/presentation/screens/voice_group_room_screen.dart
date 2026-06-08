@@ -81,7 +81,7 @@ class _VoiceGroupRoomScreenState
   Future<void> _leaveRoom() async {
     // FIX: await mat karo — turant screen close karo
     // Cleanup background mein hoga
-    ref.read(voiceRoomProvider.notifier).leaveGroup(_groupId);
+    ref.read(voiceRoomProvider.notifier).leaveGroup(widget.group.id);
     if (mounted) Navigator.pop(context);
   }
   // ✅ UNCHANGED
