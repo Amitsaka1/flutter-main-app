@@ -590,6 +590,21 @@ class _ChatConversationScreenState
           if (id.isNotEmpty && seen.add(id)) displayMsgs.add(msg);
         }
 
+        // FIX: Chronologically sort karo — oldest first, newest last
+        // Bina sort ke socket/provider messages random order mein aate hain
+        displayMsgs.sort((a, b) {
+          final aRaw = (a['createdAt'] ?? a['timestamp'])?.toString();
+          final bRaw = (b['createdAt'] ?? b['timestamp'])?.toString();
+          if (aRaw == null && bRaw == null) return 0;
+          if (aRaw == null) return -1;
+          if (bRaw == null) return  1;
+          try {
+            return DateTime.parse(aRaw).compareTo(DateTime.parse(bRaw));
+          } catch (_) {
+            return 0;
+          }
+        });
+
         final onlineUsers = ref.watch(onlineUsersProvider);
         final isOnline    = onlineUsers.contains(widget.chatUserId);
     
