@@ -69,13 +69,24 @@ class Environment {
 
   // ── ✅ UNCHANGED: Saare getters same hain — koi breaking change nahi ──
 
-  static String get baseUrl    => _apiUrl;
-  static String get livekitUrl => _livekitUrl;
-  static String get apiUrl     => _apiUrl; // ✅ Legacy alias — unchanged
+  // ── TURN Server credentials (Metered.ca) ──────────────
+  static const String _turnUsername = String.fromEnvironment(
+    'TURN_USERNAME',
+    defaultValue: '4da275ede5cf7b8ed396b34e',
+  );
 
-  // ✅ FIX: isProduction — devMode explicitly set ho toh false
-  static bool   get isProduction => _dartProduction && !_devMode;
+  static const String _turnCredential = String.fromEnvironment(
+    'TURN_CREDENTIAL',
+    defaultValue: 'TG5h5cY3aUIN80T4',
+  );
 
+  static String get baseUrl        => _apiUrl;
+  static String get livekitUrl     => _livekitUrl;
+  static String get apiUrl         => _apiUrl;
+  static String get turnUsername   => _turnUsername;
+  static String get turnCredential => _turnCredential;
+
+  static bool get isProduction => _dartProduction && !_devMode;
   // ✅ NEW: Debug logging ke liye useful
   // Koi bhi screen pe show kar sako current config — debugging easy
   static void printConfig() {
