@@ -51,20 +51,34 @@ class _VoiceWorldScreenState
 
   // FIX: Double tap protection — fast tap pe 2 rooms join hone se bachao
   bool _isNavigating = false;
+  bool _prefetchDone  = false;
 
   Future<void> _onJoinTapped(VoiceGroupModel group) async {
-    if (_isNavigating) return; // Double tap block
+    if (_isNavigating) return;
     _isNavigating = true;
 
     try {
+      // ✅ Cache check — instant token milega toh skip API call
+      final cached = ref
+          .read(voiceTokenCacheProvider.notifier)
+          .getResult(group.id);
+
+      // Cache se nikala toh hata do (use ho gaya)
+      if (cached != null) {
+        ref.read(voiceTokenCacheProvider.notifier).remove(group.id);
+      }
+
       await Navigator.of(context, rootNavigator: true).push(
         MaterialPageRoute(
-          builder: (_) => VoiceGroupRoomScreen(group: group),
+          builder: (_) => VoiceGroupRoomScreen(
+            group:           group,
+            preloadedResult: cached, // ✅ null ya instant token
+          ),
         ),
       );
+
       ref.read(voiceWorldProvider.notifier).refresh();
     } finally {
-      // Room se wapas aane pe ya error pe flag reset karo
       _isNavigating = false;
     }
   }
@@ -80,6 +94,18 @@ class _VoiceWorldScreenState
 
     final state    = ref.watch(voiceWorldProvider);
     final notifier = ref.read(voiceWorldProvider.notifier);
+
+    // ✅ Worlds load hone ke baad background mein tokens pre-fetch karo
+    if (state.status == VoiceWorldStatus.loaded &&
+        state.worlds.isNotEmpty &&
+        !_prefetchDone) {
+      _prefetchDone = true;
+      final groupIds = state.worlds.map((w) => w.id).toList();
+      ref.read(voiceTokenCacheProvider.notifier).prefetch(
+        groupIds,
+        ref.read(voiceWorldRepositoryProvider),
+      );
+    }
     final groups   = state.filteredGroups;
 
     if (state.status == VoiceWorldStatus.loading &&
