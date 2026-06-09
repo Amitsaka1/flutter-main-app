@@ -295,6 +295,71 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
     }
   }
 
+  // ─────────────────────────────────────────────────────
+  //  JOIN WITH PRE-FETCHED TOKEN — INSTANT ⚡
+  //  API call skip — seedha LiveKit connect
+  // ─────────────────────────────────────────────────────
+
+  Future<void> joinGroupWithToken(
+    VoiceGroupModel group,
+    VoiceJoinResult result,
+  ) async {
+    if (state.joinStatus == VoiceJoinStatus.joining) return;
+    state = state.copyWith(joinStatus: VoiceJoinStatus.joining);
+
+    try {
+      // Seedha LiveKit connect — no API wait
+      _liveKit.reset();
+      await _liveKit.connectWithToken(
+        token:  result.token,
+        roomId: "vg-${group.id}",
+        role:   result.role,
+      );
+
+      _currentGroupId = group.id;
+      _setupRoomListeners();
+
+      final myId = UserSession.userId ?? "";
+
+      final placeholder = VoiceMemberModel(
+        userId:    myId,
+        role:      result.role,
+        isMuted:   false,
+        name:      UserSession.name,
+        avatarUrl: UserSession.avatarUrl,
+        level:     UserSession.level,
+      );
+
+      final existingSpeakers  = group.members.where((m) => m.isSpeaker).toList();
+      final existingListeners = group.members.where((m) => !m.isSpeaker).toList();
+      final alreadyIn         = group.members.any((m) => m.userId == myId);
+
+      final updatedSpeakers = (result.role == 'speaker' && !alreadyIn)
+          ? [placeholder, ...existingSpeakers]
+          : existingSpeakers;
+
+      final updatedListeners = (result.role == 'listener' && !alreadyIn)
+          ? [placeholder, ...existingListeners]
+          : existingListeners;
+
+      state = state.copyWith(
+        joinStatus:    VoiceJoinStatus.joined,
+        myRole:        result.role,
+        isMicOn:       result.isSpeaker,
+        members:       updatedSpeakers,
+        listeners:     updatedListeners,
+        speakerCount:  group.speakerCount,
+        listenerCount: group.listenerCount,
+      );
+
+    } catch (e) {
+      state = state.copyWith(
+        joinStatus:   VoiceJoinStatus.error,
+        errorMessage: e.toString(),
+      );
+    }
+  }
+
   // ── LEAVE ────────────────────────────────────────────
   Future<void> leaveGroup(String groupId) async {
     if (_cleanedUp) return;
