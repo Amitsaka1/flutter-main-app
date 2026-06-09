@@ -46,6 +46,7 @@ class _VoiceGroupRoomScreenState
   //      Screen TURANT khulegi (Fix #2), banner mein step dikhega
   //
   String _connectingStep = "Checking access...";
+  bool   _isLeaving      = false; // ✅ Flutter level double leave guard
 
   @override
   void initState() {
@@ -87,10 +88,13 @@ class _VoiceGroupRoomScreenState
     return false;
   }
 
-  // ✅ UNCHANGED
   Future<void> _leaveRoom() async {
-    // FIX: await mat karo — turant screen close karo
-    // Cleanup background mein hoga
+    // ✅ Flutter guard — button, back arrow, WillPop
+    // teen jagah se _leaveRoom call ho sakta tha
+    // ab pehli call hi execute hogi
+    if (_isLeaving) return;
+    _isLeaving = true;
+
     ref.read(voiceRoomProvider.notifier).leaveGroup(widget.group.id);
     if (mounted) Navigator.pop(context);
   }
