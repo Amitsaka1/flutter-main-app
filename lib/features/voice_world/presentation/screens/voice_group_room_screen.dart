@@ -14,11 +14,13 @@ import '../widgets/voice_reconnecting_banner.dart';
 import '../widgets/voice_room_chat_sheet.dart';
 
 class VoiceGroupRoomScreen extends ConsumerStatefulWidget {
-  final VoiceGroupModel group;
+  final VoiceGroupModel  group;
+  final VoiceJoinResult? preloadedResult; // ✅ Optional pre-fetched token
 
   const VoiceGroupRoomScreen({
     super.key,
     required this.group,
+    this.preloadedResult, // optional — null hoga toh normal flow
   });
 
   @override
@@ -55,11 +57,21 @@ class _VoiceGroupRoomScreenState
 
   Future<void> _joinRoom() async {
 
-    // ✅ FIX #1: Step 1 — Ban check
-    if (mounted) setState(() => _connectingStep = "Checking access...");
+    // ✅ Pre-fetched token hai toh directly connect karo — NO API CALL ⚡
+    if (widget.preloadedResult != null) {
+      if (mounted) setState(() => _connectingStep = "Connecting audio...");
 
-    // ✅ FIX #1: Step 2 — Joining
-    // Thoda delay taaki UI update ho sake
+      await ref
+          .read(voiceRoomProvider.notifier)
+          .joinGroupWithToken(
+            widget.group,
+            widget.preloadedResult!,
+          );
+      return;
+    }
+
+    // Normal flow — token fetch karna padega
+    if (mounted) setState(() => _connectingStep = "Checking access...");
     await Future.delayed(const Duration(milliseconds: 300));
     if (mounted) setState(() => _connectingStep = "Joining room...");
 
@@ -67,10 +79,8 @@ class _VoiceGroupRoomScreenState
         .read(voiceRoomProvider.notifier)
         .joinGroup(widget.group);
 
-    // ✅ FIX #1: Step 3 — LiveKit connecting
     if (mounted) setState(() => _connectingStep = "Connecting audio...");
   }
-
   // ✅ UNCHANGED
   Future<bool> _onWillPop() async {
     await _leaveRoom();
