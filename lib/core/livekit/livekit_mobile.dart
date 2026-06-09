@@ -1,3 +1,5 @@
+import 'package:flutter_webrtc/flutter_webrtc.dart'
+    show RTCConfiguration, RTCIceServer;
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:livekit_client/livekit_client.dart';
@@ -158,8 +160,35 @@ class LiveKitService {
     await room.connect(
       Environment.livekitUrl,
       token,
-      connectOptions: const ConnectOptions(
+      connectOptions: ConnectOptions(
         autoSubscribe: true,
+        rtcConfiguration: RTCConfiguration(
+          iceServers: [
+            RTCIceServer(
+              urls: ['stun:stun.relay.metered.ca:80'],
+            ),
+            RTCIceServer(
+              urls: ['turn:global.relay.metered.ca:80'],
+              username:   Environment.turnUsername,
+              credential: Environment.turnCredential,
+            ),
+            RTCIceServer(
+              urls: ['turn:global.relay.metered.ca:80?transport=tcp'],
+              username:   Environment.turnUsername,
+              credential: Environment.turnCredential,
+            ),
+            RTCIceServer(
+              urls: ['turn:global.relay.metered.ca:443'],
+              username:   Environment.turnUsername,
+              credential: Environment.turnCredential,
+            ),
+            RTCIceServer(
+              urls: ['turns:global.relay.metered.ca:443?transport=tcp'],
+              username:   Environment.turnUsername,
+              credential: Environment.turnCredential,
+            ),
+          ],
+        ),
       ),
     );
 
