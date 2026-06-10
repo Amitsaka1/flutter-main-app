@@ -1,30 +1,21 @@
-import 'package:flutter_webrtc/flutter_webrtc.dart'
-    show RTCConfiguration, RTCIceServer;
+// fix: flutter_webrtc import REMOVED — TURN hataya
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';          // new: WidgetsBindingObserver
 import 'package:livekit_client/livekit_client.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 import 'package:app_project/core/config/environment.dart';
 
-class LiveKitService {
+// modify: WidgetsBindingObserver add kiya — AppLifecycle ke liye
+class LiveKitService with WidgetsBindingObserver {
 
-  Room? _room;
+  Room?   _room;
   String? _currentRoomId;
   String? _currentUserId;
   String? _currentRole;
-
-  // ✅ FIX (NEW): Voice World token store karo reconnect ke liye
-  //
-  // Problem: connectWithToken() mein _currentUserId = null set hota tha
-  //          _scheduleReconnect() mein sirf _currentUserId != null check tha
-  //          Matlab Voice World mein disconnect ho → reconnect KABHI nahi hota
-  //          User ko manually room se bahar jaake wapas aana padta tha
-  //
-  // Fix: Token store karo — reconnect pe wahi token use karo
-  //
-  String? _currentToken; // ✅ NEW — Voice World reconnect ke liye
+  String? _currentToken;
 
   bool _isConnecting = false;
   bool _isDisposed   = false;
@@ -35,13 +26,32 @@ class LiveKitService {
 
   EventsListener<RoomEvent>? _listener;
 
-  // ── Public getters — ✅ UNCHANGED ─────────────
+  // new: VoiceRoomNotifier isko set karega — reconnect ke baad listeners reload
+  VoidCallback? onReconnected;
+
+  // new: Constructor — AppLifecycle observer register karo
+  LiveKitService() {
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  // new: App kill/detach pe room disconnect karo
+  // Fix #12: App close without leave → seat stuck
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState lifecycleState) {
+    if (lifecycleState == AppLifecycleState.detached &&
+        !_isDisposed &&
+        _room != null) {
+      disconnect();
+    }
+  }
+
+  // ── Public getters — unchanged ─────────────
   Room? get room        => _room;
   bool  get isConnected =>
       _room?.connectionState == ConnectionState.connected;
 
   // ─────────────────────────────────────────────
-  //  CONNECT — 1:1 calls ke liye — ✅ UNCHANGED
+  //  CONNECT — 1:1 calls — unchanged
   // ─────────────────────────────────────────────
   Future<void> connect({
     required String userId,
@@ -56,10 +66,9 @@ class LiveKitService {
     _currentRoomId = roomId;
     _currentUserId = userId;
     _currentRole   = role;
-    _currentToken  = null; // ✅ FIX: 1:1 call mein stored token clear karo
+    _currentToken  = null;
 
     try {
-
       if (_room != null &&
           _room!.connectionState == ConnectionState.connected &&
           _room!.name == roomId) {
@@ -89,8 +98,7 @@ class LiveKitService {
   }
 
   // ─────────────────────────────────────────────
-  //  CONNECT WITH TOKEN — Voice World ke liye
-  //  FIXED: Token ab store hota hai reconnect ke liye
+  //  CONNECT WITH TOKEN — Voice World
   // ─────────────────────────────────────────────
   Future<void> connectWithToken({
     required String token,
@@ -105,13 +113,9 @@ class LiveKitService {
     _currentRoomId = roomId;
     _currentRole   = role;
     _currentUserId = null;
-
-    // ✅ FIX: Token store karo — reconnect mein kaam aayega
-    // Pehle ye line nahi thi — isliye reconnect hamesha fail hota tha
-    _currentToken = token; // ✅ NEW
+    _currentToken  = token;
 
     try {
-
       if (_room != null &&
           _room!.connectionState == ConnectionState.connected &&
           _room!.name == roomId) {
@@ -127,7 +131,8 @@ class LiveKitService {
 
     } catch (e) {
       debugPrint("❌ LiveKit connectWithToken error: $e");
-      _scheduleReconnect();
+      // modify: _scheduleReconnect() HATAYA — timer ka catch ab handle karega
+      // pehle yahan tha — double scheduling hoti thi
       rethrow;
     } finally {
       _isConnecting = false;
@@ -135,7 +140,7 @@ class LiveKitService {
   }
 
   // ─────────────────────────────────────────────
-  //  SHARED CONNECT LOGIC — ✅ UNCHANGED
+  //  CONNECT TO ROOM — TURN config HATAYA
   // ─────────────────────────────────────────────
   Future<void> _connectToRoom({
     required String token,
@@ -157,39 +162,14 @@ class LiveKitService {
       ),
     );
 
+    // modify: pura rtcConfiguration block HATAYA
+    // Fix #11: Metered.ca TURN remove — LiveKit ka built-in use hoga
+    // pehle: 5 custom ICE servers tha jo US/EU relay se jaata tha
+    // ab: LiveKit apne TURN credentials khud handle karta hai
     await room.connect(
       Environment.livekitUrl,
       token,
-      connectOptions: ConnectOptions(
-        autoSubscribe: true,
-        rtcConfiguration: RTCConfiguration(
-          iceServers: [
-            RTCIceServer(
-              urls: ['stun:stun.relay.metered.ca:80'],
-            ),
-            RTCIceServer(
-              urls: ['turn:global.relay.metered.ca:80'],
-              username:   Environment.turnUsername,
-              credential: Environment.turnCredential,
-            ),
-            RTCIceServer(
-              urls: ['turn:global.relay.metered.ca:80?transport=tcp'],
-              username:   Environment.turnUsername,
-              credential: Environment.turnCredential,
-            ),
-            RTCIceServer(
-              urls: ['turn:global.relay.metered.ca:443'],
-              username:   Environment.turnUsername,
-              credential: Environment.turnCredential,
-            ),
-            RTCIceServer(
-              urls: ['turns:global.relay.metered.ca:443?transport=tcp'],
-              username:   Environment.turnUsername,
-              credential: Environment.turnCredential,
-            ),
-          ],
-        ),
-      ),
+      connectOptions: const ConnectOptions(autoSubscribe: true),
     );
 
     if (_isDisposed) {
@@ -212,7 +192,7 @@ class LiveKitService {
   }
 
   // ─────────────────────────────────────────────
-  //  SETUP LISTENERS — ✅ UNCHANGED
+  //  SETUP LISTENERS — unchanged
   // ─────────────────────────────────────────────
   void _setupListeners({ required String role }) {
 
@@ -237,8 +217,7 @@ class LiveKitService {
         _reconnectAttempts = 0;
 
         if (role == "speaker") {
-          await _room?.localParticipant
-              ?.setMicrophoneEnabled(true);
+          await _room?.localParticipant?.setMicrophoneEnabled(true);
         }
       })
 
@@ -253,7 +232,7 @@ class LiveKitService {
   }
 
   // ─────────────────────────────────────────────
-  //  FETCH TOKEN — 1:1 calls ke liye — ✅ UNCHANGED
+  //  FETCH TOKEN — 1:1 calls — unchanged
   // ─────────────────────────────────────────────
   Future<String> _fetchToken({
     required String userId,
@@ -281,11 +260,11 @@ class LiveKitService {
   }
 
   // ─────────────────────────────────────────────
-  //  RECONNECT — FIXED
+  //  RECONNECT — 2 fixes
   // ─────────────────────────────────────────────
   void _scheduleReconnect() {
 
-    if (_isDisposed)   return;
+    if (_isDisposed)    return;
     if (_currentRoomId == null) return;
     if (_reconnectAttempts >= _maxReconnectAttempts) {
       debugPrint("❌ Max reconnect attempts reached");
@@ -294,7 +273,6 @@ class LiveKitService {
 
     _reconnectTimer?.cancel();
 
-    // ✅ UNCHANGED: Exponential backoff
     final delay = Duration(
       seconds: (_reconnectAttempts < 4)
           ? (2 * (_reconnectAttempts + 1))
@@ -310,37 +288,34 @@ class LiveKitService {
       try {
 
         if (_currentUserId != null) {
-          // ✅ UNCHANGED: 1:1 call reconnect
           await connect(
             userId: _currentUserId!,
             roomId: _currentRoomId!,
             role:   _currentRole!,
           );
-
         } else if (_currentToken != null) {
-          // ✅ FIX: Voice World reconnect
-          //
-          // Problem: Pehle ye block nahi tha
-          //          _currentUserId = null hota tha Voice World mein
-          //          Toh reconnect silently skip ho jaata tha
-          //          User ka audio band ho jaata tha permanently
-          //
-          // Fix: _currentToken store kiya (connectWithToken mein)
-          //      Wahi token se dobara connect karo
-          //
-          await connectWithToken(        // ✅ NEW
+          await connectWithToken(
             token:  _currentToken!,
             roomId: _currentRoomId!,
             role:   _currentRole!,
           );
         }
 
-      } catch (_) {}
+        // new: Fix #3 — reconnect success ke baad VoiceRoomNotifier ko notify karo
+        // taaki woh naye Room pe listeners reload kare aur members refresh kare
+        onReconnected?.call();
+
+      } catch (_) {
+        // modify: Fix #2 — retry karo silently fail mat karo
+        // pehle: catch (_) {} → reconnect permanently band ho jaata tha
+        // ab: dobara schedule karo — attempts limit tak
+        _scheduleReconnect();
+      }
     });
   }
 
   // ─────────────────────────────────────────────
-  //  MIC CONTROLS — ✅ UNCHANGED
+  //  MIC CONTROLS — unchanged
   // ─────────────────────────────────────────────
   Future<void> enableMic() async {
     await _room?.localParticipant?.setMicrophoneEnabled(true);
@@ -360,7 +335,7 @@ class LiveKitService {
       _room?.localParticipant?.isMicrophoneEnabled() ?? false;
 
   // ─────────────────────────────────────────────
-  //  CLEANUP — ✅ UNCHANGED
+  //  CLEANUP — unchanged
   // ─────────────────────────────────────────────
   Future<void> _cleanupRoom() async {
     _reconnectTimer?.cancel();
@@ -377,9 +352,22 @@ class LiveKitService {
   }
 
   // ─────────────────────────────────────────────
-  //  DISCONNECT — FIXED
+  //  DISCONNECT — expectedRoomId add kiya
+  //  Fix #5: Singleton dispose conflict fix
   // ─────────────────────────────────────────────
-  Future<void> disconnect() async {
+  Future<void> disconnect({String? expectedRoomId}) async {
+
+    // modify: Fix #5 — roomId mismatch pe skip karo
+    // Problem: LiveKitService singleton hai — Group A ka dispose
+    //          Group B ka active connection kill kar sakta tha
+    // Fix: Sirf tab disconnect karo jab room match kare
+    if (expectedRoomId != null &&
+        _currentRoomId  != null &&
+        _currentRoomId  != expectedRoomId) {
+      debugPrint("⚠️ Disconnect skipped — room mismatch");
+      return;
+    }
+
     _isDisposed        = true;
     _reconnectAttempts = _maxReconnectAttempts;
 
@@ -388,13 +376,13 @@ class LiveKitService {
     _currentRoomId = null;
     _currentUserId = null;
     _currentRole   = null;
-    _currentToken  = null; // ✅ FIX: Token bhi clear karo
+    _currentToken  = null;
 
     debugPrint("🔌 LiveKit disconnected cleanly");
   }
 
   // ─────────────────────────────────────────────
-  //  RESET — ✅ UNCHANGED
+  //  RESET — unchanged
   // ─────────────────────────────────────────────
   void reset() {
     _isDisposed        = false;
