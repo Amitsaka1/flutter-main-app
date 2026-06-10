@@ -10,7 +10,7 @@ import '../../../core/livekit/livekit_service.dart';
 import '../../../core/session/user_session.dart';
 
 // ─────────────────────────────────────────────────────────
-//  VOICE CHAT MESSAGE MODEL
+//  VOICE CHAT MESSAGE MODEL — unchanged
 // ─────────────────────────────────────────────────────────
 
 class VoiceChatMessage {
@@ -30,9 +30,9 @@ class VoiceChatMessage {
     required this.isMe,
   });
 }
+
 // ─────────────────────────────────────────────────────────
-//  VOICE WORLD STATE
-//  World screen ka state — fetch, search
+//  ENUMS + STATES — unchanged
 // ─────────────────────────────────────────────────────────
 
 enum VoiceWorldStatus { idle, loading, loaded, error }
@@ -51,14 +51,10 @@ class VoiceWorldState {
     this.searchQuery  = "",
   });
 
-  // ── ShortId se group filter ───────────────────────────
   List<VoiceGroupModel> get filteredGroups {
     if (worlds.isEmpty) return [];
-
     final all = worlds.expand((w) => w.groups).toList();
-
     if (searchQuery.trim().isEmpty) return all;
-
     return all
         .where((g) => g.shortId
             .toUpperCase()
@@ -82,7 +78,7 @@ class VoiceWorldState {
 }
 
 // ─────────────────────────────────────────────────────────
-//  VOICE WORLD NOTIFIER
+//  VOICE WORLD NOTIFIER — unchanged
 // ─────────────────────────────────────────────────────────
 
 class VoiceWorldNotifier extends StateNotifier<VoiceWorldState> {
@@ -95,10 +91,7 @@ class VoiceWorldNotifier extends StateNotifier<VoiceWorldState> {
     state = state.copyWith(status: VoiceWorldStatus.loading);
     try {
       final worlds = await _repo.getWorlds();
-      state = state.copyWith(
-        status: VoiceWorldStatus.loaded,
-        worlds: worlds,
-      );
+      state = state.copyWith(status: VoiceWorldStatus.loaded, worlds: worlds);
     } catch (e) {
       state = state.copyWith(
         status:       VoiceWorldStatus.error,
@@ -107,20 +100,16 @@ class VoiceWorldNotifier extends StateNotifier<VoiceWorldState> {
     }
   }
 
-  void onSearchChanged(String query) {
-    state = state.copyWith(searchQuery: query);
-  }
+  void onSearchChanged(String query) =>
+      state = state.copyWith(searchQuery: query);
 
-  void clearSearch() {
-    state = state.copyWith(searchQuery: "");
-  }
+  void clearSearch() => state = state.copyWith(searchQuery: "");
 
   Future<void> refresh() => fetchWorlds();
 }
 
 // ─────────────────────────────────────────────────────────
-//  VOICE ROOM STATE
-//  Room ke andar ka poora state
+//  VOICE ROOM STATE — unchanged
 // ─────────────────────────────────────────────────────────
 
 class VoiceRoomState {
@@ -129,13 +118,8 @@ class VoiceRoomState {
   final String?                myRole;
   final bool                   isMicOn;
   final List<VoiceMemberModel> members;
-
-  // Local mute — sirf is device pe, doosre ko pata nahi
   final Map<String, bool>      localMutedUsers;
-
-  // Bi-directional mute — dono taraf band
   final Set<String>            biMutedUsers;
-
   final bool                   isReconnecting;
   final bool                   justPromoted;
   final Set<String>            activeSpeakers;
@@ -160,16 +144,13 @@ class VoiceRoomState {
     this.chatMessages     = const [],
     this.listeners        = const [],
   });
-  
+
   bool get isSpeaker  => myRole == "speaker";
   bool get isListener => myRole == "listener";
   bool get isJoined   => joinStatus == VoiceJoinStatus.joined;
 
-  bool isLocalMuted(String userId) =>
-      localMutedUsers[userId] == true;
-
-  bool isBiMuted(String userId) =>
-      biMutedUsers.contains(userId);
+  bool isLocalMuted(String userId) => localMutedUsers[userId] == true;
+  bool isBiMuted(String userId)    => biMutedUsers.contains(userId);
 
   VoiceRoomState copyWith({
     VoiceJoinStatus?         joinStatus,
@@ -208,7 +189,6 @@ class VoiceRoomState {
 
 // ─────────────────────────────────────────────────────────
 //  VOICE ROOM NOTIFIER
-//  Room lifecycle — join, leave, mute, reconnect
 // ─────────────────────────────────────────────────────────
 
 class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
@@ -217,11 +197,16 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
   final LiveKitService       _liveKit;
 
   dynamic  _roomListener;
-  String?  _currentGroupId; // Abhi kis room mein hai
-  bool     _cleanedUp = false; // Double cleanup prevent karo
+  String?  _currentGroupId;
+  bool     _cleanedUp = false;
 
+  // modify: Constructor — Fix #3: onReconnected callback register karo
+  // livekit_mobile.dart mein naya field tha jo reconnect success pe fire karta hai
+  // Ab VoiceRoomNotifier ko pata chalega jab reconnect hua
   VoiceRoomNotifier(this._repo, this._liveKit)
-      : super(const VoiceRoomState());
+      : super(const VoiceRoomState()) {
+    _liveKit.onReconnected = _onLiveKitReconnected; // new: Fix #3
+  }
 
   // ── JOIN ─────────────────────────────────────────────
   Future<void> joinGroup(VoiceGroupModel group) async {
@@ -230,85 +215,8 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
     state = state.copyWith(joinStatus: VoiceJoinStatus.joining);
 
     try {
-      // fix: Ban check remove kiya — backend joinGroup andar hi check karta hai
-      // Agar banned hai toh backend PERMANENTLY_BANNED error throw karega
-      // jo catch block handle kar lega — 1 API call ki jagah ab 1 hi hogi
-      // 2. Join API — backend se token + role milega
       final result = await _repo.joinGroup(group.id);
 
-      // 3. LiveKit connect
-      _liveKit.reset();
-      await _liveKit.connectWithToken(
-        token:  result.token,
-        roomId: "vg-${group.id}",
-        role:   result.role,
-      );
-
-      // 4. Current group track karo (cleanup ke liye)
-      _currentGroupId = group.id;
-
-      // 5. Room listeners
-      _setupRoomListeners();
-
-      // fix: Pehle placeholder se turant seat fill karo
-      final myId = UserSession.userId ?? "";
-
-      final placeholder = VoiceMemberModel(
-        userId:    myId,
-        role:      result.role,
-        isMuted:   false,
-        name:      UserSession.name,
-        avatarUrl: UserSession.avatarUrl,
-        level:     UserSession.level,
-      );
-
-      // FIX: Speakers aur listeners alag karo join pe
-      final existingSpeakers  = group.members.where((m) => m.isSpeaker).toList();
-      final existingListeners = group.members.where((m) => !m.isSpeaker).toList();
-
-      final alreadyIn = group.members.any((m) => m.userId == myId);
-
-      // Placeholder sahi list mein daalo role ke hisaab se
-      final updatedSpeakers = (result.role == 'speaker' && !alreadyIn)
-          ? [placeholder, ...existingSpeakers]
-          : existingSpeakers;
-
-      final updatedListeners = (result.role == 'listener' && !alreadyIn)
-          ? [placeholder, ...existingListeners]
-          : existingListeners;
-
-      state = state.copyWith(
-        joinStatus:    VoiceJoinStatus.joined,
-        myRole:        result.role,
-        isMicOn:       result.isSpeaker,
-        members:       updatedSpeakers,
-        listeners:     updatedListeners,
-        speakerCount:  group.speakerCount,
-        listenerCount: group.listenerCount,
-      );
-
-    } catch (e) {
-      state = state.copyWith(
-        joinStatus:   VoiceJoinStatus.error,
-        errorMessage: e.toString(),
-      );
-    }
-  }
-
-  // ─────────────────────────────────────────────────────
-  //  JOIN WITH PRE-FETCHED TOKEN — INSTANT ⚡
-  //  API call skip — seedha LiveKit connect
-  // ─────────────────────────────────────────────────────
-
-  Future<void> joinGroupWithToken(
-    VoiceGroupModel group,
-    VoiceJoinResult result,
-  ) async {
-    if (state.joinStatus == VoiceJoinStatus.joining) return;
-    state = state.copyWith(joinStatus: VoiceJoinStatus.joining);
-
-    try {
-      // Seedha LiveKit connect — no API wait
       _liveKit.reset();
       await _liveKit.connectWithToken(
         token:  result.token,
@@ -353,9 +261,94 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
       );
 
     } catch (e) {
+      // modify: Fix #4 — Ghost seat prevent karo
+      // Pehle: sirf joinStatus + errorMessage set hota tha
+      // Ab: members + listeners bhi clear karo
+      //     LiveKit bhi cleanup karo (agar partially connected tha)
+      _liveKit.disconnect(
+        expectedRoomId: "vg-${group.id}",
+      ).catchError((_) {}); // new: Fix #4
+
       state = state.copyWith(
-        joinStatus:   VoiceJoinStatus.error,
-        errorMessage: e.toString(),
+        joinStatus:    VoiceJoinStatus.error,
+        errorMessage:  e.toString(),
+        members:       [],        // new: Fix #4
+        listeners:     [],        // new: Fix #4
+        speakerCount:  0,         // new: Fix #4
+        listenerCount: 0,         // new: Fix #4
+      );
+    }
+  }
+
+  // ─────────────────────────────────────────────────────
+  //  JOIN WITH PRE-FETCHED TOKEN
+  //  NOTE: Prefetch feature Step 6 mein remove hoga
+  //        Tab tak ye method rakhna zaroori hai
+  // ─────────────────────────────────────────────────────
+
+  Future<void> joinGroupWithToken(
+    VoiceGroupModel group,
+    VoiceJoinResult result,
+  ) async {
+    if (state.joinStatus == VoiceJoinStatus.joining) return;
+    state = state.copyWith(joinStatus: VoiceJoinStatus.joining);
+
+    try {
+      _liveKit.reset();
+      await _liveKit.connectWithToken(
+        token:  result.token,
+        roomId: "vg-${group.id}",
+        role:   result.role,
+      );
+
+      _currentGroupId = group.id;
+      _setupRoomListeners();
+
+      final myId          = UserSession.userId ?? "";
+      final placeholder   = VoiceMemberModel(
+        userId:    myId,
+        role:      result.role,
+        isMuted:   false,
+        name:      UserSession.name,
+        avatarUrl: UserSession.avatarUrl,
+        level:     UserSession.level,
+      );
+
+      final existingSpeakers  = group.members.where((m) => m.isSpeaker).toList();
+      final existingListeners = group.members.where((m) => !m.isSpeaker).toList();
+      final alreadyIn         = group.members.any((m) => m.userId == myId);
+
+      final updatedSpeakers = (result.role == 'speaker' && !alreadyIn)
+          ? [placeholder, ...existingSpeakers]
+          : existingSpeakers;
+
+      final updatedListeners = (result.role == 'listener' && !alreadyIn)
+          ? [placeholder, ...existingListeners]
+          : existingListeners;
+
+      state = state.copyWith(
+        joinStatus:    VoiceJoinStatus.joined,
+        myRole:        result.role,
+        isMicOn:       result.isSpeaker,
+        members:       updatedSpeakers,
+        listeners:     updatedListeners,
+        speakerCount:  group.speakerCount,
+        listenerCount: group.listenerCount,
+      );
+
+    } catch (e) {
+      // modify: Fix #4 — same ghost seat fix
+      _liveKit.disconnect(
+        expectedRoomId: "vg-${group.id}",
+      ).catchError((_) {}); // new: Fix #4
+
+      state = state.copyWith(
+        joinStatus:    VoiceJoinStatus.error,
+        errorMessage:  e.toString(),
+        members:       [],     // new: Fix #4
+        listeners:     [],     // new: Fix #4
+        speakerCount:  0,      // new: Fix #4
+        listenerCount: 0,      // new: Fix #4
       );
     }
   }
@@ -365,25 +358,30 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
     if (_cleanedUp) return;
     _cleanedUp = true;
 
-    // FIX: Turant UI clear karo — user ko instant feedback
     state = state.copyWith(
       joinStatus: VoiceJoinStatus.leaving,
       members:    [],
       listeners:  [],
     );
 
-    // FIX: await hatao — background mein karo
-    // Screen turant close hogi — cleanup peeche chalega
-    _liveKit.disconnect().catchError((_) {});
+    // modify: Fix #6 — expectedRoomId pass karo
+    // Pehle: _liveKit.disconnect() — koi bhi room disconnect ho sakta tha
+    // Ab: Sirf is specific room ka disconnect hoga
+    _liveKit.onReconnected = null;              // new: Fix #6 — reconnect callback clear
+    _liveKit.disconnect(
+      expectedRoomId: "vg-$groupId",           // new: Fix #5
+    ).catchError((_) {});
+
     _repo.leaveGroupWithRetry(groupId);
 
     _roomListener?.dispose();
-    _roomListener = null;
+    _roomListener   = null;
     _currentGroupId = null;
 
     state = const VoiceRoomState();
   }
-  // ── SELF MIC TOGGLE ──────────────────────────────────
+
+  // ── MIC CONTROLS — unchanged ─────────────────────────
   Future<void> toggleMic() async {
     if (!state.isSpeaker) return;
     final newMicState = !state.isMicOn;
@@ -391,19 +389,15 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
     state = state.copyWith(isMicOn: newMicState);
   }
 
-  // ── LOCAL MUTE — sirf apne liye, doosre ko pata nahi ─
   void toggleLocalMute(String userId) {
     final updated = Map<String, bool>.from(state.localMutedUsers);
-    final current = updated[userId] == true;
-    updated[userId] = !current;
-    _applyTrackMute(userId, !current);
+    updated[userId] = !(updated[userId] == true);
+    _applyTrackMute(userId, updated[userId]!);
     state = state.copyWith(localMutedUsers: updated);
   }
 
-  // ── BI-DIRECTIONAL MUTE — dono taraf ─────────────────
   void toggleBiMute(String userId) {
     final updated = Set<String>.from(state.biMutedUsers);
-
     if (updated.contains(userId)) {
       updated.remove(userId);
       _applyTrackMute(userId, false);
@@ -413,11 +407,9 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
       _applyTrackMute(userId, true);
       _sendData("BI_MUTE:$userId");
     }
-
     state = state.copyWith(biMutedUsers: updated);
   }
 
-  // ── REPORT ───────────────────────────────────────────
   Future<void> reportUser({
     required String reportedId,
     required String groupId,
@@ -433,14 +425,11 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
   void clearPromoted() =>
       state = state.copyWith(justPromoted: false);
 
-  // new: Live room chat message bhejo via LiveKit Data Channel
-  // Backend involve nahi — zero server load
   void sendChatMessage(String message) {
     if (message.trim().isEmpty) return;
 
     final myId = UserSession.userId ?? "";
 
-    // FIX: Dono lists check karo — speaker state.members mein, listener state.listeners mein
     final me = state.members.firstWhere(
       (m) => m.userId == myId,
       orElse: () => state.listeners.firstWhere(
@@ -449,14 +438,13 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
           userId:    myId,
           role:      'listener',
           isMuted:   false,
-          name:      UserSession.name,      // ✅ Session se fallback
+          name:      UserSession.name,
           avatarUrl: UserSession.avatarUrl,
           level:     UserSession.level,
         ),
       ),
     );
 
-    // new: Local mein turant add karo — apna message dikhao
     final chatMsg = VoiceChatMessage(
       userId:    myId,
       name:      me.name ?? "User",
@@ -466,14 +454,10 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
       isMe:      true,
     );
 
-    // new: Max 100 messages rakho — memory leak prevent
     final updated = [...state.chatMessages, chatMsg];
     if (updated.length > 100) updated.removeAt(0);
-
     state = state.copyWith(chatMessages: updated);
 
-    // new: Sab room members ko LiveKit Data Channel se bhejo
-    // Backend ka koi kaam nahi — LiveKit directly deliver karta hai
     final payload = jsonEncode({
       "type":      "ROOM_CHAT",
       "userId":    myId,
@@ -491,246 +475,119 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
   // ─────────────────────────────────────────────────────
 
   void _setupRoomListeners() {
-  try {
-    final room = _liveKit.room;
-    if (room == null) return;
-
-    _roomListener?.dispose();
-    _roomListener = room.createListener();
-
-    _roomListener
-      ..on<dynamic>((event) {
-        final name = event.runtimeType.toString();
-
-        // Active speakers — speaking glow animation
-        if (name.contains('ActiveSpeakersChangedEvent')) {
-          try {
-            final speakers = (event.speakers as List)
-                .map<String>((s) => s.identity as String)
-                .toSet();
-            state = state.copyWith(activeSpeakers: speakers);
-          } catch (_) {}
-        }
-
-        // Reconnecting
-        else if (name.contains('RoomReconnectingEvent')) {
-          state = state.copyWith(isReconnecting: true);
-        }
-
-        // Reconnected — fresh member list fetch karo
-        else if (name.contains('RoomReconnectedEvent')) {
-          state = state.copyWith(isReconnecting: false);
-
-          // FIX: Internet cut ke dauran jo join/leave hue unka record nahi tha
-          // Fresh fetch se seat grid + listener list dono ek saath update hongi
-          if (_currentGroupId != null) {
-            _repo.fetchGroupMembers(_currentGroupId!).then((result) {
-              if (result == null) return;
-              state = state.copyWith(
-                members:       result.speakers,
-                listeners:     result.listeners,
-                speakerCount:  result.speakerCount,
-                listenerCount: result.listenerCount,
-              );
-            }).catchError((_) {});
-          }
-        }
-
-        // Participant disconnected
-        else if (name.contains('ParticipantConnectedEvent')) {
-                  try {
-                    final userId = event.participant.identity as String;
-
-                    // FIX: Dono lists mein check karo
-                    final alreadyInSpeakers  = state.members.any((m) => m.userId == userId);
-                    final alreadyInListeners = state.listeners.any((m) => m.userId == userId);
-
-                    if (!alreadyInSpeakers && !alreadyInListeners) {
-                      // FIX: groupId pass karo — backend real role dega
-                      _repo.fetchMemberProfile(
-                        userId,
-                        groupId: _currentGroupId,
-                      ).then((profile) {
-                        if (profile == null) return;
-
-                        // Abhi bhi absent hai? Tab hi add karo
-                        final stillAbsent =
-                            !state.members.any((m) => m.userId == userId) &&
-                            !state.listeners.any((m) => m.userId == userId);
-                        if (!stillAbsent) return;
-
-                        if (profile.role == 'speaker') {
-                          // Speaker — seat grid mein
-                          state = state.copyWith(
-                            members:      [...state.members, profile],
-                            speakerCount: state.speakerCount + 1,
-                          );
-                        } else {
-                          // Listener — listener list mein
-                          state = state.copyWith(
-                            listeners:     [...state.listeners, profile],
-                            listenerCount: state.listenerCount + 1,
-                          );
-                        }
-                      }).catchError((_) {});
-          }
-        } catch (_) {}
-      }
-
-        // Participant connected — end
-        // Participant disconnected
-        else if (name.contains('ParticipantDisconnectedEvent')) {
-          final identity = event.participant.identity as String;
-
-          // FIX: Dono lists mein check karo
-          final inSpeakers  = state.members.any((m) => m.userId == identity);
-          final inListeners = state.listeners.any((m) => m.userId == identity);
-
-          final leaving = inSpeakers
-              ? state.members.firstWhere((m) => m.userId == identity)
-              : inListeners
-                  ? state.listeners.firstWhere((m) => m.userId == identity)
-                  : VoiceMemberModel(userId: identity, role: 'listener', isMuted: false);
-
-          // Dono lists se remove karo
-          final updatedSpeakers  = state.members.where((m) => m.userId != identity).toList();
-          final updatedListeners = state.listeners.where((m) => m.userId != identity).toList();
-
-          state = state.copyWith(
-            members:       updatedSpeakers,
-            listeners:     updatedListeners,
-            speakerCount:  (leaving.role == 'speaker' && inSpeakers)
-                ? (state.speakerCount  - 1).clamp(0, 999)
-                : state.speakerCount,
-            listenerCount: (leaving.role == 'listener' && inListeners)
-                ? (state.listenerCount - 1).clamp(0, 999)
-                : state.listenerCount,
-          );
-        }
-        // Data received
-        else if (name.contains('DataReceivedEvent')) {
-          _handleDataMessage(event);
-        }
-      });
-  } catch (_) {}
-  }
-
-  void _handleDataMessage(dynamic event) {
     try {
-      final raw   = String.fromCharCodes(event.data);
-      // Format: "TYPE:targetUserId"
-      final colon = raw.indexOf(":");
-      if (colon < 0) return;
+      final room = _liveKit.room;
+      if (room == null) return;
 
-      final type   = raw.substring(0, colon);
-      final target = raw.substring(colon + 1);
-      final sender = event.participant?.identity ?? "";
-      final myId   = UserSession.userId ?? "";
+      _roomListener?.dispose();
+      _roomListener = room.createListener();
 
-      switch (type) {
-        case "BI_MUTE":
-          if (target == myId) {
-            _liveKit.disableMic();
-            state = state.copyWith(isMicOn: false);
+      _roomListener
+        ..on<dynamic>((event) {
+          final name = event.runtimeType.toString();
+
+          if (name.contains('ActiveSpeakersChangedEvent')) {
+            try {
+              final speakers = (event.speakers as List)
+                  .map<String>((s) => s.identity as String)
+                  .toSet();
+              state = state.copyWith(activeSpeakers: speakers);
+            } catch (_) {}
           }
-          _applyTrackMute(sender, true);
-          break;
 
-        case "BI_UNMUTE":
-          if (target == myId && state.isSpeaker) {
-            _liveKit.enableMic();
-            state = state.copyWith(isMicOn: true);
+          else if (name.contains('RoomReconnectingEvent')) {
+            state = state.copyWith(isReconnecting: true);
           }
-          _applyTrackMute(sender, false);
-          break;
 
-          // new: Live room chat message receive karo
-        case "ROOM_CHAT":
-          try {
-            final data     = jsonDecode(target) as Map<String, dynamic>;
-            final myId     = UserSession.userId ?? "";
-            final senderId = data["userId"] as String? ?? "";
+          else if (name.contains('RoomReconnectedEvent')) {
+            // SDK internal reconnect — short hiccup
+            state = state.copyWith(isReconnecting: false);
 
-            // new: Apna hi message dobara add mat karo
-            if (senderId == myId) break;
-
-            final chatMsg = VoiceChatMessage(
-              userId:    senderId,
-              name:      data["name"]      as String? ?? "User",
-              avatarUrl: data["avatarUrl"] as String?,
-              message:   data["message"]   as String?  ?? "",
-              time:      DateTime.tryParse(
-                           data["time"] as String? ?? ""
-                         ) ?? DateTime.now(),
-              isMe:      false,
-            );
-
-            // new: Max 100 messages
-            final msgs = [...state.chatMessages, chatMsg];
-            if (msgs.length > 100) msgs.removeAt(0);
-
-            state = state.copyWith(chatMessages: msgs);
-          } catch (_) {}
-          break;
-
-        case "PROMOTED_TO_SPEAKER":
-          if (target == myId) {
-            // FIX: Pehle listeners mein dhundo — promoted user wahan hoga
-            final meInListeners = state.listeners
-                .where((m) => m.userId == myId)
-                .toList();
-
-            // Listeners se remove karo
-            final updatedListeners = state.listeners
-                .where((m) => m.userId != myId)
-                .toList();
-
-            // Members mein already hai toh update, nahi hai toh add
-            final alreadyInMembers =
-                state.members.any((m) => m.userId == myId);
-
-            final List<VoiceMemberModel> updatedMembers;
-
-            if (alreadyInMembers) {
-              // Update existing entry
-              updatedMembers = state.members.map((m) {
-                if (m.userId != myId) return m;
-                return VoiceMemberModel(
-                  userId:    m.userId,
-                  role:      "speaker",
-                  isMuted:   m.isMuted,
-                  name:      m.name,
-                  avatarUrl: m.avatarUrl,
-                  level:     m.level,
+            if (_currentGroupId != null) {
+              _repo.fetchGroupMembers(_currentGroupId!).then((result) {
+                if (_cleanedUp || result == null) return;
+                state = state.copyWith(
+                  members:       result.speakers,
+                  listeners:     result.listeners,
+                  speakerCount:  result.speakerCount,
+                  listenerCount: result.listenerCount,
                 );
-              }).toList();
-            } else {
-              // Listener se promote hua — members mein add karo
-              final promoted = meInListeners.isNotEmpty
-                  ? VoiceMemberModel(
-                      userId:    myId,
-                      role:      "speaker",
-                      isMuted:   false,
-                      name:      meInListeners.first.name,
-                      avatarUrl: meInListeners.first.avatarUrl,
-                      level:     meInListeners.first.level,
-                    )
-                  : VoiceMemberModel(
-                      userId:  myId,
-                      role:    "speaker",
-                      isMuted: false,
-                      name:    UserSession.name,
-                      avatarUrl: UserSession.avatarUrl,
-                      level:   UserSession.level,
-                    );
-              updatedMembers = [...state.members, promoted];
+              }).catchError((_) {});
             }
+          }
+
+          // new: Fix #1 — RoomDisconnectedEvent pe banner reset karo
+          // Pehle: ye handler tha hi nahi
+          //        isReconnecting kabhi false nahi hota tha
+          //        Banner hamesha ke liye stuck rehta tha
+          // Ab: Full disconnect pe banner band karo
+          //     _scheduleReconnect background mein chalega
+          //     _onLiveKitReconnected callback success pe banner update karega
+          else if (name.contains('RoomDisconnectedEvent')) {
+            state = state.copyWith(isReconnecting: false); // new: Fix #1
+          }
+
+          else if (name.contains('ParticipantConnectedEvent')) {
+            try {
+              final userId = event.participant.identity as String;
+
+              final alreadyInSpeakers  = state.members.any((m) => m.userId == userId);
+              final alreadyInListeners = state.listeners.any((m) => m.userId == userId);
+
+              if (!alreadyInSpeakers && !alreadyInListeners) {
+                _repo.fetchMemberProfile(
+                  userId,
+                  groupId: _currentGroupId,
+                ).then((profile) {
+                  if (profile == null) return;
+
+                  final stillAbsent =
+                      !state.members.any((m) => m.userId == userId) &&
+                      !state.listeners.any((m) => m.userId == userId);
+                  if (!stillAbsent) return;
+
+                  if (profile.role == 'speaker') {
+                    state = state.copyWith(
+                      members:      [...state.members, profile],
+                      speakerCount: state.speakerCount + 1,
+                    );
+                  } else {
+                    state = state.copyWith(
+                      listeners:     [...state.listeners, profile],
+                      listenerCount: state.listenerCount + 1,
+                    );
+                  }
+                }).catchError((_) {});
+              }
+            } catch (_) {}
+          }
+
+          else if (name.contains('ParticipantDisconnectedEvent')) {
+            final identity = event.participant.identity as String;
+
+            final inSpeakers  = state.members.any((m) => m.userId == identity);
+            final inListeners = state.listeners.any((m) => m.userId == identity);
+
+            final leaving = inSpeakers
+                ? state.members.firstWhere((m) => m.userId == identity)
+                : inListeners
+                    ? state.listeners.firstWhere((m) => m.userId == identity)
+                    : VoiceMemberModel(
+                        userId:  identity,
+                        role:    'listener',
+                        isMuted: false,
+                      );
+
+            final updatedSpeakers  =
+                state.members.where((m) => m.userId != identity).toList();
+            final updatedListeners =
+                state.listeners.where((m) => m.userId != identity).toList();
 
             state = state.copyWith(
               myRole:        "speaker",
               justPromoted:  true,
               members:       updatedMembers,
-              listeners:     updatedListeners,      // ✅ Remove from listeners
+              listeners:     updatedListeners,
               speakerCount:  state.speakerCount  + 1,
               listenerCount: meInListeners.isNotEmpty
                   ? (state.listenerCount - 1).clamp(0, 999)
@@ -772,11 +629,19 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
   @override
   void dispose() {
     if (!_cleanedUp) {
-      _cleanedUp = true;
-      _liveKit.disconnect();
+      _cleanedUp              = true;
+      _liveKit.onReconnected  = null; // new: Fix #6 — callback clear karo
+
+      // modify: Fix #5 — expectedRoomId pass karo
+      // Pehle: _liveKit.disconnect() — kisi bhi room ka connection cut ho sakta tha
+      // Ab: Sirf is specific group ka disconnect hoga
+      _liveKit.disconnect(
+        expectedRoomId: _currentGroupId != null
+            ? "vg-$_currentGroupId"
+            : null,                            // new: Fix #5
+      );
+
       if (_currentGroupId != null) {
-        // FIX: Retry wala use karo — internet cut pe bhi leave backend pe ho
-        // Pehle leaveGroup tha — network fail pe seat backend pe stuck rehti thi
         _repo.leaveGroupWithRetry(_currentGroupId!);
       }
     }
@@ -786,7 +651,7 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
 }
 
 // ─────────────────────────────────────────────────────────
-//  PROVIDERS
+//  PROVIDERS — unchanged
 // ─────────────────────────────────────────────────────────
 
 final voiceWorldRepositoryProvider =
@@ -794,8 +659,6 @@ final voiceWorldRepositoryProvider =
   return VoiceWorldRepository.instance;
 });
 
-// FIX: autoDispose add kiya — screen close hone pe LiveKitService free ho
-// Pehle Provider tha — memory mein hamesha pada rehta tha
 final voiceLiveKitProvider =
     Provider.autoDispose<LiveKitService>((ref) {
   final service = LiveKitService();
@@ -803,13 +666,11 @@ final voiceLiveKitProvider =
   return service;
 });
 
-// World screen — persist karo (tab switch pe reload nahi)
 final voiceWorldProvider =
     StateNotifierProvider<VoiceWorldNotifier, VoiceWorldState>(
   (ref) => VoiceWorldNotifier(ref.read(voiceWorldRepositoryProvider)),
 );
 
-// Room — autoDispose: screen close pe sab cleanup
 final voiceRoomProvider =
     StateNotifierProvider.autoDispose<VoiceRoomNotifier, VoiceRoomState>(
   (ref) => VoiceRoomNotifier(
