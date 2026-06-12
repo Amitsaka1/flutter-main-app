@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../providers/voice_world_provider.dart';
-import '../../../../providers/voice_token_cache_provider.dart'; // ✅ NEW
+// remove: voice_token_cache_provider import hataya — prefetch remove ho gaya
 import '../../data/models/voice_group_model.dart';
 import '../widgets/voice_world_header.dart';
 import '../widgets/voice_search_bar.dart';
@@ -12,12 +12,6 @@ import '../widgets/voice_world_loading.dart';
 import '../widgets/voice_world_error.dart';
 import '../widgets/voice_world_empty.dart';
 import 'voice_group_room_screen.dart';
-
-// ─────────────────────────────────────────────────────────
-//  VOICE WORLD SCREEN
-//  Path: lib/features/voice_world/presentation/screens/voice_world_screen.dart
-//  Sirf wiring — logic provider mein, UI widgets mein
-// ─────────────────────────────────────────────────────────
 
 class VoiceWorldScreen extends ConsumerStatefulWidget {
   const VoiceWorldScreen({super.key});
@@ -49,30 +43,25 @@ class _VoiceWorldScreenState
     });
   }
 
-  // FIX: Double tap protection — fast tap pe 2 rooms join hone se bachao
+  // remove: _prefetchDone field hataya — prefetch remove ho gaya
   bool _isNavigating = false;
-  bool _prefetchDone  = false;
 
   Future<void> _onJoinTapped(VoiceGroupModel group) async {
     if (_isNavigating) return;
     _isNavigating = true;
 
     try {
-      // ✅ Cache check — instant token milega toh skip API call
-      final cached = ref
-          .read(voiceTokenCacheProvider.notifier)
-          .getResult(group.id);
-
-      // Cache se nikala toh hata do (use ho gaya)
-      if (cached != null) {
-        ref.read(voiceTokenCacheProvider.notifier).remove(group.id);
-      }
-
+      // modify: Fix #8 — Prefetch cache logic hataya
+      // Pehle: cached token check → preloadedResult pass karta tha
+      //        Lekin: world IDs jaate the (group IDs nahi) → sab fail
+      //        Aur: joinGroup() DB records banata tha bina actual join ke
+      // Ab: Seedha room screen push karo — normal join flow chalega
+      //     ~1s ICE negotiation time save nahi ho sakta prefetch se anyway
       await Navigator.of(context, rootNavigator: true).push(
         MaterialPageRoute(
           builder: (_) => VoiceGroupRoomScreen(
             group:           group,
-            preloadedResult: cached, // ✅ null ya instant token
+            preloadedResult: null, // modify: hamesha null — normal join flow
           ),
         ),
       );
@@ -95,18 +84,12 @@ class _VoiceWorldScreenState
     final state    = ref.watch(voiceWorldProvider);
     final notifier = ref.read(voiceWorldProvider.notifier);
 
-    // ✅ Worlds load hone ke baad background mein tokens pre-fetch karo
-    if (state.status == VoiceWorldStatus.loaded &&
-        state.worlds.isNotEmpty &&
-        !_prefetchDone) {
-      _prefetchDone = true;
-      final groupIds = state.worlds.map((w) => w.id).toList();
-      ref.read(voiceTokenCacheProvider.notifier).prefetch(
-        groupIds,
-        ref.read(voiceWorldRepositoryProvider),
-      );
-    }
-    final groups   = state.filteredGroups;
+    // remove: Prefetch block hataya
+    // Pehle: state.worlds.map((w) => w.id) → world IDs (wrong!)
+    //        repo.joinGroup() → DB records + ghost members
+    // Ab: Kuch nahi — join tap pe normal flow
+
+    final groups = state.filteredGroups;
 
     if (state.status == VoiceWorldStatus.loading &&
         state.worlds.isEmpty) {
