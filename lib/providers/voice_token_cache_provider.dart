@@ -7,9 +7,10 @@ import '../features/voice_world/data/repository/voice_world_repository.dart';
 //  VOICE TOKEN CACHE PROVIDER
 //  Path: lib/providers/voice_token_cache_provider.dart
 //
-//  Worlds screen load hote hi background mein
-//  top rooms ke tokens fetch karke yahan store karo
-//  Join tap karne pe cache se instant token milega ⚡
+//  NOTE: Prefetch feature removed — Fix #8
+//        joinGroup() DB side effects ki wajah se ghost members bante the
+//        ICE negotiation (~950ms) save nahi ho sakta tha anyway
+//        File structure rakha hai future use ke liye
 // ─────────────────────────────────────────────────────────
 
 final voiceTokenCacheProvider = StateNotifierProvider<
@@ -23,47 +24,26 @@ class VoiceTokenCacheNotifier
 
   VoiceTokenCacheNotifier() : super({});
 
-  bool _isFetching = false;
-
-  // ── Background mein top rooms ke tokens fetch karo ──
+  // modify: Fix #8 — prefetch body hataya
+  // Pehle: repo.joinGroup() call karta tha background mein
+  //        Ghost DB members bante the + world IDs jaate the (wrong)
+  // Ab: No-op — screen se call hona bhi band ho gaya
   Future<void> prefetch(
-    List<String>          groupIds,
-    VoiceWorldRepository  repo,
+    List<String>         groupIds,
+    VoiceWorldRepository repo,
   ) async {
-    if (_isFetching) return;
-    _isFetching = true;
-
-    try {
-      for (final groupId in groupIds.take(5)) {
-        // Already cached hai toh skip karo
-        if (state.containsKey(groupId)) continue;
-
-        // Background fetch — error pe quietly skip karo
-        repo.joinGroup(groupId).then((result) {
-          state = { ...state, groupId: result };
-        }).catchError((_) {
-          // Pre-fetch fail hona ok hai
-          // User join tap karega tab normal flow chalega
-        });
-
-        // Ek saath sab rooms flood mat karo server pe
-        await Future.delayed(const Duration(milliseconds: 400));
-      }
-    } finally {
-      _isFetching = false;
-    }
+    // Intentionally empty — prefetch removed
+    // Direct join flow use karo
   }
 
-  // ── Token lo agar cached hai ─────────────────────────
+  // unchanged: Cache operations — future use ke liye rakhe
   VoiceJoinResult? getResult(String groupId) => state[groupId];
 
-  // ── Join ke baad cache hatao ─────────────────────────
   void remove(String groupId) {
     final updated = Map<String, VoiceJoinResult>.from(state);
     updated.remove(groupId);
     state = updated;
   }
 
-  // ── Sab clear karo (logout/leave) ───────────────────
   void clearAll() => state = {};
 }
