@@ -600,6 +600,99 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
     } catch (_) {}
   }
 
+  void _onLiveKitReconnected() {
+    if (_cleanedUp) return;
+
+    _setupRoomListeners();
+
+    if (_currentGroupId != null) {
+      _repo.joinGroup(_currentGroupId!).catchError((_) {});
+    }
+
+    if (_currentGroupId != null) {
+      _repo.fetchGroupMembers(_currentGroupId!).then((result) {
+        if (_cleanedUp) return;
+        if (result == null) {
+          state = state.copyWith(isReconnecting: false);
+          return;
+        }
+        state = state.copyWith(
+          members:        result.speakers,
+          listeners:      result.listeners,
+          speakerCount:   result.speakerCount,
+          listenerCount:  result.listenerCount,
+          isReconnecting: false,
+        );
+      }).catchError((_) {
+        if (_cleanedUp) return;
+        state = state.copyWith(isReconnecting: false);
+      });
+    } else {
+      state = state.copyWith(isReconnecting: false);
+    }
+  }
+
+  void handleWebSocketPromotion(String? groupId) {
+    if (_cleanedUp) return;
+    if (groupId != null && groupId != _currentGroupId) return;
+
+    final myId = UserSession.userId ?? "";
+    if (myId.isEmpty) return;
+
+    final meInListeners    = state.listeners.where((m) => m.userId == myId).toList();
+    final updatedListeners = state.listeners.where((m) => m.userId != myId).toList();
+    final alreadyInMembers = state.members.any((m) => m.userId == myId);
+
+    final List<VoiceMemberModel> updatedMembers;
+
+    if (alreadyInMembers) {
+      updatedMembers = state.members.map((m) {
+        if (m.userId != myId) return m;
+        return VoiceMemberModel(
+          userId:    m.userId,
+          role:      "speaker",
+          isMuted:   m.isMuted,
+          name:      m.name,
+          avatarUrl: m.avatarUrl,
+          level:     m.level,
+        );
+      }).toList();
+    } else {
+      final promoted = meInListeners.isNotEmpty
+          ? VoiceMemberModel(
+              userId:    myId,
+              role:      "speaker",
+              isMuted:   false,
+              name:      meInListeners.first.name,
+              avatarUrl: meInListeners.first.avatarUrl,
+              level:     meInListeners.first.level,
+            )
+          : VoiceMemberModel(
+              userId:    myId,
+              role:      "speaker",
+              isMuted:   false,
+              name:      UserSession.name,
+              avatarUrl: UserSession.avatarUrl,
+              level:     UserSession.level,
+            );
+      updatedMembers = [...state.members, promoted];
+    }
+
+    state = state.copyWith(
+      myRole:        "speaker",
+      justPromoted:  true,
+      members:       updatedMembers,
+      listeners:     updatedListeners,
+      speakerCount:  state.speakerCount + 1,
+      listenerCount: meInListeners.isNotEmpty
+          ? (state.listenerCount - 1).clamp(0, 999)
+          : state.listenerCount,
+    );
+
+    _liveKit.enableMic();
+    debugPrint("🎙️ Promoted via WebSocket");
+  }
+
   void _applyTrackMute(String userId, bool mute) {
     try {
       final room = _liveKit.room;
