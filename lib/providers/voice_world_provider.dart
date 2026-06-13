@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart'; // fix: debugPrint ke liye
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../features/voice_world/data/models/voice_group_model.dart';
@@ -10,7 +11,7 @@ import '../../../core/livekit/livekit_service.dart';
 import '../../../core/session/user_session.dart';
 
 // ─────────────────────────────────────────────────────────
-//  VOICE CHAT MESSAGE MODEL — unchanged
+//  VOICE CHAT MESSAGE MODEL
 // ─────────────────────────────────────────────────────────
 
 class VoiceChatMessage {
@@ -32,7 +33,7 @@ class VoiceChatMessage {
 }
 
 // ─────────────────────────────────────────────────────────
-//  ENUMS + STATES — unchanged
+//  ENUMS + STATES
 // ─────────────────────────────────────────────────────────
 
 enum VoiceWorldStatus { idle, loading, loaded, error }
@@ -78,7 +79,7 @@ class VoiceWorldState {
 }
 
 // ─────────────────────────────────────────────────────────
-//  VOICE WORLD NOTIFIER — unchanged
+//  VOICE WORLD NOTIFIER
 // ─────────────────────────────────────────────────────────
 
 class VoiceWorldNotifier extends StateNotifier<VoiceWorldState> {
@@ -109,7 +110,7 @@ class VoiceWorldNotifier extends StateNotifier<VoiceWorldState> {
 }
 
 // ─────────────────────────────────────────────────────────
-//  VOICE ROOM STATE — unchanged
+//  VOICE ROOM STATE
 // ─────────────────────────────────────────────────────────
 
 class VoiceRoomState {
@@ -200,12 +201,9 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
   String?  _currentGroupId;
   bool     _cleanedUp = false;
 
-  // modify: Constructor — Fix #3: onReconnected callback register karo
-  // livekit_mobile.dart mein naya field tha jo reconnect success pe fire karta hai
-  // Ab VoiceRoomNotifier ko pata chalega jab reconnect hua
   VoiceRoomNotifier(this._repo, this._liveKit)
       : super(const VoiceRoomState()) {
-    _liveKit.onReconnected = _onLiveKitReconnected; // new: Fix #3
+    _liveKit.onReconnected = _onLiveKitReconnected;
   }
 
   // ── JOIN ─────────────────────────────────────────────
@@ -261,31 +259,22 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
       );
 
     } catch (e) {
-      // modify: Fix #4 — Ghost seat prevent karo
-      // Pehle: sirf joinStatus + errorMessage set hota tha
-      // Ab: members + listeners bhi clear karo
-      //     LiveKit bhi cleanup karo (agar partially connected tha)
       _liveKit.disconnect(
         expectedRoomId: "vg-${group.id}",
-      ).catchError((_) {}); // new: Fix #4
+      ).catchError((_) {});
 
       state = state.copyWith(
         joinStatus:    VoiceJoinStatus.error,
         errorMessage:  e.toString(),
-        members:       [],        // new: Fix #4
-        listeners:     [],        // new: Fix #4
-        speakerCount:  0,         // new: Fix #4
-        listenerCount: 0,         // new: Fix #4
+        members:       [],
+        listeners:     [],
+        speakerCount:  0,
+        listenerCount: 0,
       );
     }
   }
 
-  // ─────────────────────────────────────────────────────
-  //  JOIN WITH PRE-FETCHED TOKEN
-  //  NOTE: Prefetch feature Step 6 mein remove hoga
-  //        Tab tak ye method rakhna zaroori hai
-  // ─────────────────────────────────────────────────────
-
+  // ── JOIN WITH TOKEN ───────────────────────────────────
   Future<void> joinGroupWithToken(
     VoiceGroupModel group,
     VoiceJoinResult result,
@@ -304,8 +293,8 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
       _currentGroupId = group.id;
       _setupRoomListeners();
 
-      final myId          = UserSession.userId ?? "";
-      final placeholder   = VoiceMemberModel(
+      final myId        = UserSession.userId ?? "";
+      final placeholder = VoiceMemberModel(
         userId:    myId,
         role:      result.role,
         isMuted:   false,
@@ -337,18 +326,17 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
       );
 
     } catch (e) {
-      // modify: Fix #4 — same ghost seat fix
       _liveKit.disconnect(
         expectedRoomId: "vg-${group.id}",
-      ).catchError((_) {}); // new: Fix #4
+      ).catchError((_) {});
 
       state = state.copyWith(
         joinStatus:    VoiceJoinStatus.error,
         errorMessage:  e.toString(),
-        members:       [],     // new: Fix #4
-        listeners:     [],     // new: Fix #4
-        speakerCount:  0,      // new: Fix #4
-        listenerCount: 0,      // new: Fix #4
+        members:       [],
+        listeners:     [],
+        speakerCount:  0,
+        listenerCount: 0,
       );
     }
   }
@@ -364,12 +352,9 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
       listeners:  [],
     );
 
-    // modify: Fix #6 — expectedRoomId pass karo
-    // Pehle: _liveKit.disconnect() — koi bhi room disconnect ho sakta tha
-    // Ab: Sirf is specific room ka disconnect hoga
-    _liveKit.onReconnected = null;              // new: Fix #6 — reconnect callback clear
+    _liveKit.onReconnected = null;
     _liveKit.disconnect(
-      expectedRoomId: "vg-$groupId",           // new: Fix #5
+      expectedRoomId: "vg-$groupId",
     ).catchError((_) {});
 
     _repo.leaveGroupWithRetry(groupId);
@@ -381,7 +366,7 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
     state = const VoiceRoomState();
   }
 
-  // ── MIC CONTROLS — unchanged ─────────────────────────
+  // ── MIC CONTROLS ─────────────────────────────────────
   Future<void> toggleMic() async {
     if (!state.isSpeaker) return;
     final newMicState = !state.isMicOn;
@@ -471,7 +456,8 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
   }
 
   // ─────────────────────────────────────────────────────
-  //  PRIVATE HELPERS
+  //  SETUP ROOM LISTENERS — fix: ParticipantDisconnected
+  //  + DataReceivedEvent add kiya
   // ─────────────────────────────────────────────────────
 
   void _setupRoomListeners() {
@@ -500,7 +486,6 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
           }
 
           else if (name.contains('RoomReconnectedEvent')) {
-            // SDK internal reconnect — short hiccup
             state = state.copyWith(isReconnecting: false);
 
             if (_currentGroupId != null) {
@@ -516,15 +501,8 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
             }
           }
 
-          // new: Fix #1 — RoomDisconnectedEvent pe banner reset karo
-          // Pehle: ye handler tha hi nahi
-          //        isReconnecting kabhi false nahi hota tha
-          //        Banner hamesha ke liye stuck rehta tha
-          // Ab: Full disconnect pe banner band karo
-          //     _scheduleReconnect background mein chalega
-          //     _onLiveKitReconnected callback success pe banner update karega
           else if (name.contains('RoomDisconnectedEvent')) {
-            state = state.copyWith(isReconnecting: false); // new: Fix #1
+            state = state.copyWith(isReconnecting: false);
           }
 
           else if (name.contains('ParticipantConnectedEvent')) {
@@ -562,43 +540,55 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
             } catch (_) {}
           }
 
+          // fix: ParticipantDisconnectedEvent — wrong variables hataye
+          // pehle: updatedMembers, meInListeners use ho rahe the (wrong scope)
+          // ab: updatedSpeakers, updatedListeners, leaving.role use karo
           else if (name.contains('ParticipantDisconnectedEvent')) {
-            final identity = event.participant.identity as String;
+            try {
+              final identity = event.participant.identity as String;
 
-            final inSpeakers  = state.members.any((m) => m.userId == identity);
-            final inListeners = state.listeners.any((m) => m.userId == identity);
+              final inSpeakers  = state.members.any((m) => m.userId == identity);
+              final inListeners = state.listeners.any((m) => m.userId == identity);
 
-            final leaving = inSpeakers
-                ? state.members.firstWhere((m) => m.userId == identity)
-                : inListeners
-                    ? state.listeners.firstWhere((m) => m.userId == identity)
-                    : VoiceMemberModel(
-                        userId:  identity,
-                        role:    'listener',
-                        isMuted: false,
-                      );
+              final leaving = inSpeakers
+                  ? state.members.firstWhere((m) => m.userId == identity)
+                  : inListeners
+                      ? state.listeners.firstWhere((m) => m.userId == identity)
+                      : VoiceMemberModel(
+                          userId:  identity,
+                          role:    'listener',
+                          isMuted: false,
+                        );
 
-            final updatedSpeakers  =
-                state.members.where((m) => m.userId != identity).toList();
-            final updatedListeners =
-                state.listeners.where((m) => m.userId != identity).toList();
+              final updatedSpeakers  =
+                  state.members.where((m) => m.userId != identity).toList();
+              final updatedListeners =
+                  state.listeners.where((m) => m.userId != identity).toList();
 
-            state = state.copyWith(
-              myRole:        "speaker",
-              justPromoted:  true,
-              members:       updatedMembers,
-              listeners:     updatedListeners,
-              speakerCount:  state.speakerCount  + 1,
-              listenerCount: meInListeners.isNotEmpty
-                  ? (state.listenerCount - 1).clamp(0, 999)
-                  : state.listenerCount,
-            );
-            _liveKit.enableMic();
+              state = state.copyWith(
+                members:       updatedSpeakers,
+                listeners:     updatedListeners,
+                speakerCount:  (leaving.role == 'speaker' && inSpeakers)
+                    ? (state.speakerCount  - 1).clamp(0, 999)
+                    : state.speakerCount,
+                listenerCount: (leaving.role == 'listener' && inListeners)
+                    ? (state.listenerCount - 1).clamp(0, 999)
+                    : state.listenerCount,
+              );
+            } catch (_) {}
           }
-          break;
-      }
+
+          // fix: DataReceivedEvent — missing tha, add kiya
+          else if (name.contains('DataReceivedEvent')) {
+            _handleDataMessage(event);
+          }
+        });
     } catch (_) {}
   }
+
+  // ─────────────────────────────────────────────────────
+  //  LIVEKIT RECONNECTED CALLBACK
+  // ─────────────────────────────────────────────────────
 
   void _onLiveKitReconnected() {
     if (_cleanedUp) return;
@@ -631,6 +621,10 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
       state = state.copyWith(isReconnecting: false);
     }
   }
+
+  // ─────────────────────────────────────────────────────
+  //  WEBSOCKET PROMOTION HANDLER
+  // ─────────────────────────────────────────────────────
 
   void handleWebSocketPromotion(String? groupId) {
     if (_cleanedUp) return;
@@ -693,6 +687,132 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
     debugPrint("🎙️ Promoted via WebSocket");
   }
 
+  // ─────────────────────────────────────────────────────
+  //  DATA MESSAGE HANDLER — fix: missing tha, add kiya
+  // ─────────────────────────────────────────────────────
+
+  void _handleDataMessage(dynamic event) {
+    try {
+      final raw   = String.fromCharCodes(event.data);
+      final colon = raw.indexOf(":");
+      if (colon < 0) return;
+
+      final type   = raw.substring(0, colon);
+      final target = raw.substring(colon + 1);
+      final sender = event.participant?.identity ?? "";
+      final myId   = UserSession.userId ?? "";
+
+      switch (type) {
+        case "BI_MUTE":
+          if (target == myId) {
+            _liveKit.disableMic();
+            state = state.copyWith(isMicOn: false);
+          }
+          _applyTrackMute(sender, true);
+          break;
+
+        case "BI_UNMUTE":
+          if (target == myId && state.isSpeaker) {
+            _liveKit.enableMic();
+            state = state.copyWith(isMicOn: true);
+          }
+          _applyTrackMute(sender, false);
+          break;
+
+        case "ROOM_CHAT":
+          try {
+            final data = jsonDecode(target) as Map<String, dynamic>;
+
+            // fix: sender identity use karo — spoof prevent
+            final senderId = sender;
+            if (senderId == myId) break;
+
+            final chatMsg = VoiceChatMessage(
+              userId:    senderId,
+              name:      data["name"]      as String? ?? "User",
+              avatarUrl: data["avatarUrl"] as String?,
+              message:   data["message"]   as String? ?? "",
+              time:      DateTime.tryParse(
+                           data["time"] as String? ?? "",
+                         ) ?? DateTime.now(),
+              isMe:      false,
+            );
+
+            final msgs = [...state.chatMessages, chatMsg];
+            if (msgs.length > 100) msgs.removeAt(0);
+            state = state.copyWith(chatMessages: msgs);
+          } catch (_) {}
+          break;
+
+        case "PROMOTED_TO_SPEAKER":
+          if (target == myId) {
+            final meInListeners = state.listeners
+                .where((m) => m.userId == myId)
+                .toList();
+
+            final updatedListeners = state.listeners
+                .where((m) => m.userId != myId)
+                .toList();
+
+            final alreadyInMembers =
+                state.members.any((m) => m.userId == myId);
+
+            final List<VoiceMemberModel> updatedMembers;
+
+            if (alreadyInMembers) {
+              updatedMembers = state.members.map((m) {
+                if (m.userId != myId) return m;
+                return VoiceMemberModel(
+                  userId:    m.userId,
+                  role:      "speaker",
+                  isMuted:   m.isMuted,
+                  name:      m.name,
+                  avatarUrl: m.avatarUrl,
+                  level:     m.level,
+                );
+              }).toList();
+            } else {
+              final promoted = meInListeners.isNotEmpty
+                  ? VoiceMemberModel(
+                      userId:    myId,
+                      role:      "speaker",
+                      isMuted:   false,
+                      name:      meInListeners.first.name,
+                      avatarUrl: meInListeners.first.avatarUrl,
+                      level:     meInListeners.first.level,
+                    )
+                  : VoiceMemberModel(
+                      userId:    myId,
+                      role:      "speaker",
+                      isMuted:   false,
+                      name:      UserSession.name,
+                      avatarUrl: UserSession.avatarUrl,
+                      level:     UserSession.level,
+                    );
+              updatedMembers = [...state.members, promoted];
+            }
+
+            state = state.copyWith(
+              myRole:        "speaker",
+              justPromoted:  true,
+              members:       updatedMembers,
+              listeners:     updatedListeners,
+              speakerCount:  state.speakerCount  + 1,
+              listenerCount: meInListeners.isNotEmpty
+                  ? (state.listenerCount - 1).clamp(0, 999)
+                  : state.listenerCount,
+            );
+            _liveKit.enableMic();
+          }
+          break;
+      }
+    } catch (_) {}
+  }
+
+  // ─────────────────────────────────────────────────────
+  //  TRACK MUTE
+  // ─────────────────────────────────────────────────────
+
   void _applyTrackMute(String userId, bool mute) {
     try {
       final room = _liveKit.room;
@@ -722,16 +842,13 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
   @override
   void dispose() {
     if (!_cleanedUp) {
-      _cleanedUp              = true;
-      _liveKit.onReconnected  = null; // new: Fix #6 — callback clear karo
+      _cleanedUp             = true;
+      _liveKit.onReconnected = null;
 
-      // modify: Fix #5 — expectedRoomId pass karo
-      // Pehle: _liveKit.disconnect() — kisi bhi room ka connection cut ho sakta tha
-      // Ab: Sirf is specific group ka disconnect hoga
       _liveKit.disconnect(
         expectedRoomId: _currentGroupId != null
             ? "vg-$_currentGroupId"
-            : null,                            // new: Fix #5
+            : null,
       );
 
       if (_currentGroupId != null) {
@@ -744,7 +861,7 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
 }
 
 // ─────────────────────────────────────────────────────────
-//  PROVIDERS — unchanged
+//  PROVIDERS
 // ─────────────────────────────────────────────────────────
 
 final voiceWorldRepositoryProvider =
