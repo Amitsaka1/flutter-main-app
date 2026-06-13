@@ -6,6 +6,9 @@ class LiveKitService {
   bool get isMicEnabled => false;
   dynamic get room      => null;
 
+  // new: Fix #3
+  void Function()? onReconnected;
+
   Future<void> connect({
     required String userId,
     required String roomId,
@@ -22,7 +25,8 @@ class LiveKitService {
   Future<void> disableMic() async {}
   Future<void> toggleMic()  async {}
 
-  Future<void> disconnect() async {}
+  // modify: Fix #5
+  Future<void> disconnect({String? expectedRoomId}) async {}
 
   void reset() {}
 }
