@@ -15,6 +15,7 @@ import 'package:app_project/core/controllers/chat_controller.dart';
 import 'package:app_project/providers/online_users_provider.dart';
 import 'package:app_project/providers/messages_provider.dart';
 import 'package:app_project/providers/recent_chats_provider.dart';
+import 'package:app_project/providers/voice_world_provider.dart'; // new: Fix #5
 
 class GlobalSocketManager with WidgetsBindingObserver {
 
@@ -26,28 +27,23 @@ class GlobalSocketManager with WidgetsBindingObserver {
   static GlobalSocketManager get instance => _instance;
 
   WebSocketService? _socketService;
-
   StreamSubscription? _socketSubscription;
-
   String? _userId;
 
-  bool _initialized    = false;
-  bool _observerAdded  = false;
+  bool _initialized        = false;
+  bool _observerAdded      = false;
   bool _incomingScreenOpen = false;
+  bool _isReconnecting     = false;
 
-  // ✅ UNCHANGED: reconnect protection flags
-  bool   _isReconnecting = false;
   Timer? _reconnectTimer;
 
-  // ================= STREAMS — ✅ UNCHANGED =================
-
+  // ── Streams — unchanged ───────────────────────────────
   final StreamController<Map<String, dynamic>> _messageController =
       StreamController.broadcast();
 
   Stream<Map<String, dynamic>> get messages => _messageController.stream;
 
-  // ================= INIT — ✅ UNCHANGED =================
-
+  // ── Init — unchanged ──────────────────────────────────
   Future<void> init(String userId) async {
 
     if (_initialized && _userId == userId) return;
@@ -65,72 +61,49 @@ class GlobalSocketManager with WidgetsBindingObserver {
 
         final type = event["type"];
 
-        // ================= ONLINE — ✅ UNCHANGED =================
-
+        // ── ONLINE_USERS_LIST — unchanged ────────────────
         if (type == "ONLINE_USERS_LIST") {
-
           final users = List<String>.from(event["users"] ?? []);
-
-          final notifier = globalProviderContainer.read(
-            onlineUsersProvider.notifier,
-          );
-
-          // FIX: Merge nahi, fresh replace karo
-          // Pehle spread karta tha jo stale users hatata nahi tha
-          notifier.state = users.toSet();
-
+          globalProviderContainer
+              .read(onlineUsersProvider.notifier)
+              .state = users.toSet();
           _messageController.add(event);
         }
 
-        // ================= USER_ONLINE — ✅ UNCHANGED =================
-
+        // ── USER_ONLINE — unchanged ──────────────────────
         else if (type == "USER_ONLINE") {
-
-          final userId = event["userId"]?.toString();
-
-          if (userId != null) {
-            final notifier = globalProviderContainer.read(
-              onlineUsersProvider.notifier,
-            );
-            notifier.state = { ...notifier.state, userId };
+          final uid = event["userId"]?.toString();
+          if (uid != null) {
+            final n = globalProviderContainer.read(onlineUsersProvider.notifier);
+            n.state = { ...n.state, uid };
           }
-
           _messageController.add(event);
         }
 
-        // ================= USER_OFFLINE — ✅ UNCHANGED =================
-
+        // ── USER_OFFLINE — unchanged ─────────────────────
         else if (type == "USER_OFFLINE") {
-
-          final userId = event["userId"]?.toString();
-
-          if (userId != null) {
-            final notifier = globalProviderContainer.read(
-              onlineUsersProvider.notifier,
-            );
-            final updated = { ...notifier.state };
-            updated.remove(userId);
-            notifier.state = updated;
+          final uid = event["userId"]?.toString();
+          if (uid != null) {
+            final n       = globalProviderContainer.read(onlineUsersProvider.notifier);
+            final updated = { ...n.state };
+            updated.remove(uid);
+            n.state = updated;
           }
-
           _messageController.add(event);
         }
 
-        // ================= INCOMING CALL — ✅ UNCHANGED =================
-
+        // ── INCOMING_CALL — unchanged ────────────────────
         else if (type == "INCOMING_CALL") {
           _handleIncomingCall(event);
         }
 
-        // ================= NEW MESSAGE — FIXED =================
-
+        // ── NEW_MESSAGE — unchanged ──────────────────────
         else if (type == "NEW_MESSAGE") {
 
           final data          = event["data"];
           final senderId      = data["senderId"]?.toString();
           final currentUserId = _userId?.toString();
 
-          // ✅ UNCHANGED: Self echo ignore karo
           if (senderId == currentUserId) {
             _messageController.add(event);
             return;
@@ -138,117 +111,62 @@ class GlobalSocketManager with WidgetsBindingObserver {
 
           final receiverId = data["receiverId"]?.toString();
 
-          // ✅ UNCHANGED: Unread counter
           if (senderId != currentUserId && senderId != null) {
             UnreadCounterService.increment(senderId);
           }
 
-          // ✅ UNCHANGED: Legacy chat controller
           ChatController.instance.handleNewMessage(data);
 
-          // ✅ UNCHANGED: Messages provider update
-          final notifier = globalProviderContainer.read(
-            messagesProvider.notifier,
-          );
-
-          final current = { ...notifier.state };
+          final notifier = globalProviderContainer.read(messagesProvider.notifier);
+          final current  = { ...notifier.state };
 
           final chatId = senderId == currentUserId
               ? receiverId ?? ""
-              : senderId ?? "";
+              : senderId   ?? "";
 
           if (chatId.isNotEmpty) {
-
-            final oldMessages = current[chatId] ?? [];
-
-            // ✅ UNCHANGED: Duplicate safe check
-            final alreadyExists = oldMessages.any(
-              (m) => m["id"] == data["id"],
-            );
+            final oldMessages   = current[chatId] ?? [];
+            final alreadyExists = oldMessages.any((m) => m["id"] == data["id"]);
 
             if (!alreadyExists) {
-
-              final updatedMessages = List<dynamic>.from([
-                ...oldMessages,
-                data,
-              ]);
-
-              // ✅ UNCHANGED: Keep only latest 100 messages
-              if (updatedMessages.length > 100) {
-                updatedMessages.removeAt(0);
-              }
-
+              final updatedMessages = List<dynamic>.from([...oldMessages, data]);
+              if (updatedMessages.length > 100) updatedMessages.removeAt(0);
               current[chatId] = updatedMessages;
               notifier.state  = current;
             }
 
-            // ================= RECENT CHATS UPDATE — FIXED =================
+            final recentNotifier = globalProviderContainer.read(recentChatsProvider.notifier);
+            final recentChats    = List<dynamic>.from(recentNotifier.state);
 
-            final recentNotifier = globalProviderContainer.read(
-              recentChatsProvider.notifier,
-            );
-
-            final recentChats = List<dynamic>.from(recentNotifier.state);
-
-            // ✅ FIX #1: WRONG KEY BUG — sabse critical fix
-            //
-            // Problem: c["userId"] == chatId
-            //          Backend /chat/recent response mein "userId" key exist
-            //          hi nahi karti — isliye indexWhere hamesha -1 return
-            //          karta tha — existing chat kabhi update nahi hoti thi,
-            //          hamesha nayi duplicate entry insert ho jaati thi upar
-            //
-            // Backend actual response format:
-            // { user: { id: "abc123", phone: "..." }, lastMessage: "...", time: "..." }
-            //
-            // Fix: c["user"]["id"] == chatId — ye sahi key hai
-            //
             final existingIndex = recentChats.indexWhere(
-              // ❌ PEHLE: (c) => c["userId"] == chatId
-              (c) => c["user"]?["id"] == chatId, // ✅ FIXED
+              (c) => c["user"]?["id"] == chatId,
             );
 
             if (existingIndex != -1) {
-
-              // ✅ UNCHANGED: Existing chat ko upar le aao, content update karo
               final old = recentChats.removeAt(existingIndex);
-
               recentChats.insert(0, {
                 ...old,
                 "lastMessage": data["content"] ??
                     (data["type"] == "image" ? "📷 Image" : ""),
-
-                // ✅ FIX #2: "updatedAt" → "time"
-                //
-                // Problem: Hum "updatedAt" set kar rahe the lekin
-                //          chat_card.dart "time" key read karta hai
-                //          Isliye chat card mein time update nahi dikhti thi
-                //
-                "time": DateTime.now().toIso8601String(), // ✅ FIXED
-
+                "time":        DateTime.now().toIso8601String(),
                 "unreadCount": senderId != currentUserId
                     ? ((old["unreadCount"] ?? 0) + 1)
                     : (old["unreadCount"] ?? 0),
               });
-
             } else {
-
-              // ✅ UNCHANGED: Naya chat insert karo — format same
               recentChats.insert(0, {
                 "user": {
-                  "id": chatId,
+                  "id":    chatId,
                   "phone": data["senderPhone"] ??
-                      data["receiverPhone"] ??
-                      "Unknown",
+                           data["receiverPhone"] ?? "Unknown",
                 },
                 "lastMessage": data["content"] ??
                     (data["type"] == "image" ? "📷 Image" : ""),
-                "time": DateTime.now().toIso8601String(),
+                "time":        DateTime.now().toIso8601String(),
                 "unreadCount": senderId != currentUserId ? 1 : 0,
               });
             }
 
-            // ✅ UNCHANGED: Keep latest 200 chats
             if (recentChats.length > 200) {
               recentChats.removeRange(200, recentChats.length);
             }
@@ -259,41 +177,55 @@ class GlobalSocketManager with WidgetsBindingObserver {
           _messageController.add(event);
         }
 
-        // ================= UNREAD UPDATE — ✅ UNCHANGED =================
+        // new: Fix #5 — VOICE_PROMOTED WebSocket handler
+        //
+        // Pehle: Ye event "else" block mein jaata tha
+        //        _messageController mein forward hota tha
+        //        Lekin koi sun nahi raha tha → promotion kabhi work nahi karta tha
+        //
+        // Ab: VoiceRoomNotifier directly notify karo
+        //     try-catch: Provider disposed ho toh silently skip karo
+        //     groupId match: Sirf current room ka promotion handle karo
+        //
+        else if (type == "VOICE_PROMOTED") {
+          final groupId = event["groupId"]?.toString();
 
-        // Baaki saare events seedhe messageController mein jaayenge
-        // Voice world events, notifications, etc. — sab handle ho jaayenge
+          debugPrint("🎙️ VOICE_PROMOTED received — groupId: $groupId");
+
+          try {
+            // VoiceRoomNotifier read karo — autoDispose hai
+            // Room screen open hai toh available hoga
+            // Band hai toh ProviderException → catch block
+            final roomNotifier = globalProviderContainer
+                .read(voiceRoomProvider.notifier);
+            roomNotifier.handleWebSocketPromotion(groupId); // new: Fix #5
+          } catch (_) {
+            // Room screen open nahi hai — promotion ignore karo
+            // Normal case — no action needed
+          }
+
+          _messageController.add(event);
+        }
+
+        // ── Sab baaki events ─────────────────────────────
         else {
           _messageController.add(event);
         }
       },
 
-      onError: (e) {
-        debugPrint("❌ Socket stream error: $e");
-      },
-
-      onDone: () {
-        debugPrint("⚠️ Socket stream closed");
-      },
-
+      onError:       (e) => debugPrint("❌ Socket stream error: $e"),
+      onDone:        ()  => debugPrint("⚠️ Socket stream closed"),
       cancelOnError: false,
     );
-
-    // ================= OBSERVER — ✅ UNCHANGED =================
 
     if (!_observerAdded) {
       WidgetsBinding.instance.addObserver(this);
       _observerAdded = true;
     }
 
-    // ================= CONNECT — ✅ UNCHANGED =================
-
     await _socketService!.connect();
 
-    // ================= WATCHDOG — ✅ UNCHANGED =================
-
     _reconnectTimer?.cancel();
-
     _reconnectTimer = Timer.periodic(
       const Duration(seconds: 10),
       (_) {
@@ -309,17 +241,13 @@ class GlobalSocketManager with WidgetsBindingObserver {
     _initialized = true;
   }
 
-  // ================= INCOMING CALL — ✅ UNCHANGED =================
-
+  // ── Incoming Call — unchanged ─────────────────────────
   void _handleIncomingCall(Map<String, dynamic> data) {
-
     if (_incomingScreenOpen) return;
-
     final context = appNavigatorKey.currentContext;
     if (context == null) return;
 
     _incomingScreenOpen = true;
-
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => IncomingCallScreen(
@@ -328,22 +256,15 @@ class GlobalSocketManager with WidgetsBindingObserver {
           callType:  data["callType"],
         ),
       ),
-    ).then((_) {
-      _incomingScreenOpen = false;
-    });
+    ).then((_) => _incomingScreenOpen = false);
   }
 
-  // ================= SEND — ✅ UNCHANGED =================
+  // ── Send — unchanged ──────────────────────────────────
+  void send(Map<String, dynamic> data) => _socketService?.send(data);
 
-  void send(Map<String, dynamic> data) {
-    _socketService?.send(data);
-  }
-
-  // ================= LIFECYCLE — ✅ UNCHANGED =================
-
+  // ── Lifecycle — unchanged ─────────────────────────────
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-
     if (state == AppLifecycleState.resumed) {
       if (_socketService?.isConnected != true && !_isReconnecting) {
         _isReconnecting = true;
@@ -354,10 +275,8 @@ class GlobalSocketManager with WidgetsBindingObserver {
     }
   }
 
-  // ================= DISCONNECT — ✅ UNCHANGED =================
-
+  // ── Disconnect — unchanged ────────────────────────────
   Future<void> disconnect() async {
-
     await _socketSubscription?.cancel();
     _socketSubscription = null;
 
@@ -375,15 +294,12 @@ class GlobalSocketManager with WidgetsBindingObserver {
         .state = {};
   }
 
-  // ================= GETTERS — ✅ UNCHANGED =================
-
+  // ── Getters — unchanged ───────────────────────────────
   bool   get isConnected => _socketService?.isConnected ?? false;
   String get wsUrl       => _socketService?.wsUrl ?? "";
 
-  // ================= DISPOSE — ✅ UNCHANGED =================
-
+  // ── Dispose — unchanged ───────────────────────────────
   void dispose() {
-
     if (_observerAdded) {
       WidgetsBinding.instance.removeObserver(this);
       _observerAdded = false;
