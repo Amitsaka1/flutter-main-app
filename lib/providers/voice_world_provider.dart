@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart'; // fix: debugPrint ke liye
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../features/voice_world/data/models/voice_group_model.dart';
@@ -236,6 +236,9 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
         level:     UserSession.level,
       );
 
+      // note: group.members yahan WORLDS SCREEN ka purana snapshot hai
+      // Isiliye sirf OPTIMISTIC (turant) UI feedback ke liye use karo
+      // Asli truth neeche _refreshMembersFromBackend() se aayegi
       final existingSpeakers  = group.members.where((m) => m.isSpeaker).toList();
       final existingListeners = group.members.where((m) => !m.isSpeaker).toList();
       final alreadyIn         = group.members.any((m) => m.userId == myId);
@@ -258,6 +261,13 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
         listenerCount: group.listenerCount,
       );
 
+      // new: Fix #17 — Stale snapshot ko backend ki authoritative
+      // truth se overwrite karo. Worlds-list kabhi bhi purana ho sakta hai
+      // (naye log join hue, purane left hue) — ye fetch turant sahi karta hai
+      // Profile (name/avatarUrl) bhi backend se 100% correct aayega,
+      // chahe UserSession abhi load na hua ho
+      _refreshMembersFromBackend(group.id);
+
     } catch (e) {
       _liveKit.disconnect(
         expectedRoomId: "vg-${group.id}",
@@ -275,6 +285,9 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
   }
 
   // ── JOIN WITH TOKEN ───────────────────────────────────
+  // NOTE: Prefetch hatne ke baad ye method abhi unreachable hai
+  // (voice_world_screen.dart hamesha preloadedResult: null bhejta hai)
+  // Future-proofing ke liye fix consistent rakha hai
   Future<void> joinGroupWithToken(
     VoiceGroupModel group,
     VoiceJoinResult result,
@@ -324,6 +337,9 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
         speakerCount:  group.speakerCount,
         listenerCount: group.listenerCount,
       );
+
+      // new: Fix #17 — same backend refresh
+      _refreshMembersFromBackend(group.id);
 
     } catch (e) {
       _liveKit.disconnect(
@@ -456,8 +472,7 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
   }
 
   // ─────────────────────────────────────────────────────
-  //  SETUP ROOM LISTENERS — fix: ParticipantDisconnected
-  //  + DataReceivedEvent add kiya
+  //  SETUP ROOM LISTENERS
   // ─────────────────────────────────────────────────────
 
   void _setupRoomListeners() {
@@ -540,9 +555,6 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
             } catch (_) {}
           }
 
-          // fix: ParticipantDisconnectedEvent — wrong variables hataye
-          // pehle: updatedMembers, meInListeners use ho rahe the (wrong scope)
-          // ab: updatedSpeakers, updatedListeners, leaving.role use karo
           else if (name.contains('ParticipantDisconnectedEvent')) {
             try {
               final identity = event.participant.identity as String;
@@ -578,7 +590,6 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
             } catch (_) {}
           }
 
-          // fix: DataReceivedEvent — missing tha, add kiya
           else if (name.contains('DataReceivedEvent')) {
             _handleDataMessage(event);
           }
@@ -587,37 +598,83 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
   }
 
   // ─────────────────────────────────────────────────────
-  //  LIVEKIT RECONNECTED CALLBACK
+  //  BACKEND SYNC HELPER — Fix #17 (NEW)
+  //
+  //  Har join/rejoin ke baad ye call hota hai. Worlds-list snapshot
+  //  kabhi bhi stale ho sakta hai — ye backend se ground-truth leke
+  //  state ko overwrite karta hai. Fetch fail ho jaaye (network down)
+  //  toh optimistic placeholder hi rehne do — silently ignore karo,
+  //  next reconnect cycle ya ParticipantConnectedEvent fix kar dega.
   // ─────────────────────────────────────────────────────
 
-  void _onLiveKitReconnected() {
+  Future<void> _refreshMembersFromBackend(String groupId) async {
+    try {
+      final result = await _repo.fetchGroupMembers(groupId);
+
+      // Guard: user already kahin aur switch ho gaya ya leave kar diya
+      if (_cleanedUp || _currentGroupId != groupId) return;
+      if (result == null) return;
+
+      state = state.copyWith(
+        members:       result.speakers,
+        listeners:     result.listeners,
+        speakerCount:  result.speakerCount,
+        listenerCount: result.listenerCount,
+      );
+    } catch (_) {
+      // Optimistic placeholder hi rehne do
+    }
+  }
+
+  // ─────────────────────────────────────────────────────
+  //  LIVEKIT RECONNECTED CALLBACK — Fix #18: Race condition fix
+  //
+  //  Pehle: _repo.joinGroup() aur _repo.fetchGroupMembers() ek saath
+  //         fire hote the — agar fetch pehle resolve hota,
+  //         "main" hi list mein missing rehta tha
+  //  Ab: pehle DB membership ensure karo (await), TAB fresh list lo
+  // ─────────────────────────────────────────────────────
+
+  Future<void> _onLiveKitReconnected() async {
     if (_cleanedUp) return;
 
     _setupRoomListeners();
 
-    if (_currentGroupId != null) {
-      _repo.joinGroup(_currentGroupId!).catchError((_) {});
+    if (_currentGroupId == null) {
+      state = state.copyWith(isReconnecting: false);
+      return;
     }
 
-    if (_currentGroupId != null) {
-      _repo.fetchGroupMembers(_currentGroupId!).then((result) {
-        if (_cleanedUp) return;
-        if (result == null) {
-          state = state.copyWith(isReconnecting: false);
-          return;
-        }
-        state = state.copyWith(
-          members:        result.speakers,
-          listeners:      result.listeners,
-          speakerCount:   result.speakerCount,
-          listenerCount:  result.listenerCount,
-          isReconnecting: false,
-        );
-      }).catchError((_) {
-        if (_cleanedUp) return;
+    final groupId = _currentGroupId!;
+
+    try {
+      await _repo.joinGroup(groupId);
+    } catch (_) {
+      // Already member (alreadyJoined) ya transient fail —
+      // dono cases mein aage badho, fetchGroupMembers self-correct karega
+    }
+
+    if (_cleanedUp || _currentGroupId != groupId) return;
+
+    try {
+      final result = await _repo.fetchGroupMembers(groupId);
+
+      if (_cleanedUp || _currentGroupId != groupId) return;
+
+      if (result == null) {
         state = state.copyWith(isReconnecting: false);
-      });
-    } else {
+        return;
+      }
+
+      state = state.copyWith(
+        members:        result.speakers,
+        listeners:      result.listeners,
+        speakerCount:   result.speakerCount,
+        listenerCount:  result.listenerCount,
+        isReconnecting: false,
+      );
+    } catch (_) {
+      if (_cleanedUp) return;
       state = state.copyWith(isReconnecting: false);
     }
   }
@@ -688,7 +745,7 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
   }
 
   // ─────────────────────────────────────────────────────
-  //  DATA MESSAGE HANDLER — fix: missing tha, add kiya
+  //  DATA MESSAGE HANDLER
   // ─────────────────────────────────────────────────────
 
   void _handleDataMessage(dynamic event) {
@@ -723,7 +780,6 @@ class VoiceRoomNotifier extends StateNotifier<VoiceRoomState> {
           try {
             final data = jsonDecode(target) as Map<String, dynamic>;
 
-            // fix: sender identity use karo — spoof prevent
             final senderId = sender;
             if (senderId == myId) break;
 
