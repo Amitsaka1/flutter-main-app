@@ -1,7 +1,8 @@
 // fix: flutter_webrtc import REMOVED — TURN hataya
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/widgets.dart';          // new: WidgetsBindingObserver
+import 'package:flutter/widgets.dart'
+    show WidgetsBinding, WidgetsBindingObserver, AppLifecycleState;          // new: WidgetsBindingObserver
 import 'package:livekit_client/livekit_client.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
