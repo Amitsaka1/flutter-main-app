@@ -27,6 +27,16 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
 
+  // modify: Fix #20 — ShellRoute → StatefulShellRoute.indexedStack
+  //
+  // Problem: Plain ShellRoute + bottom-nav ka pushReplacement() har tab
+  //          switch pe poora screen DISPOSE + RECREATE karta tha
+  //          (koi IndexedStack nahi tha) — isiliye chat list ka
+  //          instant-cache-open kabhi kaam nahi karta tha
+  //
+  // Fix: Sab tabs IndexedStack mein zinda rehte hain ab — sirf
+  //      visibility switch hoti hai. State/cache/animation preserve hota hai
+  //
   late final GoRouter _router = GoRouter(
     navigatorKey: appNavigatorKey,
     initialLocation: "/login",
@@ -46,69 +56,86 @@ class _MyAppState extends State<MyApp> {
             const CreateProfileScreen(),
       ),
 
-      // ===== SHELL ROUTE (BOTTOM NAV WRAPPER) =====
-      ShellRoute(
-        builder: (context, state, child) {
+      // ===== SHELL ROUTE (BOTTOM NAV WRAPPER) — FIXED =====
+      // new: Fix #20 — StatefulShellRoute.indexedStack use kiya
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) {
           return AppLayout(
-            child: child,
-            unreadCount: 0,
+            navigationShell: navigationShell,
+            unreadCount:     0,
           );
         },
-        routes: [
+        branches: [
 
-          GoRoute(
-            path: "/dashboard",
-            pageBuilder: (context, state) =>
-                const NoTransitionPage(
-              child: DashboardScreen(),
-            ),
+          // ── Dashboard ──────────────────────
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: "/dashboard",
+                pageBuilder: (context, state) =>
+                    const NoTransitionPage(
+                  child: DashboardScreen(),
+                ),
+              ),
+            ],
           ),
 
-          GoRoute(
-            path: "/chat",
-            pageBuilder: (context, state) =>
-                const NoTransitionPage(
-              child: ChatListScreen(),
-            ),
+          // ── Chat ───────────────────────────
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: "/chat",
+                pageBuilder: (context, state) =>
+                    const NoTransitionPage(
+                  child: ChatListScreen(),
+                ),
+              ),
+            ],
           ),
 
-          // 🔥 VOICE WORLD — NEW
-          GoRoute(
-            path: "/voice-world",
-            pageBuilder: (context, state) =>
-                const NoTransitionPage(
-              child: VoiceWorldScreen(),
-            ),
+          // ── Voice World ────────────────────
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: "/voice-world",
+                pageBuilder: (context, state) =>
+                    const NoTransitionPage(
+                  child: VoiceWorldScreen(),
+                ),
+              ),
+            ],
           ),
 
-          GoRoute(
-            path: "/premium",
-            pageBuilder: (context, state) =>
-                const NoTransitionPage(
-              child: PremiumScreen(),
-            ),
+          // ── Premium ────────────────────────
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: "/premium",
+                pageBuilder: (context, state) =>
+                    const NoTransitionPage(
+                  child: PremiumScreen(),
+                ),
+              ),
+            ],
           ),
 
-          GoRoute(
-            path: "/profile",
-            pageBuilder: (context, state) =>
-                const NoTransitionPage(
-              child: MyProfileScreen(),
-            ),
-          ),
-
-          GoRoute(
-            path: "/profile/:id",
-            builder: (context, state) {
-              final id = state.pathParameters["id"]!;
-              return ProfileDetailsScreen(userId: id);
-            },
+          // ── Profile ────────────────────────
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: "/profile",
+                pageBuilder: (context, state) =>
+                    const NoTransitionPage(
+                  child: MyProfileScreen(),
+                ),
+              ),
+            ],
           ),
 
         ],
       ),
 
-      // ===== CHAT CONVERSATION (OUTSIDE SHELL) =====
+      // ===== CHAT CONVERSATION (OUTSIDE SHELL) — unchanged =====
       GoRoute(
         path: "/chat/:id",
         builder: (context, state) {
@@ -122,6 +149,17 @@ class _MyAppState extends State<MyApp> {
             chatUserLastSeen:  extras?["lastSeen"],
             initialIsOnline:   extras?["isOnline"] ?? false,
           );
+        },
+      ),
+
+      // new: Fix #20 — /profile/:id shell se BAHAR move kiya
+      // Pehle ShellRoute ke andar tha — ab /chat/:id jaisa top-level route
+      // Bottom nav automatically hide ho jaata hai (jaisa chat conversation mein)
+      GoRoute(
+        path: "/profile/:id",
+        builder: (context, state) {
+          final id = state.pathParameters["id"]!;
+          return ProfileDetailsScreen(userId: id);
         },
       ),
 
@@ -147,8 +185,8 @@ class _MyAppState extends State<MyApp> {
       builder: (context, child) {
         return Stack(
           children: [
-            child!,                      // app content
-            if (!kReleaseMode) const GlobalDebugWidget(),   // debug icon + panel
+            child!,
+            if (!kReleaseMode) const GlobalDebugWidget(),
           ],
         );
       },
