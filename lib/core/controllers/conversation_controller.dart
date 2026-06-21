@@ -165,9 +165,19 @@ class ConversationController {
 
   // ================= SEND — ✅ UNCHANGED =================
 
-  Future<void> sendMessage(String userId, String content) async {
+  // modify: Fix #19 — createdAt add + real message return karo
+  //
+  // Problem 1: createdAt missing tha — sort comparator naye message ko
+  //            "sabse purana" maan leta tha, TOP pe jump karta tha
+  // Problem 2: Server response ignore hota tha — real id/createdAt
+  //            kabhi temp message ko replace nahi karte the
+  //
+  Future<Map<String, dynamic>?> sendMessage(
+    String userId,
+    String content,
+  ) async {
 
-    if (_myId == null) return;
+    if (_myId == null) return null;
 
     final tempMessage = {
       "id":         DateTime.now().millisecondsSinceEpoch.toString(),
@@ -175,9 +185,9 @@ class ConversationController {
       "receiverId": userId,
       "content":    content,
       "isRead":     false,
+      "createdAt":  DateTime.now().toIso8601String(), // new: Fix #19
     };
 
-    // ✅ UNCHANGED: Provider handles realtime UI
     if (_loadedConversations.contains(userId)) {
       // provider handles realtime UI
     } else {
@@ -187,7 +197,6 @@ class ConversationController {
       final updated = List<dynamic>.from(_conversationCache[userId]!);
       updated.add(tempMessage);
 
-      // ✅ UNCHANGED: Keep latest 100
       if (updated.length > 100) updated.removeAt(0);
 
       _conversationCache[userId] = updated;
@@ -195,11 +204,19 @@ class ConversationController {
     }
 
     try {
-      await ApiClient.post("/chat/send", {
+      final response = await ApiClient.post("/chat/send", {
         "receiverId": userId,
         "content":    content,
       });
-    } catch (_) {}
+
+      // new: Fix #19 — real message return karo
+      if (response["success"] == true) {
+        return response["data"] as Map<String, dynamic>;
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
   }
 
   // ================= SOCKET — FIXED =================
