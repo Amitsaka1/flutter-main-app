@@ -8,13 +8,17 @@ import '../../core/network/socket_manager.dart';
 
 import 'widgets/app_bottom_nav.dart';
 
+// modify: Fix #20 — child (Widget) → navigationShell (StatefulNavigationShell)
+// Pehle: plain child widget — GoRouter har route switch pe naya banata tha
+// Ab: navigationShell internally IndexedStack maintain karta hai — sab
+//     branches zinda rehte hain, sirf visibility switch hoti hai
 class AppLayout extends StatefulWidget {
-  final Widget child;
-  final int    unreadCount;
+  final StatefulNavigationShell navigationShell; // new: Fix #20
+  final int                     unreadCount;
 
   const AppLayout({
     super.key,
-    required this.child,
+    required this.navigationShell, // new: Fix #20
     this.unreadCount = 0,
   });
 
@@ -25,7 +29,7 @@ class AppLayout extends StatefulWidget {
 class _AppLayoutState extends State<AppLayout>
     with SingleTickerProviderStateMixin {
 
-  // ── Palette ──────────────────────────────────
+  // ── Palette — unchanged ──────────────────────
   static const _bg      = Color(0xFF0A0A0F);
   static const _goldA   = Color(0xFFD4A843);
   static const _border  = Color(0xFF1E1E2E);
@@ -33,7 +37,7 @@ class _AppLayoutState extends State<AppLayout>
 
   StreamSubscription? _notificationSub;
 
-  // ── Nav entrance animation ───────────────────
+  // ── Nav entrance animation — unchanged ───────
   late AnimationController _navCtrl;
   late Animation<double>   _navSlide;
   late Animation<double>   _navFade;
@@ -42,7 +46,6 @@ class _AppLayoutState extends State<AppLayout>
   void initState() {
     super.initState();
 
-    // Nav entrance
     _navCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
@@ -60,15 +63,11 @@ class _AppLayoutState extends State<AppLayout>
       curve: const Interval(0.0, 0.7, curve: Curves.easeOut),
     );
 
-    // ===================== LOGIC START =====================
-
     final socket = SocketManager.instance;
 
     if (socket != null) {
       _notificationSub = socket.notifications.listen((event) {});
     }
-
-    // ===================== LOGIC END =======================
   }
 
   @override
@@ -88,9 +87,10 @@ class _AppLayoutState extends State<AppLayout>
       systemNavigationBarIconBrightness: Brightness.light,
     ));
 
-    final currentRoute = GoRouterState.of(context).uri.toString();
-
-    // ===================== UI START =====================
+    // modify: Fix #20 — currentRoute string parsing hataya
+    // Pehle: GoRouterState.of(context).uri.toString() se route nikalta tha
+    // Ab: navigationShell.currentIndex seedha batata hai kaunsa tab active hai
+    // (go_router import StatefulNavigationShell type ke liye abhi bhi chahiye)
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -104,12 +104,12 @@ class _AppLayoutState extends State<AppLayout>
         body: Column(
           children: [
 
-            // ── Main content ───────────────────
+            // ── Main content — Fix #20: navigationShell render karo ──
             Expanded(
-              child: widget.child,
+              child: widget.navigationShell, // modify: Fix #20
             ),
 
-            // ── Bottom nav ─────────────────────
+            // ── Bottom nav — structure unchanged ───────
             FadeTransition(
               opacity: _navFade,
               child: AnimatedBuilder(
@@ -158,9 +158,11 @@ class _AppLayoutState extends State<AppLayout>
                             ),
                           ],
                         ),
+                        // modify: Fix #20 — navigationShell pass karo
+                        // route string ki jagah currentIndex + goBranch use hoga
                         child: AppBottomNav(
-                          route:       currentRoute,
-                          unreadCount: widget.unreadCount,
+                          navigationShell: widget.navigationShell, // new: Fix #20
+                          unreadCount:     widget.unreadCount,
                         ),
                       ),
 
@@ -174,7 +176,5 @@ class _AppLayoutState extends State<AppLayout>
         ),
       ),
     );
-
-    // ===================== UI END =======================
   }
 }
