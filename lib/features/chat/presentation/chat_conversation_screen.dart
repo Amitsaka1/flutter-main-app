@@ -417,6 +417,10 @@ class _ChatConversationScreenState
             .millisecondsSinceEpoch
             .toString();
 
+    // new: Fix #19 — createdAt add kiya
+    // Pehle missing tha — naya message TOP pe jump karta tha (galat position)
+    final nowIso = DateTime.now().toIso8601String();
+
     final notifier = ref.read(messagesProvider.notifier);
     final current =
         Map<String, List<dynamic>>.from(
@@ -427,22 +431,39 @@ class _ChatConversationScreenState
     current[widget.chatUserId] = [
       ...prev,
       {
-        'id': tempId,
+        'id':         tempId,
         'senderId':   _myId,
         'receiverId': widget.chatUserId,
         'content':    text,
         'isRead':     false,
+        'createdAt':  nowIso, // new: Fix #19
       },
     ];
 
     notifier.state = current;
     _textCtrl.clear();
 
-    await _logic.sendMessage(widget.chatUserId, text);
-    
+    // new: Fix #19 — real message aane par temp ko replace karo
+    final realMessage = await _logic.sendMessage(widget.chatUserId, text);
+
+    if (realMessage != null && mounted) {
+      final latest = Map<String, List<dynamic>>.from(
+        ref.read(messagesProvider),
+      );
+      final list = List<dynamic>.from(
+        latest[widget.chatUserId] as List<dynamic>? ?? [],
+      );
+
+      final idx = list.indexWhere((m) => m['id'] == tempId);
+      if (idx != -1) {
+        list[idx] = realMessage;
+        latest[widget.chatUserId] = list;
+        ref.read(messagesProvider.notifier).state = latest;
+      }
+    }
+
     _scrollToBottom();
   }
-
   // ── Scroll (original logic — untouched) ───────────────────
 
   void _scrollToBottom() {
