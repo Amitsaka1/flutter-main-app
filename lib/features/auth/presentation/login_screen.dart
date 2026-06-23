@@ -6,6 +6,8 @@ import '../../../core/network/api_client.dart';
 import '../../../core/socket/global_socket_manager.dart';
 import '../../../core/session/user_session.dart';
 import '../../../core/location/location_service.dart';
+import 'package:app_project/providers/user_locations_provider.dart';
+import 'package:app_project/core/riverpod/app_container.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -73,6 +75,26 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  // 📍 Sabhi users ki locations ek saath fetch karo
+  Future<void> _fetchAllLocations() async {
+    try {
+      final res = await ApiClient.get("/profile/locations/all");
+
+      if (res["success"] == true) {
+        final locations = res["locations"] as List<dynamic>? ?? [];
+
+        globalProviderContainer
+            .read(userLocationsProvider.notifier)
+            .setAllLocations(locations);
+
+        debugPrint("📍 All locations loaded: ${locations.length} users");
+      }
+    } catch (e) {
+      // ✅ Silent fail — location feature ke liye app block nahi hogi
+      debugPrint("📍 Fetch all locations failed (silent): $e");
+    }
+  }
+
   Future<void> _verifyOtp() async {
 
     if (loading) return;
@@ -126,7 +148,8 @@ class _LoginScreenState extends State<LoginScreen> {
             // 🔥 Use Global Socket (no local instance)
             await GlobalSocketManager.instance
                 .init(userId.toString());
-          LocationService.updateLocationOnLogin();
+            LocationService.updateLocationOnLogin();
+            _fetchAllLocations();
           }
         }
 
