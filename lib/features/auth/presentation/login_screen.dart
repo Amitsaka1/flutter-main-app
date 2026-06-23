@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/socket/global_socket_manager.dart';
 import '../../../core/session/user_session.dart';
+import '../../../core/location/location_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -125,6 +126,7 @@ class _LoginScreenState extends State<LoginScreen> {
             // 🔥 Use Global Socket (no local instance)
             await GlobalSocketManager.instance
                 .init(userId.toString());
+          LocationService.updateLocationOnLogin();
           }
         }
 
