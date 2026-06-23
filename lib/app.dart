@@ -40,6 +40,14 @@ class _MyAppState extends State<MyApp> {
   late final GoRouter _router = GoRouter(
     navigatorKey: appNavigatorKey,
     initialLocation: "/login",
+    redirect: (context, state) async {
+      final token = await ApiClient.getToken();
+      final isOnLoginPage = state.matchedLocation == "/login";
+
+      if (token == null && !isOnLoginPage) return "/login";
+      if (token != null && isOnLoginPage) return "/dashboard";
+      return null;
+    },
     routes: [
 
       // ===== LOGIN =====
