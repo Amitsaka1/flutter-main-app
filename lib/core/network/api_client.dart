@@ -195,6 +195,34 @@ class ApiClient {
     });
   }
 
+  // ================= PATCH — NEW =================
+
+  static Future<Map<String, dynamic>> patch(
+    String endpoint,
+    Map<String, dynamic> body,
+  ) async {
+    return _withRetry(() async {
+      final uri = Uri.parse("$baseUrl$endpoint");
+
+      try {
+        final response = await http
+            .patch(
+              uri,
+              headers: await _headers(),
+              body: jsonEncode(body),
+            )
+            .timeout(_timeout);
+
+        return _handleResponse(response);
+
+      } on TimeoutException {
+        throw _RetryableException("Request timeout");
+      } on SocketException {
+        throw _RetryableException("No internet connection");
+      }
+    });
+  }
+
   // ================= MULTIPART — ✅ UNCHANGED =================
 
   static Future<Map<String, dynamic>> multipart(
