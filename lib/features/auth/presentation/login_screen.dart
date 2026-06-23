@@ -30,7 +30,6 @@ class _LoginScreenState extends State<LoginScreen> {
   void initState() {
     super.initState();
     GlobalSocketManager.instance.disconnect();
-    ApiClient.clearToken();
   }
 
   Future<void> _sendOtp() async {
