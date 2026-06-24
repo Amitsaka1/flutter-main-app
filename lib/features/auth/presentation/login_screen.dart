@@ -32,7 +32,6 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    GlobalSocketManager.instance.disconnect();
   }
 
   Future<void> _sendOtp() async {
