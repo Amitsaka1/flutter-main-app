@@ -1,6 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:app_project/core/network/api_client.dart';
+import 'package:app_project/core/session/user_session.dart';
+import 'package:app_project/providers/user_locations_provider.dart';
+import 'package:app_project/core/riverpod/app_container.dart';
 
 class LocationService {
 
@@ -20,15 +23,24 @@ class LocationService {
       }
 
       // Step 2: Permission check
+      // ✅ FIX: deniedForever pehle check karo
+      // Kuch Android devices pe pehle se permanently denied hoti hai
+      // Aur requestPermission() silently fail karta tha bina dialog ke
       LocationPermission permission = await Geolocator.checkPermission();
 
+      if (permission == LocationPermission.deniedForever) {
+        debugPrint("📍 Permission permanently denied — skip");
+        return;
+      }
+
       if (permission == LocationPermission.denied) {
-        // Pehli baar — system dialog dikhao
         permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
+        if (permission == LocationPermission.denied ||
+            permission == LocationPermission.deniedForever) {
           debugPrint("📍 Permission denied — skip");
-          return; // ✅ Silently skip — app normal chalta rahe
+          return;
         }
+      }
       }
 
       if (permission == LocationPermission.deniedForever) {
