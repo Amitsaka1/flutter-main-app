@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 // ─────────────────────────────────────────────
 //  PROFILE DETAILS AVATAR  —  Premium Dark VIP Edition
@@ -202,7 +203,7 @@ class _ProfileDetailsAvatarState extends State<ProfileDetailsAvatar>
                   radius: 66,
                   backgroundColor: const Color(0xFF1C1C2A),
                   backgroundImage: hasAvatar
-                      ? NetworkImage(widget.avatar!)
+                      ? CachedNetworkImageProvider(widget.avatar!)
                       : const AssetImage(
                               "assets/profile_placeholder.png")
                           as ImageProvider,
