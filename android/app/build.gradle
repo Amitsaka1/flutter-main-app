@@ -18,11 +18,15 @@ def flutterVersionName = localProperties.getProperty("flutter.versionName") ?: "
 android {
     namespace = "com.example.app_project"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "27.0.12077973"   // ✅ Error mein suggest kiya tha
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17  // ✅ 1.8 → 17
+        targetCompatibility = JavaVersion.VERSION_17  // ✅ 1.8 → 17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"   // ✅ New addition
     }
 
     defaultConfig {
@@ -38,8 +42,6 @@ android {
             signingConfig = signingConfigs.debug
         }
     }
-
-    // ❌ REMOVED: splits block (important fix)
 }
 
 flutter {
