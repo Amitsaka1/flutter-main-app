@@ -307,6 +307,11 @@ class GlobalSocketManager with WidgetsBindingObserver {
     globalProviderContainer
         .read(onlineUsersProvider.notifier)
         .state = {};
+
+    // 📍 Logout pe sabhi locations clear karo
+    globalProviderContainer
+        .read(userLocationsProvider.notifier)
+        .clear();
   }
 
   // ── Getters — unchanged ───────────────────────────────
