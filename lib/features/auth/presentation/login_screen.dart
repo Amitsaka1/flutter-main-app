@@ -9,6 +9,7 @@ import '../../../core/location/location_service.dart';
 import 'package:app_project/providers/user_locations_provider.dart';
 import 'package:app_project/core/riverpod/app_container.dart';
 
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -148,7 +149,7 @@ class _LoginScreenState extends State<LoginScreen> {
             await GlobalSocketManager.instance
                 .init(userId.toString());
             LocationService.updateLocationOnLogin().then((_) {
-              if (mounted) _fetchAllLocations();
+              _fetchAllLocations(); // mounted check nahi chahiye — globalProviderContainer use karta hai
             });
           }
         }
