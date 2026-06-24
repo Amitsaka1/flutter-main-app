@@ -7,6 +7,7 @@ import 'core/riverpod/app_container.dart';
 import 'app.dart';
 import 'core/network/api_client.dart';
 import 'core/socket/global_socket_manager.dart';
+import 'core/session/user_session.dart';
 
 /// 🔥 Global Navigator Key
 final GlobalKey<NavigatorState> appNavigatorKey =
@@ -33,8 +34,9 @@ void main() async {
 
       final userId = payload["id"];
 
+      UserSession.setUserId(userId.toString());
       await GlobalSocketManager.instance.init(userId);
-
+        
       debugPrint("✅ Socket initialized globally");
     }
   } catch (e) {
