@@ -281,6 +281,26 @@ class _DashboardScreenState extends State<DashboardScreen>
         }
       }
 
+      if (type == "PROFILE_UPDATED") {
+        final data          = message["data"];
+        final updatedUserId = data["userId"]?.toString();
+        final newAvatarUrl  = data["avatarUrl"]?.toString();
+        final global        = GlobalDataManager.instance;
+
+        if (updatedUserId != null && newAvatarUrl != null && global.profiles != null) {
+          final idx = global.profiles!.indexWhere(
+            (p) => p["userId"]?.toString() == updatedUserId,
+          );
+          if (idx != -1) {
+            global.profiles![idx] = {
+              ...Map<String, dynamic>.from(global.profiles![idx]),
+              "avatarUrl": newAvatarUrl,
+            };
+            global.notify();
+          }
+        }
+      }
+
       if (type == "NEW_MESSAGE") {
         final msg = message["data"];
         ChatController.instance.handleNewMessage(msg);
