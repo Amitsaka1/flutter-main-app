@@ -37,12 +37,19 @@ class LocationService {
       }
 
       // Step 3: GPS location lo
-      final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.medium, // Battery save
-          timeLimit: Duration(seconds: 10),  // Max 10 sec wait
-        ),
-      );
+      final Position position;
+      if (kIsWeb) {
+        // Web: locationSettings parameter support nahi karta geolocator 12
+        position = await Geolocator.getCurrentPosition();
+      } else {
+        // APK: full settings with accuracy + timeout
+        position = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.medium,
+            timeLimit: Duration(seconds: 10),
+          ),
+        );
+      }
 
       debugPrint("📍 Location: ${position.latitude}, ${position.longitude}");
 
