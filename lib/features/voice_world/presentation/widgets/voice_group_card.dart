@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../data/models/voice_group_model.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 // ─────────────────────────────────────────────────────────
 //  VOICE GROUP CARD
@@ -277,7 +278,7 @@ class _MembersRow extends StatelessWidget {
                 radius:          10,
                 backgroundColor: _goldA.withOpacity(0.3),
                 backgroundImage: hasAvatar
-                    ? NetworkImage(m.avatarUrl!)
+                    ? CachedNetworkImageProvider(m.avatarUrl!)
                     : null,
                 child: hasAvatar
                     ? null
