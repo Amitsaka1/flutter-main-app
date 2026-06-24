@@ -44,8 +44,10 @@ class LocationService {
         position = await Geolocator.getCurrentPosition()
             .timeout(const Duration(seconds: 10));
       } catch (_) {
-        // Fallback: last known location (cached, instant)
-        position = await Geolocator.getLastKnownPosition();
+        // Fallback: last known location — sirf mobile pe
+        if (!kIsWeb) {
+          position = await Geolocator.getLastKnownPosition();
+        }
       }
 
       if (position == null) {
