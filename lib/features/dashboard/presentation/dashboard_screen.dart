@@ -262,6 +262,27 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   // ===================== UNREAD END =============================
 
+  // ===================== FETCH ALL LOCATIONS START ==================
+
+  Future<void> _fetchAllLocations() async {
+    try {
+      final res = await ApiClient.get("/profile/locations/all");
+      if (!mounted) return;
+
+      if (res["success"] == true) {
+        final locations = res["locations"] as List<dynamic>? ?? [];
+        globalProviderContainer
+            .read(userLocationsProvider.notifier)
+            .setAllLocations(locations);
+        debugPrint("📍 Locations loaded on restart: ${locations.length} users");
+      }
+    } catch (e) {
+      debugPrint("📍 Fetch locations failed (silent): $e");
+    }
+  }
+
+  // ===================== FETCH ALL LOCATIONS END ====================
+
   // ===================== SOCKET LISTENER START ==================
 
   void _listenSocket() {
