@@ -423,3 +423,54 @@ class _OnlinePulseBadgeState extends State<_OnlinePulseBadge>
     );
   }
 }
+
+// ─────────────────────────────────────────────
+//  Distance Badge — Top Left
+// ─────────────────────────────────────────────
+
+class _DistanceBadge extends StatelessWidget {
+  final String label;
+  const _DistanceBadge({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0E0E18).withOpacity(0.92),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: const Color(0xFF2A2A3A),
+          width: 0.6,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.4),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.location_on,
+            size: 8,
+            color: Color(0xFF6C63FF), // Purple — app ka accent color
+          ),
+          const SizedBox(width: 2),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Color(0xFF9A9AB0),
+              fontSize: 8,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.2,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
