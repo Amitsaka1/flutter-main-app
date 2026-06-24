@@ -37,20 +37,22 @@ class LocationService {
       }
 
       // Step 3: GPS location lo
-      final Position position;
-      if (kIsWeb) {
-        // Web: locationSettings parameter support nahi karta geolocator 12
-        position = await Geolocator.getCurrentPosition();
-      } else {
-        // APK: full settings with accuracy + timeout
-        position = await Geolocator.getCurrentPosition(
-          locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.medium,
-            timeLimit: Duration(seconds: 10),
-          ),
-        );
+      Position? position;
+
+      try {
+        // Fresh GPS try karo — 10s mein nahi mila toh fallback
+        position = await Geolocator.getCurrentPosition()
+            .timeout(const Duration(seconds: 10));
+      } catch (_) {
+        // Fallback: last known location (cached, instant)
+        position = await Geolocator.getLastKnownPosition();
       }
 
+      if (position == null) {
+        debugPrint("📍 Location unavailable — skip");
+        return;
+      }
+      
       debugPrint("📍 Location: ${position.latitude}, ${position.longitude}");
 
       // Step 4: Backend ko bhejo
