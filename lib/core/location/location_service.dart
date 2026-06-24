@@ -7,11 +7,6 @@ import 'package:app_project/core/riverpod/app_container.dart';
 
 class LocationService {
 
-  // ─────────────────────────────────────────────
-  // Login ke baad ye call karo
-  // Permission allow → location send
-  // Permission deny  → silently skip, koi error nahi
-  // ─────────────────────────────────────────────
   static Future<void> updateLocationOnLogin() async {
     try {
 
@@ -23,9 +18,6 @@ class LocationService {
       }
 
       // Step 2: Permission check
-      // ✅ FIX: deniedForever pehle check karo
-      // Kuch Android devices pe pehle se permanently denied hoti hai
-      // Aur requestPermission() silently fail karta tha bina dialog ke
       LocationPermission permission = await Geolocator.checkPermission();
 
       if (permission == LocationPermission.deniedForever) {
@@ -41,22 +33,15 @@ class LocationService {
           return;
         }
       }
-      }
-
-      if (permission == LocationPermission.deniedForever) {
-        debugPrint("📍 Permission permanently denied — skip");
-        return; // ✅ Silently skip
-      }
+      // ✅ Extra } hata diya, aur duplicate deniedForever check bhi hata diya
 
       // Step 3: GPS location lo
       Position? position;
 
       try {
-        // Fresh GPS try karo — 10s mein nahi mila toh fallback
         position = await Geolocator.getCurrentPosition()
             .timeout(const Duration(seconds: 10));
       } catch (_) {
-        // Fallback: last known location — sirf mobile pe
         if (!kIsWeb) {
           position = await Geolocator.getLastKnownPosition();
         }
@@ -66,7 +51,7 @@ class LocationService {
         debugPrint("📍 Location unavailable — skip");
         return;
       }
-      
+
       debugPrint("📍 Location: ${position.latitude}, ${position.longitude}");
 
       // Step 4: Backend ko bhejo
@@ -75,10 +60,7 @@ class LocationService {
         "longitude": position.longitude,
       });
 
-      // ✅ FIX: Apni location Riverpod mein bhi save karo
-      // profile_card pe distance badge ke liye myLoc chahiye
-      // fetchAllLocations mein apni location nahi hoti (race condition)
-      // Isliye yahan directly Riverpod update karo
+      // Step 5: Riverpod update
       final myId = UserSession.getUserId();
       if (myId != null) {
         globalProviderContainer
@@ -89,7 +71,6 @@ class LocationService {
       debugPrint("📍 Location updated ✅");
 
     } catch (e) {
-      // ✅ Silent fail — location ke liye app crash nahi hogi
       debugPrint("📍 Location update failed (silent): $e");
     }
   }
