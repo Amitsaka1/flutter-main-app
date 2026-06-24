@@ -9,6 +9,8 @@ import '../../../core/socket/global_socket_manager.dart';
 import '../../../core/controllers/chat_controller.dart';
 import '../../../core/data/global_data_manager.dart';
 import '../../../core/session/user_session.dart';
+import 'package:app_project/providers/user_locations_provider.dart';
+import 'package:app_project/core/riverpod/app_container.dart';
 
 import 'widgets/dashboard_search_bar.dart';
 import 'widgets/dashboard_grid.dart';
