@@ -75,6 +75,17 @@ class LocationService {
         "longitude": position.longitude,
       });
 
+      // ✅ FIX: Apni location Riverpod mein bhi save karo
+      // profile_card pe distance badge ke liye myLoc chahiye
+      // fetchAllLocations mein apni location nahi hoti (race condition)
+      // Isliye yahan directly Riverpod update karo
+      final myId = UserSession.getUserId();
+      if (myId != null) {
+        globalProviderContainer
+            .read(userLocationsProvider.notifier)
+            .updateLocation(myId, position.latitude, position.longitude);
+      }
+
       debugPrint("📍 Location updated ✅");
 
     } catch (e) {
