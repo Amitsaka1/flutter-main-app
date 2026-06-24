@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class ChatCard extends StatefulWidget {
   final dynamic      chat;
@@ -179,7 +180,7 @@ class _ChatCardState extends State<ChatCard>
                         ),
                         image: hasAvatar
                             ? DecorationImage(
-                                image: NetworkImage(avatarUrl!),
+                                image: CachedNetworkImageProvider(avatarUrl!),
                                 fit:   BoxFit.cover,
                               )
                             : null,
