@@ -8,6 +8,7 @@ import 'dart:math' show sin, cos, sqrt, atan2, pi;
 import 'package:app_project/providers/user_locations_provider.dart';
 import 'package:app_project/core/session/user_session.dart';
 import 'online_indicator.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 // ─────────────────────────────────────────────
 //  PROFILE CARD  —  Premium Dark VIP Edition
@@ -315,23 +316,63 @@ class _AvatarRing extends StatelessWidget {
           shape: BoxShape.circle,
           color: Color(0xFF0E0E18),
         ),
-        child: CircleAvatar(
-          radius: 28,
-          backgroundColor: const Color(0xFF1C1C2A),
-          backgroundImage: hasAvatar
-              ? NetworkImage(avatarUrl!)
-              : const AssetImage("assets/profile_placeholder.png")
-                  as ImageProvider,
-          child: !hasAvatar && name.isNotEmpty
-              ? Text(
-                  name[0].toUpperCase(),
-                  style: const TextStyle(
-                    color: Color(0xFFD4A843),
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+        child: ClipOval(
+          child: SizedBox(
+            width: 56,
+            height: 56,
+            child: hasAvatar
+                ? CachedNetworkImage(
+                    imageUrl: avatarUrl!,
+                    width: 56,
+                    height: 56,
+                    fit: BoxFit.cover,
+                    placeholder: (_, __) => Container(
+                      color: const Color(0xFF1C1C2A),
+                      alignment: Alignment.center,
+                      child: name.isNotEmpty
+                          ? Text(
+                              name[0].toUpperCase(),
+                              style: const TextStyle(
+                                color: Color(0xFFD4A843),
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            )
+                          : const Icon(Icons.person,
+                              color: Color(0xFF3A3A55), size: 24),
+                    ),
+                    errorWidget: (_, __, ___) => Container(
+                      color: const Color(0xFF1C1C2A),
+                      alignment: Alignment.center,
+                      child: name.isNotEmpty
+                          ? Text(
+                              name[0].toUpperCase(),
+                              style: const TextStyle(
+                                color: Color(0xFFD4A843),
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            )
+                          : const Icon(Icons.person,
+                              color: Color(0xFF3A3A55), size: 24),
+                    ),
+                  )
+                : Container(
+                    color: const Color(0xFF1C1C2A),
+                    alignment: Alignment.center,
+                    child: name.isNotEmpty
+                        ? Text(
+                            name[0].toUpperCase(),
+                            style: const TextStyle(
+                              color: Color(0xFFD4A843),
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          )
+                        : const Icon(Icons.person,
+                            color: Color(0xFF3A3A55), size: 24),
                   ),
-                )
-              : null,
+          ),
         ),
       ),
     );
