@@ -28,7 +28,7 @@ class UserLocationsNotifier
 
   // ── Saari locations ek saath set karo (login pe) ──
   void setAllLocations(List<dynamic> locations) {
-    final Map<String, Map<String, double>> newMap = {};
+    final Map<String, Map<String, double>> newMap = { ...state };
 
     for (final loc in locations) {
       final userId = loc["userId"]?.toString();
