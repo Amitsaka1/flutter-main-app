@@ -7,6 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/controllers/chat_controller.dart';
+import 'package:app_project/core/database/cache_service.dart';
+import 'package:app_project/core/data/global_data_manager.dart';
 
 import 'package:app_project/providers/recent_chats_provider.dart';
 import 'package:app_project/providers/online_users_provider.dart';
@@ -133,29 +135,38 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
 
   Future<void> _initialize() async {
 
-      // fix: Cache turant dikhao — koi await nahi
+      // ✅ NAYA: App restart pe SQLite se load karo
+      if (!_controller.hasData) {
+        final cachedChats = await CacheService.instance.getChats();
+        if (cachedChats.isNotEmpty && mounted) {
+          ref.read(recentChatsProvider.notifier).state = cachedChats;
+          setState(() => loading = false);
+          _listCtrl..reset()..forward();
+        }
+      }
+
+      // In-memory cache — same as before
       if (_controller.hasData) {
         ref.read(recentChatsProvider.notifier).state = _controller.chats;
         setState(() => loading = false);
         _listCtrl..reset()..forward();
-
-        // fix: Fresh hai toh API mat maaro
         if (_controller.isFresh) return;
       }
 
-      // fix: Token check cache ke baad
       final token = await ApiClient.getToken();
       if (token == null) {
         if (mounted) context.go("/login");
         return;
       }
   
-      // Background API refresh
       try {
         final response = await ApiClient.get("/chat/recent");
 
         if (response["success"] == true) {
           final data = List<dynamic>.from(response["data"]);
+
+          // ✅ NAYA: SQLite mein save karo
+          await GlobalDataManager.instance.setChats(data);
 
           if (mounted) {
             ref.read(recentChatsProvider.notifier).state = data;
@@ -166,7 +177,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
           }
         }
       } catch (_) {}
-    }
+  }
 
   // ✅ UNCHANGED: Pull-to-refresh
   Future<void> _onRefresh() async {
