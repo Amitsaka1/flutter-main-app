@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/riverpod/app_container.dart';
+import 'core/data/global_data_manager.dart';
 
 import 'app.dart';
 import 'core/network/api_client.dart';
@@ -18,6 +19,9 @@ void main() async {
 
   /// 🔥 AUDIO SETUP
   await _setupAudio();
+
+  /// ✅ YE ADD HUA — SQLite se instant load
+  await GlobalDataManager.instance.loadFromCache();
 
   /// 🔥 GLOBAL SOCKET INIT (NEW)
   try {
