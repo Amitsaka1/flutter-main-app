@@ -7,6 +7,7 @@ import '../../../core/socket/global_socket_manager.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:async';
 import 'dart:io';
+import '../../../core/database/cache_service.dart';
 
 import 'widgets/profile_avatar_section.dart';
 import 'widgets/profile_stat_box.dart';
@@ -88,6 +89,9 @@ class _MyProfileScreenState extends State<MyProfileScreen>
       profile = Map.from(_cache!);
       loading = false;
       _entranceCtrl.forward();
+    } else {
+      // ✅ NAYA: App restart pe SQLite se load karo
+      _loadProfileFromSqlite();
     }
 
     _fetchProfile();
@@ -134,12 +138,27 @@ class _MyProfileScreenState extends State<MyProfileScreen>
         setState(() => profile!["avatarUrl"] = imageUrl);
         _cache = Map.from(profile!);
 
+        // ✅ NAYA: SQLite update karo
+        await CacheService.instance.saveMyProfile(Map.from(profile!));
+
         if (mounted) {
           _showToast("Profile photo updated ✦");
         }
       }
     } catch (e) {
       debugPrint("Upload error: $e");
+    }
+  }
+
+  // ── Load from SQLite ──────────────────────────
+  Future<void> _loadProfileFromSqlite() async {
+    final cached = await CacheService.instance.getMyProfile();
+    if (cached != null && mounted && profile == null) {
+      setState(() {
+        profile = cached;
+        loading = false;
+      });
+      _entranceCtrl.forward();
     }
   }
 
@@ -151,6 +170,11 @@ class _MyProfileScreenState extends State<MyProfileScreen>
 
     if (response["success"] == true) {
       _cache = response["data"];
+
+      // ✅ NAYA: SQLite mein save karo
+      await CacheService.instance.saveMyProfile(
+        response["data"] as Map<String, dynamic>,
+      );
 
       // ── ADD THESE 3 LINES ──────────────────
       final user        = response["data"]?["user"];
