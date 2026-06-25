@@ -64,6 +64,19 @@ class VoiceMemberModel {
       level:     level,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    "userId":  userId,
+    "role":    role,
+    "isMuted": isMuted,
+    "user": {
+      "level": level,
+      "profile": {
+        "name":      name,
+        "avatarUrl": avatarUrl,
+      },
+    },
+  };
 }
 
 // ─────────────────────────────────────────────────────────
@@ -139,6 +152,17 @@ class VoiceGroupModel {
       members:       members       ?? this.members,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    "id":            id,
+    "shortId":       shortId,
+    "name":          name,
+    "emoji":         emoji,
+    "speakerCount":  speakerCount,
+    "listenerCount": listenerCount,
+    "maxSpeakers":   maxSpeakers,
+    "members":       members.map((m) => m.toJson()).toList(),
+  };
 }
 
 // ─────────────────────────────────────────────────────────
@@ -169,6 +193,13 @@ class VoiceWorldModel {
           .toList(),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    "id":     id,
+    "name":   name,
+    "emoji":  emoji,
+    "groups": groups.map((g) => g.toJson()).toList(),
+  };
 }
 
 // ─────────────────────────────────────────────────────────
