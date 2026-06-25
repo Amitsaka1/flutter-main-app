@@ -18,6 +18,8 @@ import 'package:app_project/core/config/environment.dart';
 //   flutter_secure_storage: ^9.0.0
 //
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../data/global_data_manager.dart';
+import '../network/sync_service.dart';
 
 class ApiClient {
   static String get baseUrl => Environment.baseUrl;
@@ -305,6 +307,9 @@ class ApiClient {
     // ✅ UNCHANGED: 401 — token clear karo
     if (response.statusCode == 401) {
       clearToken();
+      // ✅ NAYA: Cache bhi clear karo — purana data na rahe
+      GlobalDataManager.instance.clear();
+      SyncService.instance.stop();
       throw Exception("Session expired");
     }
 
