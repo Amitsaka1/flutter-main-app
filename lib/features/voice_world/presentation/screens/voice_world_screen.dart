@@ -35,11 +35,12 @@ class _VoiceWorldScreenState
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final state = ref.read(voiceWorldProvider);
-      if (state.status == VoiceWorldStatus.idle) {
-        ref.read(voiceWorldProvider.notifier).fetchWorlds();
-      }
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // ✅ NAYA: Cache se pehle load karo — instant dikhega
+      await ref.read(voiceWorldProvider.notifier).loadFromCache();
+
+      // Phir fresh data fetch karo background mein
+      ref.read(voiceWorldProvider.notifier).fetchWorlds();
     });
   }
 
