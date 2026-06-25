@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../features/voice_world/data/models/voice_group_model.dart';
 import '../features/voice_world/data/repository/voice_world_repository.dart';
+import '../core/data/global_data_manager.dart';
 
 import '../../../core/livekit/livekit_service.dart';
 import '../../../core/session/user_session.dart';
@@ -93,11 +94,37 @@ class VoiceWorldNotifier extends StateNotifier<VoiceWorldState> {
     try {
       final worlds = await _repo.getWorlds();
       state = state.copyWith(status: VoiceWorldStatus.loaded, worlds: worlds);
+
+      // ✅ NAYA: SQLite mein save karo
+      await GlobalDataManager.instance.setRooms(
+        worlds.map((w) => w.toJson()).toList(),
+      );
     } catch (e) {
       state = state.copyWith(
         status:       VoiceWorldStatus.error,
         errorMessage: e.toString(),
       );
+    }
+  }
+
+  // ✅ NAYA: Cache se load karo
+  Future<void> loadFromCache() async {
+    final cached = GlobalDataManager.instance.rooms;
+    if (cached == null || cached.isEmpty) return;
+
+    try {
+      final worlds = cached
+          .map((r) => VoiceWorldModel.fromJson(r as Map<String, dynamic>))
+          .toList();
+
+      if (worlds.isNotEmpty) {
+        state = state.copyWith(
+          status: VoiceWorldStatus.loaded,
+          worlds: worlds,
+        );
+      }
+    } catch (e) {
+      debugPrint("⚠️ VoiceWorld loadFromCache failed: $e");
     }
   }
 
