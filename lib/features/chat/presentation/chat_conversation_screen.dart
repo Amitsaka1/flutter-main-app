@@ -20,6 +20,8 @@ import '../../../core/chat/unread_counter_service.dart';
 import 'package:app_project/providers/messages_provider.dart';
 import 'package:app_project/providers/online_users_provider.dart';
 import 'package:app_project/core/session/user_session.dart';
+import 'package:app_project/core/database/cache_service.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:app_project/features/call/presentation/call_screen.dart';
 
 // ──────────────────────────────────────────────────────────────
@@ -387,17 +389,30 @@ class _ChatConversationScreenState
     }
 
     _myId = UserSession.userId;
-    
     if (_myId == null) return;
 
     _logic.init(_myId!);
 
-    _sub = _logic.stream(widget.chatUserId).listen((data) {
-      if (!mounted) return;
+    // ✅ NAYA: SQLite se pehle load karo — instant dikhega
+    final cachedMessages =
+        await CacheService.instance.getMessages(widget.chatUserId);
+    if (cachedMessages.isNotEmpty && mounted) {
       setState(() {
-        _messages = data as List<dynamic>;
+        _messages = cachedMessages;
         _loading  = false;
       });
+      _scrollToBottom();
+    }
+
+    _sub = _logic.stream(widget.chatUserId).listen((data) {
+      if (!mounted) return;
+      final msgs = data as List<dynamic>;
+      setState(() {
+        _messages = msgs;
+        _loading  = false;
+      });
+      // ✅ NAYA: Fresh messages SQLite mein save karo
+      CacheService.instance.saveMessages(widget.chatUserId, msgs);
       _scrollToBottom();
     });
 
@@ -412,38 +427,44 @@ class _ChatConversationScreenState
     final text = _textCtrl.text.trim();
     if (text.isEmpty) return;
 
-    final tempId =
-        DateTime.now()
-            .millisecondsSinceEpoch
-            .toString();
+    final tempId  = DateTime.now().millisecondsSinceEpoch.toString();
+    final nowIso  = DateTime.now().toIso8601String();
 
-    // new: Fix #19 — createdAt add kiya
-    // Pehle missing tha — naya message TOP pe jump karta tha (galat position)
-    final nowIso = DateTime.now().toIso8601String();
+    final tempMsg = {
+      'id':         tempId,
+      'senderId':   _myId,
+      'receiverId': widget.chatUserId,
+      'content':    text,
+      'isRead':     false,
+      'createdAt':  nowIso,
+      'isPending':  false,
+    };
 
     final notifier = ref.read(messagesProvider.notifier);
-    final current =
-        Map<String, List<dynamic>>.from(
-      notifier.state,
-    );
+    final current  = Map<String, List<dynamic>>.from(notifier.state);
     final prev     = (current[widget.chatUserId] as List<dynamic>?) ?? [];
 
-    current[widget.chatUserId] = [
-      ...prev,
-      {
-        'id':         tempId,
-        'senderId':   _myId,
-        'receiverId': widget.chatUserId,
-        'content':    text,
-        'isRead':     false,
-        'createdAt':  nowIso, // new: Fix #19
-      },
-    ];
-
+    current[widget.chatUserId] = [...prev, tempMsg];
     notifier.state = current;
     _textCtrl.clear();
 
-    // new: Fix #19 — real message aane par temp ko replace karo
+    // ✅ NAYA: Internet check karo
+    final connectivity = await Connectivity().checkConnectivity();
+    final isOffline    = connectivity == ConnectivityResult.none;
+
+    if (isOffline) {
+      // ✅ Internet nahi — queue mein save karo
+      tempMsg['isPending'] = true;
+      await CacheService.instance.addToQueue(
+        tempId,
+        widget.chatUserId,
+        tempMsg,
+      );
+      _scrollToBottom();
+      return; // Baad mein bhejega jab internet aayega
+    }
+
+    // ✅ Internet hai — normal send
     final realMessage = await _logic.sendMessage(widget.chatUserId, text);
 
     if (realMessage != null && mounted) {
@@ -459,6 +480,12 @@ class _ChatConversationScreenState
         list[idx] = realMessage;
         latest[widget.chatUserId] = list;
         ref.read(messagesProvider.notifier).state = latest;
+
+        // ✅ NAYA: Sent message SQLite mein bhi save karo
+        await CacheService.instance.saveMessages(
+          widget.chatUserId,
+          List<dynamic>.from(latest[widget.chatUserId] ?? []),
+        );
       }
     }
 
