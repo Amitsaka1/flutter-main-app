@@ -174,12 +174,13 @@ class _DashboardScreenState extends State<DashboardScreen>
   Future<void> _fetchProfiles() async {
     final global = GlobalDataManager.instance;
 
+    // ✅ Cache se instant dikhao — loading nahi
     if (global.profiles != null) {
       setState(() {
         profiles = global.profiles!;
         loading  = false;
       });
-      return;
+      // ✅ Return nahi — background mein fresh data bhi lao
     }
 
     try {
@@ -192,7 +193,7 @@ class _DashboardScreenState extends State<DashboardScreen>
 
       if (response["success"] == true) {
         final data = response["data"] as List;
-        global.setProfiles(data);
+        await global.setProfiles(data); // ✅ await add kiya
         setState(() {
           profiles = data;
           page     = 1;
@@ -200,9 +201,10 @@ class _DashboardScreenState extends State<DashboardScreen>
           loading  = false;
         });
       } else {
-        setState(() => loading = false);
+        if (mounted) setState(() => loading = false);
       }
     } catch (_) {
+      // ✅ Offline hai — cache already dikh raha hai — koi error nahi
       if (mounted) setState(() => loading = false);
     }
   }
