@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/riverpod/app_container.dart';
 import 'core/data/global_data_manager.dart';
+import 'core/network/sync_service.dart';
 
 import 'app.dart';
 import 'core/network/api_client.dart';
@@ -22,6 +23,8 @@ void main() async {
 
   /// ✅ YE ADD HUA — SQLite se instant load
   await GlobalDataManager.instance.loadFromCache();
+  // ✅ NAYA: Offline queue sync start karo
+  SyncService.instance.start();
 
   /// 🔥 GLOBAL SOCKET INIT (NEW)
   try {
