@@ -208,6 +208,81 @@ class GlobalSocketManager with WidgetsBindingObserver {
           _messageController.add(event);
         }
 
+        // ✅ NEW: PENDING_MESSAGES — offline the toh missed messages
+        // Backend connect hone pe push karta hai
+        else if (type == "PENDING_MESSAGES") {
+          final messages = List<dynamic>.from(event["data"] ?? []);
+
+          for (final msg in messages) {
+            final senderId  = msg["senderId"]?.toString();
+            final chatId    = senderId == _userId
+                ? msg["receiverId"]?.toString() ?? ""
+                : senderId ?? "";
+
+            if (chatId.isEmpty) continue;
+
+            // messagesProvider update karo
+            final notifier = globalProviderContainer
+                .read(messagesProvider.notifier);
+            final current = { ...notifier.state };
+            final oldMessages   = current[chatId] ?? [];
+            final alreadyExists =
+                oldMessages.any((m) => m["id"] == msg["id"]);
+
+            if (!alreadyExists) {
+              final updated = List<dynamic>.from([...oldMessages, msg]);
+              if (updated.length > 100) updated.removeAt(0);
+              current[chatId] = updated;
+              notifier.state  = current;
+            }
+
+            // ConversationController cache bhi update karo
+            ChatController.instance.handleNewMessage(msg);
+          }
+
+          // recentChats refresh karo
+          final recentNotifier =
+              globalProviderContainer.read(recentChatsProvider.notifier);
+          recentNotifier.state =
+              List<dynamic>.from(recentNotifier.state);
+
+          _messageController.add(event);
+        }
+
+        // ✅ NEW: MESSAGE_CONFIRMED — tempId ko real DB id se replace karo
+        else if (type == "MESSAGE_CONFIRMED") {
+          final tempId = event["tempId"]?.toString();
+          final data   = event["data"] as Map<String, dynamic>?;
+
+          if (tempId != null && data != null) {
+            final senderId  = data["senderId"]?.toString();
+            final receiverId = data["receiverId"]?.toString();
+            final chatId    = senderId == _userId
+                ? receiverId ?? ""
+                : senderId   ?? "";
+
+            if (chatId.isNotEmpty) {
+              // messagesProvider mein replace karo
+              final notifier = globalProviderContainer
+                  .read(messagesProvider.notifier);
+              final current = { ...notifier.state };
+              final msgs    = List<dynamic>.from(current[chatId] ?? []);
+              final idx     =
+                  msgs.indexWhere((m) => m["id"]?.toString() == tempId);
+              if (idx != -1) {
+                msgs[idx]       = data;
+                current[chatId] = msgs;
+                notifier.state  = current;
+              }
+
+              // ConversationController mein bhi replace karo
+              ConversationController.instance
+                  .replaceTempMessage(tempId, data, chatId);
+            }
+          }
+          _messageController.add(event);
+        }
+
         // ── USER_LOCATION_UPDATE — real-time location ────
         else if (type == "USER_LOCATION_UPDATE") {
           final uid = event["userId"]?.toString();
@@ -248,6 +323,8 @@ class GlobalSocketManager with WidgetsBindingObserver {
           _isReconnecting = true;
           _socketService?.connect().whenComplete(() {
             _isReconnecting = false;
+            // ✅ NEW: Reconnect ke baad conversations force reload
+            ConversationController.instance.forceReloadAll();
           });
         }
       },
@@ -285,11 +362,17 @@ class GlobalSocketManager with WidgetsBindingObserver {
         _isReconnecting = true;
         _socketService?.connect().whenComplete(() {
           _isReconnecting = false;
+          // ✅ NEW: Wapas aaye toh pending messages load karo
+          ConversationController.instance.forceReloadAll();
         });
       }
+    } else if (state == AppLifecycleState.paused) {
+      // ✅ NEW: App background gaya — server ko turant offline batao
+      // Server ko signal milega → ws.on("close") → USER_OFFLINE broadcast
+      _socketService?.disconnect();
     }
   }
-
+  
   // ── Disconnect — unchanged ────────────────────────────
   Future<void> disconnect() async {
     await _socketSubscription?.cancel();
