@@ -36,9 +36,28 @@ class LocationService {
           await Permission.locationWhenInUse.status;
       debugPrint("📍 Permission: $status");
 
-      if (status.isDenied || status.isPermanentlyDenied) {
+      // ✅ Denied pe request karo
+      if (status.isDenied) {
         status = await Permission.locationWhenInUse.request();
         debugPrint("📍 After request: $status");
+      }
+
+      // ✅ OPPO/Vivo/Realme fix — permanentlyDenied pe settings kholo
+      // In devices pe fresh install bhi permanentlyDenied return karta hai
+      // Pehle request try karo — agar dialog aaya toh theek
+      // Nahi aaya toh settings pe bhejna better hai
+      if (status.isPermanentlyDenied) {
+        status = await Permission.locationWhenInUse.request();
+        debugPrint("📍 After force request: $status");
+
+        // Abhi bhi denied? — Settings open karo
+        if (!status.isGranted) {
+          debugPrint("📍 Opening settings for OPPO/Vivo fix");
+          await openAppSettings();
+          // Settings se wapas aane ke baad check karo
+          await Future.delayed(const Duration(seconds: 1));
+          status = await Permission.locationWhenInUse.status;
+        }
       }
 
       if (!status.isGranted) {
