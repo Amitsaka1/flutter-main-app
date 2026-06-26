@@ -292,6 +292,35 @@ class ConversationController {
     _streams[userId]!.add(List.from(_conversationCache[userId]!));
   }
 
+  // ================= TELEGRAM STYLE RELOAD — NEW =================
+
+  /// Reconnect ke baad call karo — fresh data fetch hoga
+  /// Cache clear nahi hota — stale data instantly dikhta rehega
+  /// API call tab hogi jab user conversation open karega
+  void forceReloadAll() {
+    _loadedConversations.clear();
+  }
+
+  /// Sirf ek conversation ko force reload karo
+  void forceReloadConversation(String userId) {
+    _loadedConversations.remove(userId);
+  }
+
+  /// MESSAGE_CONFIRMED ke liye — tempId ko real DB id se replace karo
+  void replaceTempMessage(
+      String tempId, Map<String, dynamic> realMessage, String chatId) {
+    final messages = _conversationCache[chatId];
+    if (messages == null) return;
+
+    final updated = List<dynamic>.from(messages);
+    final idx     = updated.indexWhere((m) => m["id"]?.toString() == tempId);
+    if (idx != -1) {
+      updated[idx]             = realMessage;
+      _conversationCache[chatId] = updated;
+      _emit(chatId);
+    }
+  }
+
   // ================= DISPOSE — FIXED =================
 
   void dispose() {
