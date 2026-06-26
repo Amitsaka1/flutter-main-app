@@ -70,9 +70,19 @@ class SyncService {
           final tempId         = item["id"] as String;
           final content        = data["content"]?.toString() ?? "";
 
-          if (content.isEmpty) {
-            // Invalid message — queue se hata do
+          final msgType = data["type"]?.toString() ?? "text";
+
+          if (content.isEmpty && msgType != "image") {
+            // Text content nahi aur image bhi nahi — invalid, hata do
             await CacheService.instance.removeFromQueue(tempId);
+            continue;
+          }
+
+          if (msgType == "image") {
+            // Image ka file data queue mein nahi hota — silently remove karo
+            // User ko dobara bhejni padegi
+            await CacheService.instance.removeFromQueue(tempId);
+            debugPrint("⚠️ Image queue item removed — re-send manually: $tempId");
             continue;
           }
 
