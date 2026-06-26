@@ -148,9 +148,7 @@ class _LoginScreenState extends State<LoginScreen> {
             // 🔥 Use Global Socket (no local instance)
             await GlobalSocketManager.instance
                 .init(userId.toString());
-            LocationService.updateLocationOnLogin().then((_) {
-              _fetchAllLocations(); // mounted check nahi chahiye — globalProviderContainer use karta hai
-            });
+            _fetchAllLocations();
           }
         }
 
