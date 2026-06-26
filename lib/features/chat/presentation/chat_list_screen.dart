@@ -135,7 +135,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
 
   Future<void> _initialize() async {
 
-      // ✅ NAYA: App restart pe SQLite se load karo
+      // ✅ SQLite se cache load karo — sirf jab controller mein data nahi
       if (!_controller.hasData) {
         final cachedChats = await CacheService.instance.getChats();
         if (cachedChats.isNotEmpty && mounted) {
@@ -145,7 +145,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
         }
       }
 
-      // In-memory cache — same as before
+      // In-memory cache check
       if (_controller.hasData) {
         ref.read(recentChatsProvider.notifier).state = _controller.chats;
         setState(() => loading = false);
@@ -158,25 +158,26 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
         if (mounted) context.go("/login");
         return;
       }
-  
+
       try {
         final response = await ApiClient.get("/chat/recent");
 
         if (response["success"] == true) {
           final data = List<dynamic>.from(response["data"]);
 
-          // ✅ NAYA: SQLite mein save karo
-          await GlobalDataManager.instance.setChats(data);
+          // SQLite save — unawaited rakho taaki UI block na ho
+          GlobalDataManager.instance.setChats(data);
 
           if (mounted) {
             ref.read(recentChatsProvider.notifier).state = data;
-            if (loading) {
-              setState(() => loading = false);
-              _listCtrl..reset()..forward();
-            }
+            // ✅ FIX: loading check hatao — hamesha UI update karo
+            setState(() => loading = false);
+            _listCtrl..reset()..forward();
           }
         }
-      } catch (_) {}
+      } catch (_) {
+        if (mounted) setState(() => loading = false);
+      }
   }
 
   // ✅ UNCHANGED: Pull-to-refresh
