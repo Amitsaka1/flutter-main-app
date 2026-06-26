@@ -56,7 +56,10 @@ class CacheService {
       final batch = db.batch();
 
       for (final c in chats) {
-        final id = c["id"]?.toString() ?? c["_id"]?.toString();
+        // ✅ FIX: Chat ka id user ke andar hota hai
+        final id = c["user"]?["id"]?.toString()
+                ?? c["id"]?.toString()
+                ?? c["_id"]?.toString();
         if (id == null) continue;
         batch.insert("chats", {
           "id":         id,
