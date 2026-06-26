@@ -201,7 +201,9 @@ class _DashboardScreenState extends State<DashboardScreen>
 
       if (response["success"] == true) {
         final data = response["data"] as List;
-        await global.setProfiles(data); // ✅ await add kiya
+        // ✅ FIX: await hatao — unawaited rakho SQLite save ko
+        // notify() se double setState nahi hoga
+        global.setProfiles(data);
         setState(() {
           profiles = data;
           page     = 1;
