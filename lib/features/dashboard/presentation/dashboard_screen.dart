@@ -10,6 +10,7 @@ import '../../../core/controllers/chat_controller.dart';
 import '../../../core/data/global_data_manager.dart';
 import '../../../core/session/user_session.dart';
 import 'package:app_project/core/location/location_service.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import 'widgets/dashboard_search_bar.dart';
 import 'widgets/dashboard_grid.dart';
@@ -132,7 +133,8 @@ class _DashboardScreenState extends State<DashboardScreen>
     // Navigation complete hone ke baad dialog aata hai sab devices pe
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await Future.delayed(const Duration(milliseconds: 500));
-      await LocationService.updateLocationOnLogin();
+      final result = await LocationService.updateLocationOnLogin();
+      _showLocationFeedback(result);
     });
 
     ApiClient.get("/profile/me").then((profileRes) {
@@ -156,8 +158,59 @@ class _DashboardScreenState extends State<DashboardScreen>
     });
   }
 
-  // ===================== GLOBAL LISTENER START =====================
+  // ===================== LOCATION FEEDBACK START =====================
 
+  void _showLocationFeedback(LocationUpdateResult result) {
+    if (!mounted) return;
+
+    switch (result) {
+      case LocationUpdateResult.success:
+        break; // sab theek — kuch dikhane ki zarurat nahi
+
+      case LocationUpdateResult.gpsOff:
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("📍 Location off hai — distance dikhane ke liye GPS on karo."),
+          ),
+        );
+        break;
+
+      case LocationUpdateResult.permissionPermanentlyDenied:
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text("📍 Location permission band hai — allow karo distance dekhne ke liye."),
+            action: SnackBarAction(
+              label: "Settings",
+              onPressed: () => openAppSettings(),
+            ),
+          ),
+        );
+        break;
+
+      case LocationUpdateResult.permissionDenied:
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("📍 Location allow nahi hui — distance nahi dikhega."),
+          ),
+        );
+        break;
+
+      case LocationUpdateResult.locationUnavailable:
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("📍 Location nahi mil paayi — thodi der baad try karo."),
+          ),
+        );
+        break;
+
+      case LocationUpdateResult.failed:
+        break; // network/unknown error — silent
+    }
+  }
+
+  // ===================== LOCATION FEEDBACK END =======================
+
+  // ===================== GLOBAL LISTENER START =====================
   void _listenGlobal() {
     final global = GlobalDataManager.instance;
 
