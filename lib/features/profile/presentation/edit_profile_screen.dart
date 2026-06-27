@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/location/location_service.dart';
+import '../../../core/session/user_session.dart';
 
 import 'widgets/profile_form_text_field.dart';
 import 'widgets/profile_form_dropdown.dart';
@@ -71,6 +72,7 @@ class _EditProfileScreenState extends State<EditProfileScreen>
     roleType  = widget.profile["roleType"] ?? "";
     havePlace = widget.profile["havePlace"] ?? false;
     locationEnabled = widget.profile["locationEnabled"] ?? false;
+        UserSession.locationEnabled = locationEnabled;
 
     // Entrance
     _entranceCtrl = AnimationController(
@@ -154,6 +156,7 @@ class _EditProfileScreenState extends State<EditProfileScreen>
             locationEnabled       = false;
             _lastLocationToggleAt = DateTime.now();
           });
+          UserSession.locationEnabled = false;
         }
       } catch (e) {
         if (mounted) {
@@ -212,11 +215,13 @@ class _EditProfileScreenState extends State<EditProfileScreen>
       }
     });
 
+    UserSession.locationEnabled = locationEnabled;
+
     if (result != LocationUpdateResult.success) {
       _showErrorToast(_locationMessageFor(result));
     }
   }
-
+  
   String _locationMessageFor(LocationUpdateResult result) {
     switch (result) {
       case LocationUpdateResult.gpsOff:
