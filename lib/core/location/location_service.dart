@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart'; // ✅ ADD
+import 'package:location/location.dart' as loc;
 import 'package:app_project/core/network/api_client.dart';
 
 enum LocationUpdateResult {
@@ -31,10 +32,17 @@ class LocationService {
       }
 
       // GPS on hai?
-      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+
       if (!serviceEnabled) {
-        debugPrint("📍 GPS off — skip");
-        return LocationUpdateResult.gpsOff;
+        // ✅ NAYA — Zomato/Uber jaisa in-app "Turn on Location" dialog
+        debugPrint("📍 GPS off — turn-on dialog dikhao");
+        serviceEnabled = await loc.Location().requestService();
+
+        if (!serviceEnabled) {
+          debugPrint("📍 User ne GPS on nahi kiya — skip");
+          return LocationUpdateResult.gpsOff;
+        }
       }
 
       // ✅ NAYA — permission_handler use karo
