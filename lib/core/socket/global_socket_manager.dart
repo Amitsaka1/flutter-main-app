@@ -16,7 +16,6 @@ import 'package:app_project/providers/online_users_provider.dart';
 import 'package:app_project/providers/messages_provider.dart';
 import 'package:app_project/providers/recent_chats_provider.dart';
 import 'package:app_project/providers/voice_world_provider.dart'; // new: Fix #5
-import 'package:app_project/providers/user_locations_provider.dart';
 
 class GlobalSocketManager with WidgetsBindingObserver {
 
@@ -283,20 +282,6 @@ class GlobalSocketManager with WidgetsBindingObserver {
           _messageController.add(event);
         }
 
-        // ── USER_LOCATION_UPDATE — real-time location ────
-        else if (type == "USER_LOCATION_UPDATE") {
-          final uid = event["userId"]?.toString();
-          final lat = (event["latitude"]  as num?)?.toDouble();
-          final lng = (event["longitude"] as num?)?.toDouble();
-
-          if (uid != null && lat != null && lng != null) {
-            globalProviderContainer
-                .read(userLocationsProvider.notifier)
-                .updateLocation(uid, lat, lng);
-          }
-          _messageController.add(event);
-        }
-
         // ── Sab baaki events ─────────────────────────────
         else {
           _messageController.add(event);
@@ -390,13 +375,7 @@ class GlobalSocketManager with WidgetsBindingObserver {
     globalProviderContainer
         .read(onlineUsersProvider.notifier)
         .state = {};
-
-    // 📍 Logout pe sabhi locations clear karo
-    globalProviderContainer
-        .read(userLocationsProvider.notifier)
-        .clear();
   }
-
   // ── Getters — unchanged ───────────────────────────────
   bool   get isConnected => _socketService?.isConnected ?? false;
   String get wsUrl       => _socketService?.wsUrl ?? "";
