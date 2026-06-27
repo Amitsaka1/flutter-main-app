@@ -2,9 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart'; // ✅ ADD
 import 'package:app_project/core/network/api_client.dart';
-import 'package:app_project/core/session/user_session.dart';
-import 'package:app_project/providers/user_locations_provider.dart';
-import 'package:app_project/core/riverpod/app_container.dart';
 
 class LocationService {
 
@@ -114,7 +111,7 @@ class LocationService {
     return null;
   }
 
-  // Backend + Riverpod update
+  // Backend update
   static Future<void> _send(Position position) async {
     debugPrint("📍 Sending: ${position.latitude}, ${position.longitude}");
 
@@ -122,13 +119,6 @@ class LocationService {
       "latitude":  position.latitude,
       "longitude": position.longitude,
     });
-
-    final myId = UserSession.getUserId();
-    if (myId != null) {
-      globalProviderContainer
-          .read(userLocationsProvider.notifier)
-          .updateLocation(myId, position.latitude, position.longitude);
-    }
 
     debugPrint("📍 Location updated ✅");
   }
