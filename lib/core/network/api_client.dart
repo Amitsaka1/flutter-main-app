@@ -225,6 +225,29 @@ class ApiClient {
     });
   }
 
+  // ================= DELETE — NEW =================
+
+  static Future<Map<String, dynamic>> delete(
+    String endpoint,
+  ) async {
+    return _withRetry(() async {
+      final uri = Uri.parse("$baseUrl$endpoint");
+
+      try {
+        final response = await http
+            .delete(uri, headers: await _headers())
+            .timeout(_timeout);
+
+        return _handleResponse(response);
+
+      } on TimeoutException {
+        throw _RetryableException("Request timeout");
+      } on SocketException {
+        throw _RetryableException("No internet connection");
+      }
+    });
+  }
+
   // ================= MULTIPART — ✅ UNCHANGED =================
 
   static Future<Map<String, dynamic>> multipart(
