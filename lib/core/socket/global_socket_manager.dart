@@ -16,6 +16,8 @@ import 'package:app_project/providers/online_users_provider.dart';
 import 'package:app_project/providers/messages_provider.dart';
 import 'package:app_project/providers/recent_chats_provider.dart';
 import 'package:app_project/providers/voice_world_provider.dart'; // new: Fix #5
+import 'package:app_project/core/session/user_session.dart';
+import 'package:app_project/core/location/location_service.dart';
 
 class GlobalSocketManager with WidgetsBindingObserver {
 
@@ -351,10 +353,27 @@ class GlobalSocketManager with WidgetsBindingObserver {
           ConversationController.instance.forceReloadAll();
         });
       }
+
+      // ✅ NEW Fix #11 — agar location abhi ON nahi hai, silently check karo
+      // ki permission Settings se manually grant toh nahi hui (dialog nahi aayega)
+      _checkLocationOnResume();
+
     } else if (state == AppLifecycleState.paused) {
       // ✅ NEW: App background gaya — server ko turant offline batao
       // Server ko signal milega → ws.on("close") → USER_OFFLINE broadcast
       _socketService?.disconnect();
+    }
+  }
+
+  Future<void> _checkLocationOnResume() async {
+    if (UserSession.locationEnabled) return; // already ON — kuch nahi karna
+
+    final granted = await LocationService.hasPermissionNow();
+    if (!granted) return; // abhi bhi nahi diya — silently ignore, dialog nahi
+
+    final result = await LocationService.updateLocationOnLogin();
+    if (result == LocationUpdateResult.success) {
+      UserSession.locationEnabled = true;
     }
   }
   
