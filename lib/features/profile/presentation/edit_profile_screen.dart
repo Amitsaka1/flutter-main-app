@@ -134,8 +134,18 @@ class _EditProfileScreenState extends State<EditProfileScreen>
     if (_locationLoading) return;
 
     if (!newValue) {
-      // ⚠️ Abhi sirf UI state — backend se actual delete Fix #9 mein aayega
-      setState(() => locationEnabled = false);
+      setState(() => _locationLoading = true);
+
+      try {
+        await ApiClient.delete("/profile/location");
+        if (mounted) setState(() => locationEnabled = false);
+      } catch (e) {
+        if (mounted) {
+          _showErrorToast("Location off nahi ho paayi — phir try karo.");
+        }
+      }
+
+      if (mounted) setState(() => _locationLoading = false);
       return;
     }
 
