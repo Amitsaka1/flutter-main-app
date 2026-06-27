@@ -134,9 +134,11 @@ class _DashboardScreenState extends State<DashboardScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await Future.delayed(const Duration(milliseconds: 500));
       final result = await LocationService.updateLocationOnLogin();
+      if (result == LocationUpdateResult.success) {
+        UserSession.locationEnabled = true;
+      }
       _showLocationFeedback(result);
     });
-
     ApiClient.get("/profile/me").then((profileRes) {
       if (!mounted) return;
       if (profileRes["success"] != true) {
