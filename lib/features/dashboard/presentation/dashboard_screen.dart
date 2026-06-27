@@ -9,9 +9,7 @@ import '../../../core/socket/global_socket_manager.dart';
 import '../../../core/controllers/chat_controller.dart';
 import '../../../core/data/global_data_manager.dart';
 import '../../../core/session/user_session.dart';
-import 'package:app_project/providers/user_locations_provider.dart';
 import 'package:app_project/core/location/location_service.dart';
-import 'package:app_project/core/riverpod/app_container.dart';
 
 import 'widgets/dashboard_search_bar.dart';
 import 'widgets/dashboard_grid.dart';
@@ -129,7 +127,6 @@ class _DashboardScreenState extends State<DashboardScreen>
     _fetchUnread();
     _listenSocket();
     ChatController.instance.loadChats();
-    _fetchAllLocations();
 
     // ✅ Location yahan maango — app fully loaded hone ke baad
     // Navigation complete hone ke baad dialog aata hai sab devices pe
@@ -273,27 +270,6 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   // ===================== UNREAD END =============================
-
-  // ===================== FETCH ALL LOCATIONS START ==================
-
-  Future<void> _fetchAllLocations() async {
-    try {
-      final res = await ApiClient.get("/profile/locations/all");
-      if (!mounted) return;
-
-      if (res["success"] == true) {
-        final locations = res["locations"] as List<dynamic>? ?? [];
-        globalProviderContainer
-            .read(userLocationsProvider.notifier)
-            .setAllLocations(locations);
-        debugPrint("📍 Locations loaded on restart: ${locations.length} users");
-      }
-    } catch (e) {
-      debugPrint("📍 Fetch locations failed (silent): $e");
-    }
-  }
-
-  // ===================== FETCH ALL LOCATIONS END ====================
 
   // ===================== SOCKET LISTENER START ==================
 
