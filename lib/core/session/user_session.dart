@@ -3,6 +3,7 @@ class UserSession {
   static String? name;
   static String? avatarUrl;
   static int     level = 1;
+  static bool    locationEnabled = false;
 
   static void setUserId(String id) {
     userId = id;
@@ -21,9 +22,10 @@ class UserSession {
   static String? getUserId() => userId;
 
   static void clear() {
-    userId    = null;
-    name      = null;
-    avatarUrl = null;
-    level     = 1;
+    userId          = null;
+    name            = null;
+    avatarUrl       = null;
+    level           = 1;
+    locationEnabled = false;
   }
 }
