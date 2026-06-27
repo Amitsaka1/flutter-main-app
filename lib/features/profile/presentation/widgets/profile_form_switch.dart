@@ -83,6 +83,7 @@ class _ProfileFormSwitchState extends State<ProfileFormSwitch>
     if (t.contains("place")) return "I have a private place to meet";
     if (t.contains("notif")) return "Receive push notifications";
     if (t.contains("online")) return "Show my online status";
+    if (t.contains("location")) return "Let others see distance to you";
     return "Toggle this option";
   }
 
