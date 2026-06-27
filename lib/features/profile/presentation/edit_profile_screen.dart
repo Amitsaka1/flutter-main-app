@@ -46,6 +46,7 @@ class _EditProfileScreenState extends State<EditProfileScreen>
   bool   loading   = false;
   bool   locationEnabled  = false;
   bool   _locationLoading = false;
+  DateTime?  _lastLocationToggleAt;
 
   // ── Entrance animation ───────────────────────
   late AnimationController _entranceCtrl;
@@ -133,12 +134,27 @@ class _EditProfileScreenState extends State<EditProfileScreen>
   Future<void> _onLocationToggle(bool newValue) async {
     if (_locationLoading) return;
 
+    // ✅ 2-minute cooldown — rapid toggle spam rokne ke liye
+    if (_lastLocationToggleAt != null) {
+      final elapsed = DateTime.now().difference(_lastLocationToggleAt!);
+      if (elapsed < const Duration(minutes: 2)) {
+        final waitSecs = 120 - elapsed.inSeconds;
+        _showErrorToast("Thoda ruko — $waitSecs second baad phir try karo.");
+        return;
+      }
+    }
+
     if (!newValue) {
       setState(() => _locationLoading = true);
 
       try {
         await ApiClient.delete("/profile/location");
-        if (mounted) setState(() => locationEnabled = false);
+        if (mounted) {
+          setState(() {
+            locationEnabled       = false;
+            _lastLocationToggleAt = DateTime.now();
+          });
+        }
       } catch (e) {
         if (mounted) {
           _showErrorToast("Location off nahi ho paayi — phir try karo.");
@@ -191,6 +207,9 @@ class _EditProfileScreenState extends State<EditProfileScreen>
     setState(() {
       _locationLoading = false;
       locationEnabled  = result == LocationUpdateResult.success;
+      if (result == LocationUpdateResult.success) {
+        _lastLocationToggleAt = DateTime.now();
+      }
     });
 
     if (result != LocationUpdateResult.success) {
