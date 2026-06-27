@@ -18,6 +18,8 @@ import 'package:app_project/providers/recent_chats_provider.dart';
 import 'package:app_project/providers/voice_world_provider.dart'; // new: Fix #5
 import 'package:app_project/core/session/user_session.dart';
 import 'package:app_project/core/location/location_service.dart';
+import 'package:app_project/core/network/api_client.dart';
+import 'package:geolocator/geolocator.dart';
 
 class GlobalSocketManager with WidgetsBindingObserver {
 
@@ -36,8 +38,11 @@ class GlobalSocketManager with WidgetsBindingObserver {
   bool _observerAdded      = false;
   bool _incomingScreenOpen = false;
   bool _isReconnecting     = false;
+  bool _wasAutoDisabledByGps = false;
 
   Timer? _reconnectTimer;
+  Timer? _gpsDebounceTimer;
+  StreamSubscription<ServiceStatus>? _gpsStatusSubscription;
 
   // ── Streams — unchanged ───────────────────────────────
   final StreamController<Map<String, dynamic>> _messageController =
@@ -299,6 +304,10 @@ class GlobalSocketManager with WidgetsBindingObserver {
       WidgetsBinding.instance.addObserver(this);
       _observerAdded = true;
     }
+
+    // ✅ NEW Fix #12 — GPS hardware on/off continuously sunte raho
+    // (heat-protection, battery saver, manual toggle — sabhi cases cover)
+    _listenGpsStatus();
 
     await _socketService!.connect();
 
