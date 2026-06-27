@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/location/location_service.dart';
 
 import 'widgets/profile_form_text_field.dart';
 import 'widgets/profile_form_dropdown.dart';
@@ -43,6 +44,8 @@ class _EditProfileScreenState extends State<EditProfileScreen>
   String roleType = "";
   bool   havePlace = false;
   bool   loading   = false;
+  bool   locationEnabled  = false;
+  bool   _locationLoading = false;
 
   // ── Entrance animation ───────────────────────
   late AnimationController _entranceCtrl;
@@ -66,6 +69,7 @@ class _EditProfileScreenState extends State<EditProfileScreen>
     gender    = widget.profile["gender"]   ?? "";
     roleType  = widget.profile["roleType"] ?? "";
     havePlace = widget.profile["havePlace"] ?? false;
+    locationEnabled = widget.profile["locationEnabled"] ?? false;
 
     // Entrance
     _entranceCtrl = AnimationController(
@@ -125,8 +129,82 @@ class _EditProfileScreenState extends State<EditProfileScreen>
     if (mounted) setState(() => loading = false);
   }
 
-  // ===================== LOGIC END =======================
+  // 📍 Location toggle — ON karne se pehle consent dialog
+  Future<void> _onLocationToggle(bool newValue) async {
+    if (_locationLoading) return;
 
+    if (!newValue) {
+      // ⚠️ Abhi sirf UI state — backend se actual delete Fix #9 mein aayega
+      setState(() => locationEnabled = false);
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: _surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: const Text(
+          "Share your location?",
+          style: TextStyle(color: _textPrime),
+        ),
+        content: const Text(
+          "Doosre users tumhari sirf approx distance dekh paayenge (jaise '2 km'). Exact location kabhi kisi ko nahi dikhayi jaati.",
+          style: TextStyle(color: _textMuted),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text(
+              "Allow",
+              style: TextStyle(color: _goldA),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _locationLoading = true);
+
+    final result = await LocationService.updateLocationOnLogin();
+
+    if (!mounted) return;
+
+    setState(() {
+      _locationLoading = false;
+      locationEnabled  = result == LocationUpdateResult.success;
+    });
+
+    if (result != LocationUpdateResult.success) {
+      _showErrorToast(_locationMessageFor(result));
+    }
+  }
+
+  String _locationMessageFor(LocationUpdateResult result) {
+    switch (result) {
+      case LocationUpdateResult.gpsOff:
+        return "Location off hai — GPS on karke try karo.";
+      case LocationUpdateResult.permissionPermanentlyDenied:
+        return "Permission band hai — Settings mein jaake allow karo.";
+      case LocationUpdateResult.permissionDenied:
+        return "Permission allow nahi hui.";
+      case LocationUpdateResult.locationUnavailable:
+        return "Location nahi mil paayi — thodi der baad try karo.";
+      default:
+        return "Kuch gadbad hui — phir try karo.";
+    }
+  }
+
+  // ===================== LOGIC END =======================
+  
   // ── Error toast ───────────────────────────────
   void _showErrorToast(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -470,6 +548,27 @@ class _EditProfileScreenState extends State<EditProfileScreen>
                                     value: havePlace,
                                     onChanged: (v) =>
                                         setState(() => havePlace = v),
+                                  ),
+                                ),
+
+                                const SizedBox(height: 20),
+
+                                // ── Section 4: Location Sharing ──
+                                _sectionLabel(
+                                  "Distance Visibility",
+                                  Icons.location_on_outlined,
+                                ),
+                                _sectionCard(
+                                  child: AbsorbPointer(
+                                    absorbing: _locationLoading,
+                                    child: Opacity(
+                                      opacity: _locationLoading ? 0.5 : 1.0,
+                                      child: ProfileFormSwitch(
+                                        title: "Share My Location",
+                                        value: locationEnabled,
+                                        onChanged: _onLocationToggle,
+                                      ),
+                                    ),
                                   ),
                                 ),
 
