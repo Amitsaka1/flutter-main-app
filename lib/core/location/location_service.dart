@@ -3,9 +3,18 @@ import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart'; // ✅ ADD
 import 'package:app_project/core/network/api_client.dart';
 
+enum LocationUpdateResult {
+  success,
+  gpsOff,
+  permissionDenied,
+  permissionPermanentlyDenied,
+  locationUnavailable,
+  failed,
+}
+
 class LocationService {
 
-  static Future<void> updateLocationOnLogin() async {
+  static Future<LocationUpdateResult> updateLocationOnLogin() async {
     try {
 
       // Web pe alag logic
@@ -14,17 +23,18 @@ class LocationService {
           final pos = await Geolocator.getCurrentPosition()
               .timeout(const Duration(seconds: 15));
           await _send(pos);
+          return LocationUpdateResult.success;
         } catch (_) {
           debugPrint("📍 Web location failed — skip");
+          return LocationUpdateResult.failed;
         }
-        return;
       }
 
       // GPS on hai?
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         debugPrint("📍 GPS off — skip");
-        return;
+        return LocationUpdateResult.gpsOff;
       }
 
       // ✅ NAYA — permission_handler use karo
@@ -33,46 +43,43 @@ class LocationService {
           await Permission.locationWhenInUse.status;
       debugPrint("📍 Permission: $status");
 
+      // ✅ FIX: permanently denied pe dobara request() try nahi karna —
+      // Android dialog wapas dega hi nahi, seedha settings ka rasta batao
+      if (status.isPermanentlyDenied) {
+        debugPrint("📍 Permanently denied — settings chahiye");
+        return LocationUpdateResult.permissionPermanentlyDenied;
+      }
+
       // ✅ Denied pe request karo
       if (status.isDenied) {
         status = await Permission.locationWhenInUse.request();
         debugPrint("📍 After request: $status");
       }
 
-      // ✅ OPPO/Vivo/Realme fix — permanentlyDenied pe settings kholo
-      // In devices pe fresh install bhi permanentlyDenied return karta hai
-      // Pehle request try karo — agar dialog aaya toh theek
-      // Nahi aaya toh settings pe bhejna better hai
+      // Request ke baad bhi permanently denied ho sakta hai
       if (status.isPermanentlyDenied) {
-        status = await Permission.locationWhenInUse.request();
-        debugPrint("📍 After force request: $status");
-
-        // Abhi bhi denied? — Settings open karo
-        if (!status.isGranted) {
-          debugPrint("📍 Opening settings for OPPO/Vivo fix");
-          await openAppSettings();
-          // Settings se wapas aane ke baad check karo
-          await Future.delayed(const Duration(seconds: 1));
-          status = await Permission.locationWhenInUse.status;
-        }
+        debugPrint("📍 Request ke baad permanently denied — settings chahiye");
+        return LocationUpdateResult.permissionPermanentlyDenied;
       }
 
       if (!status.isGranted) {
         debugPrint("📍 Permission not granted — skip");
-        return;
+        return LocationUpdateResult.permissionDenied;
       }
 
       // ✅ NAYA — retry logic slow devices ke liye
       final position = await _getLocation();
       if (position == null) {
         debugPrint("📍 Location unavailable — skip");
-        return;
+        return LocationUpdateResult.locationUnavailable;
       }
 
       await _send(position);
+      return LocationUpdateResult.success;
 
     } catch (e) {
       debugPrint("📍 Silent fail: $e");
+      return LocationUpdateResult.failed;
     }
   }
 
