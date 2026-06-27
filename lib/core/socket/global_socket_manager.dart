@@ -385,6 +385,47 @@ class GlobalSocketManager with WidgetsBindingObserver {
       UserSession.locationEnabled = true;
     }
   }
+
+  // ✅ NEW Fix #12 — GPS hardware on/off continuously sunte raho
+  void _listenGpsStatus() {
+    _gpsStatusSubscription?.cancel();
+    _gpsStatusSubscription =
+        Geolocator.getServiceStatusStream().listen((status) {
+      // ✅ Debounce — signal flicker/weather ki wajah se rapid on-off
+      // ho toh turant react nahi karna, 3 second stable rehne do
+      _gpsDebounceTimer?.cancel();
+      _gpsDebounceTimer = Timer(const Duration(seconds: 3), () {
+        _handleGpsStatusChange(status);
+      });
+    });
+  }
+
+  Future<void> _handleGpsStatusChange(ServiceStatus status) async {
+    if (status == ServiceStatus.disabled) {
+      // GPS beech mein band ho gaya — agar sharing ON thi, safely clear karo
+      // taaki doosre users ko stale/wrong distance na dikhe
+      if (UserSession.locationEnabled) {
+        _wasAutoDisabledByGps = true;
+        try {
+          await ApiClient.delete("/profile/location");
+        } catch (e) {
+          debugPrint("📍 GPS-off auto-clear failed: $e");
+        }
+        UserSession.locationEnabled = false;
+        debugPrint("📍 GPS band hua — location backend se clear ki");
+      }
+    } else if (status == ServiceStatus.enabled) {
+      // GPS wapas on hua — agar isi wajah se band hui thi, dobara try karo
+      if (_wasAutoDisabledByGps) {
+        _wasAutoDisabledByGps = false;
+        final result = await LocationService.updateLocationOnLogin();
+        if (result == LocationUpdateResult.success) {
+          UserSession.locationEnabled = true;
+          debugPrint("📍 GPS wapas on — location dobara share ki");
+        }
+      }
+    }
+  }
   
   // ── Disconnect — unchanged ────────────────────────────
   Future<void> disconnect() async {
@@ -396,6 +437,12 @@ class GlobalSocketManager with WidgetsBindingObserver {
 
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
+
+    // ✅ NEW Fix #12 — GPS listener bhi band karo
+    _gpsStatusSubscription?.cancel();
+    _gpsStatusSubscription = null;
+    _gpsDebounceTimer?.cancel();
+    _wasAutoDisabledByGps = false;
 
     _initialized = false;
     _userId      = null;
