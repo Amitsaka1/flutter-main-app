@@ -4,12 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:app_project/providers/online_users_provider.dart';
-import 'dart:math' show sin, cos, sqrt, atan2, pi;
-import 'package:app_project/providers/user_locations_provider.dart';
-import 'package:app_project/core/session/user_session.dart';
 import 'online_indicator.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-
 // ─────────────────────────────────────────────
 //  PROFILE CARD  —  Premium Dark VIP Edition
 // ─────────────────────────────────────────────
@@ -74,20 +70,6 @@ class ProfileCard extends ConsumerWidget {
     );
   }
 
-  // 📍 Haversine Formula — 2 points ke beech distance km mein
-  double _haversineKm(
-      double lat1, double lon1, double lat2, double lon2) {
-    const R   = 6371.0;
-    final dLat = (lat2 - lat1) * pi / 180;
-    final dLon = (lon2 - lon1) * pi / 180;
-    final a = sin(dLat / 2) * sin(dLat / 2) +
-        cos(lat1 * pi / 180) *
-            cos(lat2 * pi / 180) *
-            sin(dLon / 2) *
-            sin(dLon / 2);
-    return R * 2 * atan2(sqrt(a), sqrt(1 - a));
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // ===================== UI START =====================
@@ -97,32 +79,8 @@ class ProfileCard extends ConsumerWidget {
     final String? userId = profile["userId"]?.toString();
     final online      = userId != null && onlineUsers.contains(userId);
 
-    // 📍 Distance calculate karo
-    final locations   = ref.watch(userLocationsProvider);
-    String? distanceLabel;
-
-    if (userId != null) {
-      final myId    = UserSession.getUserId();
-      final myLoc   = myId   != null ? locations[myId]   : null;
-      final theirLoc = userId != null ? locations[userId] : null;
-
-      if (myId != null &&
-          myId != userId &&
-          myLoc != null &&
-          theirLoc != null) {
-        final km = _haversineKm(
-          myLoc["latitude"]!,
-          myLoc["longitude"]!,
-          theirLoc["latitude"]!,
-          theirLoc["longitude"]!,
-        );
-
-        // 1km se kam → meters, zyada → km
-        distanceLabel = km < 1.0
-            ? "${(km * 1000).round()} m"
-            : "${km.toStringAsFixed(1)} km";
-      }
-    }
+    // 📍 Distance — backend khud calculate karke bhejta hai
+    final String? distanceLabel = profile["distance"]?.toString();
 
     final String name      = profile["name"]     ?? "";
     final String gender    = profile["gender"]   ?? "";
