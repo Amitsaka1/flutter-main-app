@@ -91,6 +91,13 @@ class LocationService {
     }
   }
 
+  // ✅ NAYA Fix #11 — sirf status check karta hai, KOI dialog nahi dikhata
+  static Future<bool> hasPermissionNow() async {
+    if (kIsWeb) return false;
+    final status = await Permission.locationWhenInUse.status;
+    return status.isGranted;
+  }
+
   // ✅ 3 tries — fast/slow/offline sabhi devices
   static Future<Position?> _getLocation() async {
 
