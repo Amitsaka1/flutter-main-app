@@ -47,6 +47,10 @@ class _InternetBannerState extends State<InternetBanner>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _checkNow();
+    } else if (state == AppLifecycleState.paused) {
+      // ✅ Background mein periodic retry band karo — battery/data bachao
+      _retryTimer?.cancel();
+      _retryTimer = null;
     }
   }
 
