@@ -223,7 +223,7 @@ class _GridItemShellState extends State<_GridItemShell>
             scale: _pressAnim.value,
             child: child,
           ),
-          child: widget.child,
+          child: RepaintBoundary(child: widget.child), // 6.11.3 — sirf ye card rebuild ho
         ),
       ),
     );
