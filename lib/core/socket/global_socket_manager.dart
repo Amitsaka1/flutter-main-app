@@ -303,6 +303,18 @@ class GlobalSocketManager with WidgetsBindingObserver {
           _messageController.add(event);
         }
 
+        // ── UNREAD_UPDATE — backend mark-read pe count=0 bhejta hai ──
+        else if (type == \"UNREAD_UPDATE\") {
+          final count = event[\"count\"] ?? 0;
+          if (count == 0) {
+            // Mark-read hua — UnreadCounterService reset karo
+            // Kaunsa chat? activeChat ya senderId se nahi pata chalta
+            // isliye _refreshRecentChats se fresh state lo
+            _refreshRecentChats();
+          }
+          _messageController.add(event);
+        }
+
         // ── Sab baaki events ─────────────────────────────
         else {
           _messageController.add(event);
