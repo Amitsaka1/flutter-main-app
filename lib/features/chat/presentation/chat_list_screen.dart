@@ -24,8 +24,7 @@ class ChatListScreen extends ConsumerStatefulWidget {
 }
 
 class _ChatListScreenState extends ConsumerState<ChatListScreen>
-    with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
-
+    with AutomaticKeepAliveClientMixin, TickerProviderStateMixin, WidgetsBindingObserver {
   // ── Palette — ✅ UNCHANGED ────────────────────
   static const _bg        = Color(0xFF0A0A0F);
   static const _surface   = Color(0xFF0E0E18);
@@ -118,11 +117,15 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
       setState(() => _searchQuery = _searchCtrl.text.toLowerCase().trim());
     });
 
+    // Point 6 Fix: App resume pe list refresh
+    WidgetsBinding.instance.addObserver(this);
+
     _initialize();
   }
-
+  
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _headerCtrl.dispose();
     _listCtrl.dispose();
     _searchCtrlAnim.dispose();
