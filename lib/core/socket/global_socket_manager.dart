@@ -463,6 +463,13 @@ class GlobalSocketManager with WidgetsBindingObserver {
     _gpsDebounceTimer?.cancel();
     _wasAutoDisabledByGps = false;
 
+    // 6.8.3 — Connectivity listener cancel karo
+    _connectivitySub?.cancel();
+    _connectivitySub = null;
+    _connectivityDebounce?.cancel();
+    _connectivityDebounce = null;
+    _reconnectFailCount = 0;
+
     _initialized = false;
     _userId      = null;
 
@@ -489,6 +496,12 @@ class GlobalSocketManager with WidgetsBindingObserver {
 
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
+
+    // 6.8.3 — Connectivity cleanup in dispose bhi
+    _connectivitySub?.cancel();
+    _connectivitySub = null;
+    _connectivityDebounce?.cancel();
+    _connectivityDebounce = null;
 
     _messageController.close();
 
