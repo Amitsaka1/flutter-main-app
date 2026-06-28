@@ -113,6 +113,19 @@ class ApiClient {
     }
   }
 
+  // ================= CONNECTIVITY CHECK — NEW =================
+
+  static Future<bool> hasInternet() async {
+    try {
+      final uri = Uri.parse("$baseUrl/health");
+      final response =
+          await http.get(uri).timeout(const Duration(seconds: 5));
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
   // ================= GET — FIXED =================
 
   // ✅ UNCHANGED: Same signature — koi breaking change nahi
