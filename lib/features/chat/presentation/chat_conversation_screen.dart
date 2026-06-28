@@ -381,6 +381,9 @@ class _ChatConversationScreenState
     if (ChatController.instance.activeChatUserId == widget.chatUserId) {
       ChatController.instance.activeChatUserId = null;
     }
+    // Back karne pe bhi unread clear karo
+    ChatController.instance.markAsRead(widget.chatUserId);
+    UnreadCounterService.clearChat(widget.chatUserId);
     WidgetsBinding.instance.removeObserver(this);
     _sub?.cancel();
     _textCtrl.removeListener(_onTextChanged);
