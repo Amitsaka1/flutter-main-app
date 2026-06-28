@@ -18,6 +18,7 @@ import 'package:app_project/features/voice_world/presentation/screens/voice_worl
 
 import 'main.dart';
 import 'core/debug/global_debug_widget.dart';
+import 'core/network/internet_banner.dart';
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
@@ -195,6 +196,7 @@ class _MyAppState extends State<MyApp> {
         return Stack(
           children: [
             child!,
+            const InternetBanner(),
             if (!kReleaseMode) const GlobalDebugWidget(),
           ],
         );
