@@ -327,7 +327,7 @@ class ChatConversationScreen extends ConsumerStatefulWidget {
 
 class _ChatConversationScreenState
     extends ConsumerState<ChatConversationScreen>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
 
   // Controllers
   final _scrollCtrl  = ScrollController();
@@ -357,6 +357,13 @@ class _ChatConversationScreenState
       duration: const Duration(milliseconds: 220),
     );
 
+    // Point 1 Fix: Is screen ka userId active mark karo
+    // Taaki GlobalSocketManager increment skip kare is sender ke liye
+    ChatController.instance.activeChatUserId = widget.chatUserId;
+
+    // Point 6 Fix: Resume pe re-init karo
+    WidgetsBinding.instance.addObserver(this);
+
     _textCtrl.addListener(_onTextChanged);
     _initChat();
   }
@@ -370,6 +377,11 @@ class _ChatConversationScreenState
 
   @override
   void dispose() {
+    // Point 1 Fix: Screen band hogi toh active chat clear karo
+    if (ChatController.instance.activeChatUserId == widget.chatUserId) {
+      ChatController.instance.activeChatUserId = null;
+    }
+    WidgetsBinding.instance.removeObserver(this);
     _sub?.cancel();
     _textCtrl.removeListener(_onTextChanged);
     _textCtrl.dispose();
@@ -377,6 +389,20 @@ class _ChatConversationScreenState
     _focusNode.dispose();
     _sendAnim.dispose();
     super.dispose();
+  }
+
+  // Point 6 Fix: App background se wapas aaye toh messages refresh karo
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Force reload taaki fresh messages aayein
+      ConversationController.instance.forceReloadConversation(widget.chatUserId);
+      // Re-read bhi mark karo — background mein aaye messages clear ho jayein
+      ChatController.instance.markAsRead(widget.chatUserId);
+      UnreadCounterService.clearChat(widget.chatUserId);
+      // Messages dobara load karo
+      ConversationController.instance.loadMessages(widget.chatUserId);
+    }
   }
 
   // ── Init (original logic — untouched) ──────────────────────
