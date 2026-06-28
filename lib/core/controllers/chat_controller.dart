@@ -15,6 +15,8 @@ class ChatController {
   /// 🔥 loaded flag (instant open)
   bool _loaded = false;
 
+  String? activeChatUserId;
+
   final StreamController<List<dynamic>> _chatStreamController =
       StreamController.broadcast();
 
