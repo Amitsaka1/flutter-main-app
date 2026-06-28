@@ -120,7 +120,12 @@ class GlobalSocketManager with WidgetsBindingObserver {
           final receiverId = data["receiverId"]?.toString();
 
           if (senderId != currentUserId && senderId != null) {
+          // Point 1 Fix: User already us conversation pe hai toh increment mat karo
+          // ChatController.instance.activeChatUserId — jo chat screen open hai uska ID
+          final activeChat = ChatController.instance.activeChatUserId;
+          if (activeChat != senderId) {
             UnreadCounterService.increment(senderId);
+          }
           }
 
           ChatController.instance.handleNewMessage(data);
