@@ -134,6 +134,14 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen>
     super.dispose();
   }
 
+  // Point 6 Fix: Resume pe fresh counts lo
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _initialize();
+    }
+  }
+
   // ===================== LOGIC — FIXED =====================
 
   Future<void> _initialize() async {
