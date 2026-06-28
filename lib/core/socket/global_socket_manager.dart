@@ -512,4 +512,148 @@ class GlobalSocketManager with WidgetsBindingObserver {
     _initialized = false;
     _userId      = null;
   }
+
+  // ─────────────────────────────────────────────────────
+  // 6.8 — Connectivity Listener
+  // ─────────────────────────────────────────────────────
+  void _startConnectivityListener() {
+    _connectivitySub?.cancel();
+
+    // 6.8.4 — App start pe bhi ek baar initial state check
+    Connectivity().checkConnectivity().then((result) {
+      if (result == ConnectivityResult.none) {
+        globalProviderContainer
+            .read(onlineUsersProvider.notifier)
+            .state = {};
+      }
+    });
+
+    _connectivitySub = Connectivity().onConnectivityChanged.listen((result) {
+      // 6.8.5 + 7.7 — Debounce 2s — WiFi↔Mobile Data switch pe false triggers
+      _connectivityDebounce?.cancel();
+      _connectivityDebounce = Timer(const Duration(seconds: 2), () {
+        _handleConnectivityChange(result);
+      });
+    });
+  }
+
+  void _handleConnectivityChange(ConnectivityResult result) {
+    if (result == ConnectivityResult.none) {
+      // 6.4.4 — Internet OFF → stale green dots hata do
+      debugPrint("📡 Internet OFF — online set clear");
+      globalProviderContainer
+          .read(onlineUsersProvider.notifier)
+          .state = {};
+      // 6.4.6 — Reconnect timer pause karo — futile attempts band
+      _reconnectTimer?.cancel();
+      _reconnectTimer = null;
+    } else {
+      // 6.5 — Internet ON → exact sequence: reconnect → bulk fetch
+      debugPrint("📡 Internet ON — reconnect + sync");
+      _reconnectAndSync();
+      // Timer restart karo agar band tha
+      _reconnectTimer ??= Timer.periodic(
+        const Duration(seconds: 10),
+        (_) => _onReconnectTick(),
+      );
+    }
+  }
+
+  // ─────────────────────────────────────────────────────
+  // 6.9 — Reconnect And Sync Helper (7.6 — sirf ek call hogi)
+  // ─────────────────────────────────────────────────────
+  Future<void> _reconnectAndSync() async {
+    if (_isReconnecting) return; // 7.6 — concurrent calls prevent
+    _isReconnecting = true;
+    try {
+      // Step 1 — WebSocket reconnect
+      await _socketService?.connect();
+
+      if (_socketService?.isConnected == true) {
+        _reconnectFailCount = 0;
+        ConversationController.instance.forceReloadAll();
+        // Step 2 — Recent chats refresh
+        await _refreshRecentChats();
+        // Step 3 — Bulk online status fetch (6.5.2 — sequential)
+        await _fetchOnlineStatusForRecentChats();
+      }
+    } catch (_) {
+      // ignore — reconnect timer handle karega
+    } finally {
+      _isReconnecting = false;
+    }
+  }
+
+  // ─────────────────────────────────────────────────────
+  // Reconnect Timer Tick — failure tracking (6.10)
+  // ─────────────────────────────────────────────────────
+  void _onReconnectTick() {
+    if (_socketService?.isConnected != true && !_isReconnecting) {
+      _isReconnecting = true;
+      _socketService?.connect().whenComplete(() {
+        _isReconnecting = false;
+        if (_socketService?.isConnected == true) {
+          // 6.10.3 — Success → reset count
+          _reconnectFailCount = 0;
+          ConversationController.instance.forceReloadAll();
+          _refreshRecentChats();
+          _fetchOnlineStatusForRecentChats();
+        } else {
+          // 6.10.1 — Failure tracking
+          _reconnectFailCount++;
+          if (_reconnectFailCount >= 3) {
+            debugPrint("⚠️ 3 reconnect fail — stale dots clear");
+            globalProviderContainer
+                .read(onlineUsersProvider.notifier)
+                .state = {};
+          }
+        }
+      });
+    }
+  }
+
+  // ─────────────────────────────────────────────────────
+  // 6.5 — Bulk Online Status Fetch (5.6.1 endpoint use karo)
+  // ─────────────────────────────────────────────────────
+  Future<void> _fetchOnlineStatusForRecentChats() async {
+    try {
+      final recentChats = globalProviderContainer.read(recentChatsProvider);
+      final userIds = recentChats
+          .map<String?>((c) => c["user"]?["id"]?.toString())
+          .whereType<String>()
+          .where((id) => id.isNotEmpty)
+          .take(100) // 5.6.5 — max 100
+          .toList();
+
+      if (userIds.isEmpty) return;
+
+      final response = await ApiClient.get(
+        "/users/online-status",
+        queryParams: {"ids": userIds.join(",")},
+      );
+
+      if (response["success"] == true) {
+        final statusMap = response["data"] as Map<String, dynamic>? ?? {};
+        final current = Set<String>.from(
+          globalProviderContainer.read(onlineUsersProvider),
+        );
+
+        for (final entry in statusMap.entries) {
+          final isOnline =
+              (entry.value as Map<String, dynamic>?)?["isOnline"] == true;
+          if (isOnline) {
+            current.add(entry.key);
+          } else {
+            current.remove(entry.key);
+          }
+        }
+
+        globalProviderContainer
+            .read(onlineUsersProvider.notifier)
+            .state = current;
+      }
+    } catch (_) {
+      // ignore — stale state rehne do
+    }
+  }
 }
