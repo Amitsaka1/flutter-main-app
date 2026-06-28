@@ -21,6 +21,7 @@ import 'package:app_project/core/session/user_session.dart';
 import 'package:app_project/core/location/location_service.dart';
 import 'package:app_project/core/network/api_client.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 class GlobalSocketManager with WidgetsBindingObserver {
 
@@ -45,6 +46,11 @@ class GlobalSocketManager with WidgetsBindingObserver {
   Timer? _gpsDebounceTimer;
   StreamSubscription<ServiceStatus>? _gpsStatusSubscription;
 
+  // 6.8.1 — Connectivity listener fields
+  StreamSubscription<ConnectivityResult>? _connectivitySub;
+  Timer?  _connectivityDebounce;
+  int     _reconnectFailCount = 0;
+  
   // ── Streams — unchanged ───────────────────────────────
   final StreamController<Map<String, dynamic>> _messageController =
       StreamController.broadcast();
@@ -320,19 +326,11 @@ class GlobalSocketManager with WidgetsBindingObserver {
     _reconnectTimer?.cancel();
     _reconnectTimer = Timer.periodic(
       const Duration(seconds: 10),
-      (_) {
-        if (_socketService?.isConnected != true && !_isReconnecting) {
-          _isReconnecting = true;
-          _socketService?.connect().whenComplete(() {
-            _isReconnecting = false;
-            ConversationController.instance.forceReloadAll();
-            // Point 2/3/4 Fix: Internet wapas aaya / server wapas aaya
-            // Fresh unreadCounts server se lo — in-memory state stale hogi
-            _refreshRecentChats();
-          });
-        }
-      },
+      (_) => _onReconnectTick(),
     );
+
+    // 6.8.2 — Connectivity listener start karo
+    _startConnectivityListener();
 
     _initialized = true;
   }
@@ -362,23 +360,20 @@ class GlobalSocketManager with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      if (_socketService?.isConnected != true && !_isReconnecting) {
-        _isReconnecting = true;
-        _socketService?.connect().whenComplete(() {
-          _isReconnecting = false;
-          ConversationController.instance.forceReloadAll();
-          // Point 5/6 Fix: Resume pe recent chats bhi refresh karo — fresh unreadCount aayega
-          _refreshRecentChats();
-        });
-      } else {
-        // Point 6 Fix: Connected hai but resume hua — still unread counts sync karo
-        _refreshRecentChats();
-      }
-
+      // 6.7.1 — Resume pe pehle internet check karo
+      Connectivity().checkConnectivity().then((result) {
+        if (result != ConnectivityResult.none) {
+          // 6.7.4 — Same helper — internet ON flow same hai
+          _reconnectAndSync();
+        }
+        // No internet → set already cleared tha connectivity listener se (6.4.4)
+      });
       _checkLocationOnResume();
 
     } else if (state == AppLifecycleState.paused) {
+      // 6.6.1 — Background → disconnect (server ko signal milega → USER_OFFLINE)
       _socketService?.disconnect();
+      // 6.6.2 — Set CLEAR MAT KARO — stale data rakho
     }
   }
 
