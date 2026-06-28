@@ -125,16 +125,18 @@ class GlobalSocketManager with WidgetsBindingObserver {
 
           final receiverId = data["receiverId"]?.toString();
 
+          final activeChat   = ChatController.instance.activeChatUserId;
+          final isActiveChat = activeChat == senderId;
+
           if (senderId != currentUserId && senderId != null) {
-          // Point 1 Fix: User already us conversation pe hai toh increment mat karo
-          // ChatController.instance.activeChatUserId — jo chat screen open hai uska ID
-          final activeChat = ChatController.instance.activeChatUserId;
-          if (activeChat != senderId) {
-            UnreadCounterService.increment(senderId);
-          }
+            if (!isActiveChat) {
+              UnreadCounterService.increment(senderId);
+            }
           }
 
-          ChatController.instance.handleNewMessage(data);
+          if (!isActiveChat) {
+            ChatController.instance.handleNewMessage(data);
+          }
 
           final notifier = globalProviderContainer.read(messagesProvider.notifier);
           final current  = { ...notifier.state };
@@ -168,9 +170,9 @@ class GlobalSocketManager with WidgetsBindingObserver {
                 "lastMessage": data["content"] ??
                     (data["type"] == "image" ? "📷 Image" : ""),
                 "time":        DateTime.now().toIso8601String(),
-                "unreadCount": senderId != currentUserId
-                    ? ((old["unreadCount"] ?? 0) + 1)
-                    : (old["unreadCount"] ?? 0),
+                \"unreadCount\": (senderId != currentUserId && !isActiveChat)
+                    ? ((old[\"unreadCount\"] ?? 0) + 1)
+                    : (old[\"unreadCount\"] ?? 0),
               });
             } else {
               recentChats.insert(0, {
@@ -182,7 +184,7 @@ class GlobalSocketManager with WidgetsBindingObserver {
                 "lastMessage": data["content"] ??
                     (data["type"] == "image" ? "📷 Image" : ""),
                 "time":        DateTime.now().toIso8601String(),
-                "unreadCount": senderId != currentUserId ? 1 : 0,
+                \"unreadCount\": (senderId != currentUserId && !isActiveChat) ? 1 : 0,
               });
             }
 
