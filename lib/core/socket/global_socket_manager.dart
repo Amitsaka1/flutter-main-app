@@ -539,7 +539,6 @@ class GlobalSocketManager with WidgetsBindingObserver {
 
   void _handleConnectivityChange(ConnectivityResult result) {
     if (result == ConnectivityResult.none) {
-      // 6.4.4 — Internet OFF → stale green dots hata do
       debugPrint("📡 Internet OFF — online set clear");
       globalProviderContainer
           .read(onlineUsersProvider.notifier)
@@ -547,6 +546,10 @@ class GlobalSocketManager with WidgetsBindingObserver {
       // 6.4.6 — Reconnect timer pause karo — futile attempts band
       _reconnectTimer?.cancel();
       _reconnectTimer = null;
+      // Server ko signal karo ki ye user offline ho gaya
+      // TCP FIN/RST server tak pahuchega → ws.on("close") fire hoga
+      // Agar nahi pahuncha (internet truly dead) → heartbeat 10s mein detect karega
+      _socketService?.disconnect();
     } else {
       // 6.5 — Internet ON → exact sequence: reconnect → bulk fetch
       debugPrint("📡 Internet ON — reconnect + sync");
