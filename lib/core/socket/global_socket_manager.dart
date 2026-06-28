@@ -170,9 +170,9 @@ class GlobalSocketManager with WidgetsBindingObserver {
                 "lastMessage": data["content"] ??
                     (data["type"] == "image" ? "📷 Image" : ""),
                 "time":        DateTime.now().toIso8601String(),
-                \"unreadCount\": (senderId != currentUserId && !isActiveChat)
-                    ? ((old[\"unreadCount\"] ?? 0) + 1)
-                    : (old[\"unreadCount\"] ?? 0),
+                "unreadCount": (senderId != currentUserId && !isActiveChat)
+                    ? ((old["unreadCount"] ?? 0) + 1)
+                    : (old["unreadCount"] ?? 0),
               });
             } else {
               recentChats.insert(0, {
@@ -184,7 +184,7 @@ class GlobalSocketManager with WidgetsBindingObserver {
                 "lastMessage": data["content"] ??
                     (data["type"] == "image" ? "📷 Image" : ""),
                 "time":        DateTime.now().toIso8601String(),
-                \"unreadCount\": (senderId != currentUserId && !isActiveChat) ? 1 : 0,
+                "unreadCount": (senderId != currentUserId && !isActiveChat) ? 1 : 0,
               });
             }
 
@@ -304,8 +304,8 @@ class GlobalSocketManager with WidgetsBindingObserver {
         }
 
         // ── UNREAD_UPDATE — backend mark-read pe count=0 bhejta hai ──
-        else if (type == \"UNREAD_UPDATE\") {
-          final count = event[\"count\"] ?? 0;
+        else if (type == "UNREAD_UPDATE") {
+          final count = event["count"] ?? 0;
           if (count == 0) {
             // Mark-read hua — UnreadCounterService reset karo
             // Kaunsa chat? activeChat ya senderId se nahi pata chalta
