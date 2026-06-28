@@ -325,8 +325,10 @@ class GlobalSocketManager with WidgetsBindingObserver {
           _isReconnecting = true;
           _socketService?.connect().whenComplete(() {
             _isReconnecting = false;
-            // ✅ NEW: Reconnect ke baad conversations force reload
             ConversationController.instance.forceReloadAll();
+            // Point 2/3/4 Fix: Internet wapas aaya / server wapas aaya
+            // Fresh unreadCounts server se lo — in-memory state stale hogi
+            _refreshRecentChats();
           });
         }
       },
@@ -364,19 +366,35 @@ class GlobalSocketManager with WidgetsBindingObserver {
         _isReconnecting = true;
         _socketService?.connect().whenComplete(() {
           _isReconnecting = false;
-          // ✅ NEW: Wapas aaye toh pending messages load karo
           ConversationController.instance.forceReloadAll();
+          // Point 5/6 Fix: Resume pe recent chats bhi refresh karo — fresh unreadCount aayega
+          _refreshRecentChats();
         });
+      } else {
+        // Point 6 Fix: Connected hai but resume hua — still unread counts sync karo
+        _refreshRecentChats();
       }
 
-      // ✅ NEW Fix #11 — agar location abhi ON nahi hai, silently check karo
-      // ki permission Settings se manually grant toh nahi hui (dialog nahi aayega)
       _checkLocationOnResume();
 
     } else if (state == AppLifecycleState.paused) {
-      // ✅ NEW: App background gaya — server ko turant offline batao
-      // Server ko signal milega → ws.on("close") → USER_OFFLINE broadcast
       _socketService?.disconnect();
+    }
+  }
+
+  // Point 2/3/4/5/6 Fix: Recent chats API se fresh unreadCount lo
+  // In-memory state stale ho sakti hai — server always correct hai
+  Future<void> _refreshRecentChats() async {
+    try {
+      final response = await ApiClient.get("/chat/recent");
+      if (response["success"] == true) {
+        final data = List<dynamic>.from(response["data"]);
+        globalProviderContainer
+            .read(recentChatsProvider.notifier)
+            .state = data;
+      }
+    } catch (_) {
+      // Network nahi — stale state rehne do, user pull-to-refresh karega
     }
   }
 
