@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:app_project/providers/online_users_provider.dart';
+import 'package:app_project/core/session/user_session.dart';
 import 'online_indicator.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 // ─────────────────────────────────────────────
@@ -75,9 +76,12 @@ class ProfileCard extends ConsumerWidget {
     // ===================== UI START =====================
 
     final onlineUsers = ref.watch(onlineUsersProvider);
-    // FIX: Dono keys try karo — backend kabhi "userId" kabhi "id" bhejta hai
+    final String? myId   = UserSession.userId; // 4.1 — apna ID
     final String? userId = profile["userId"]?.toString();
-    final online      = userId != null && onlineUsers.contains(userId);
+    // 4.1 — Khud ka green dot KABHI nahi dikhana
+    final online = userId != null &&
+                   userId != myId &&
+                   onlineUsers.contains(userId);
 
     // 📍 Distance — backend khud calculate karke bhejta hai
     final String? distanceLabel = profile["distance"]?.toString();
