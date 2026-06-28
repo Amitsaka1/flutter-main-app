@@ -383,6 +383,15 @@ class _DashboardScreenState extends State<DashboardScreen>
       if (type == "MESSAGES_READ") {
         _fetchUnread();
       }
+
+      // Backend mark-read pe UNREAD_UPDATE bhi bhejta hai count=0 ke saath
+      // Ye ensure karta hai dashboard badge bhi reset ho
+      if (type == "UNREAD_UPDATE") {
+        final count = message["count"] ?? 0;
+        if (count == 0 && mounted) {
+          setState(() => unreadCount = 0);
+        }
+      }
     });
   }
 
