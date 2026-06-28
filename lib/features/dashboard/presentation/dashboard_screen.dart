@@ -369,9 +369,15 @@ class _DashboardScreenState extends State<DashboardScreen>
       }
 
       if (type == "NEW_MESSAGE") {
-        final msg = message["data"];
-        ChatController.instance.handleNewMessage(msg);
-        setState(() => unreadCount++);
+        // global_socket_manager already handleNewMessage call karta hai
+        // dobara call karne se ChatController._chats double increment hoga
+        final msg        = message["data"];
+        final senderId   = msg["senderId"]?.toString();
+        final activeChat = ChatController.instance.activeChatUserId;
+        // Sirf tab badge badhao jab user us chat pe nahi hai
+        if (activeChat != senderId) {
+          setState(() => unreadCount++);
+        }
       }
 
       if (type == "MESSAGES_READ") {
