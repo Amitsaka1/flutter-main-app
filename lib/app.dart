@@ -109,8 +109,9 @@ class _MyAppState extends State<MyApp> {
                 path: "/voice-world",
                 pageBuilder: (context, state) =>
                     const NoTransitionPage(
-                  child: VoiceWorldScreen(),
+                  child: VoiceWorldGate(),
                 ),
+              ),
               ),
             ],
           ),
