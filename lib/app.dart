@@ -14,8 +14,7 @@ import 'package:app_project/features/profile/presentation/edit_profile_screen.da
 import 'package:app_project/features/subscription/presentation/premium_screen.dart';
 import 'package:flutter/foundation.dart';
 // 🔥 VOICE WORLD — NEW
-import 'package:app_project/features/voice_world/presentation/screens/voice_world_screen.dart';
-
+import 'package:app_project/features/voice_world/presentation/screens/voice_world_gate.dart';
 import 'main.dart';
 import 'core/debug/global_debug_widget.dart';
 import 'core/network/internet_banner.dart';
