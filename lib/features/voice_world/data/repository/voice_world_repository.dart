@@ -57,6 +57,25 @@ class VoiceWorldRepository {
   }
 
   // ─────────────────────────────────────────────────────
+  //  GET WORLD STATUS
+  //  GET /voice/world-status
+  //  Active/Coming-Soon gate ke liye — VoiceWorldGate isse
+  //  use karta hai, real data load karne se pehle
+  // ─────────────────────────────────────────────────────
+
+  Future<bool> getWorldStatus() async {
+    try {
+      final res = await ApiClient.get("/voice/world-status");
+      return res["enabled"] as bool? ?? true;
+    } catch (e) {
+      // Status check fail ho (network blip) toh fail-open —
+      // feature available maano, real users ko Coming Soon
+      // accidentally na dikhe
+      return true;
+    }
+  }
+
+  // ─────────────────────────────────────────────────────
   //  JOIN GROUP
   //  POST /voice/join
   //  Returns: token + role
