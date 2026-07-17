@@ -111,11 +111,6 @@ class ConversationController {
 
         _loadedConversations.add(userId);
 
-        // ✅ UNCHANGED: Mark read
-        ApiClient.post("/chat/mark-read", {
-          "senderId": userId,
-        });
-
         _emit(userId);
       }
 
