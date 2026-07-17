@@ -450,8 +450,8 @@ class _ChatConversationScreenState
     await _logic.loadMessages(widget.chatUserId);
     ChatController.instance.markAsRead(widget.chatUserId);
     UnreadCounterService.clearChat(widget.chatUserId);
+    ConversationController.instance.markConversationRead(widget.chatUserId);
   }
-
   // ── Send message (original logic — untouched) ──────────────
 
   Future<void> _sendMessage() async {
