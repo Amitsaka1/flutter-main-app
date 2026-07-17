@@ -384,6 +384,7 @@ class _ChatConversationScreenState
     // Back karne pe bhi unread clear karo
     ChatController.instance.markAsRead(widget.chatUserId);
     UnreadCounterService.clearChat(widget.chatUserId);
+    ConversationController.instance.markConversationRead(widget.chatUserId);
     WidgetsBinding.instance.removeObserver(this);
     _sub?.cancel();
     _textCtrl.removeListener(_onTextChanged);
@@ -403,6 +404,7 @@ class _ChatConversationScreenState
       // Re-read bhi mark karo — background mein aaye messages clear ho jayein
       ChatController.instance.markAsRead(widget.chatUserId);
       UnreadCounterService.clearChat(widget.chatUserId);
+      ConversationController.instance.markConversationRead(widget.chatUserId);
       // Messages dobara load karo
       ConversationController.instance.loadMessages(widget.chatUserId);
     }
