@@ -389,7 +389,7 @@ class _DashboardScreenState extends State<DashboardScreen>
       if (type == "UNREAD_UPDATE") {
         final count = message["count"] ?? 0;
         if (count == 0 && mounted) {
-          setState(() => unreadCount = 0);
+          _fetchUnread();
         }
       }
     });
