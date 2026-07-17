@@ -595,6 +595,11 @@ class GlobalSocketManager with WidgetsBindingObserver {
         await _refreshRecentChats();
         // Step 3 — Bulk online status fetch (6.5.2 — sequential)
         await _fetchOnlineStatusForRecentChats();
+
+        final activeChat = ChatController.instance.activeChatUserId;
+        if (activeChat != null) {
+          ConversationController.instance.markConversationRead(activeChat);
+        }
       }
     } catch (_) {
       // ignore — reconnect timer handle karega
