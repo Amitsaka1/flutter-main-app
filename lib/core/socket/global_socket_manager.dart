@@ -131,9 +131,11 @@ class GlobalSocketManager with WidgetsBindingObserver {
           if (senderId != currentUserId && senderId != null) {
             if (!isActiveChat) {
               UnreadCounterService.increment(senderId);
+            } else {
+              ConversationController.instance.markConversationRead(senderId);
             }
           }
-
+          
           if (!isActiveChat) {
             ChatController.instance.handleNewMessage(data);
           }
