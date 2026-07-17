@@ -32,6 +32,17 @@ class ConversationController {
   final Map<String, bool>    _hasMore     = {};
   final Map<String, bool>    _loadingMore = {}; // Double load prevent karo
 
+  final Map<String, Timer?> _markReadDebounce = {};
+
+  void markConversationRead(String userId) {
+    _markReadDebounce[userId]?.cancel();
+    _markReadDebounce[userId] = Timer(const Duration(milliseconds: 400), () async {
+      try {
+        await ApiClient.post("/chat/mark-read", { "senderId": userId });
+      } catch (_) {}
+    });
+  }
+
   // ================= INIT — ✅ UNCHANGED =================
 
   void init(String myId) {
