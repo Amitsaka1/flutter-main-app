@@ -622,6 +622,11 @@ class GlobalSocketManager with WidgetsBindingObserver {
           ConversationController.instance.forceReloadAll();
           _refreshRecentChats();
           _fetchOnlineStatusForRecentChats();
+
+          final activeChat = ChatController.instance.activeChatUserId;
+          if (activeChat != null) {
+            ConversationController.instance.markConversationRead(activeChat);
+          }
         } else {
           // 6.10.1 — Failure tracking
           _reconnectFailCount++;
