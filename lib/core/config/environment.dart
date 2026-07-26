@@ -50,6 +50,14 @@ class Environment {
     defaultValue: 'wss://acceptable-marleen-amitsaka12345-ddc0c198.koyeb.app',
   );
 
+  // ✅ NEW: Centrifugo WebSocket URL
+  // ⚠️ TODO: Centrifugo server deploy hone ke baad yahan production
+  //          wss://... URL daalo (ya --dart-define=CENTRIFUGO_URL=...)
+  static const String _centrifugoUrl = String.fromEnvironment(
+    'CENTRIFUGO_URL',
+    defaultValue: 'ws://localhost:8000/connection/websocket',
+  );
+
   // ✅ FIX: isProduction ab sahi se kaam karta hai
   //
   // Pehle: sirf dart.vm.product check karta tha
@@ -82,6 +90,7 @@ class Environment {
 
   static String get baseUrl        => _apiUrl;
   static String get livekitUrl     => _livekitUrl;
+  static String get centrifugoUrl  => _centrifugoUrl;
   static String get apiUrl         => _apiUrl;
   static String get turnUsername   => _turnUsername;
   static String get turnCredential => _turnCredential;
