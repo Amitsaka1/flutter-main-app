@@ -175,7 +175,9 @@ class CentrifugoService {
     _personalPubSub?.cancel();
     _presencePubSub?.cancel();
 
-    _client?.close();
+    // ⚠️ centrifuge ^0.17.0 mein Client.close() nahi hai (sirf 0.19.0+ mein
+    // aaya), isliye disconnect() use karo — instance yahan se reuse nahi hoga
+    _client?.disconnect();
     _client = null;
 
     _connected = false;
