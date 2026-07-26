@@ -3,7 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'websocket_service.dart';
+import 'centrifugo_service.dart';
 
 import 'package:app_project/features/call/presentation/incoming_call_screen.dart';
 import 'package:app_project/main.dart';
@@ -32,7 +32,7 @@ class GlobalSocketManager with WidgetsBindingObserver {
 
   static GlobalSocketManager get instance => _instance;
 
-  WebSocketService? _socketService;
+  CentrifugoService? _socketService;
   StreamSubscription? _socketSubscription;
   String? _userId;
 
@@ -68,7 +68,7 @@ class GlobalSocketManager with WidgetsBindingObserver {
     _socketSubscription = null;
 
     _socketService?.dispose();
-    _socketService = WebSocketService(userId: userId);
+    _socketService = CentrifugoService(userId: userId);
 
     _socketSubscription = _socketService!.messages.listen(
       (event) {
