@@ -55,7 +55,7 @@ class Environment {
   //          wss://... URL daalo (ya --dart-define=CENTRIFUGO_URL=...)
   static const String _centrifugoUrl = String.fromEnvironment(
     'CENTRIFUGO_URL',
-    defaultValue: 'ws://localhost:8000/connection/websocket',
+    defaultValue: 'wss://momo-centryfugo.onrender.com/connection/websocket',
   );
 
   // ✅ FIX: isProduction ab sahi se kaam karta hai
