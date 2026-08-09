@@ -43,6 +43,7 @@ class GlobalSocketManager with WidgetsBindingObserver {
   bool _wasAutoDisabledByGps = false;
 
   Timer? _reconnectTimer;
+  Timer? _heartbeatTimer;
   Timer? _gpsDebounceTimer;
   StreamSubscription<ServiceStatus>? _gpsStatusSubscription;
 
@@ -345,6 +346,12 @@ class GlobalSocketManager with WidgetsBindingObserver {
       (_) => _onReconnectTick(),
     );
 
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = Timer.periodic(
+      const Duration(seconds: 40),
+      (_) => _sendHeartbeat(),
+    );
+
     // 6.8.2 — Connectivity listener start karo
     _startConnectivityListener();
 
@@ -513,6 +520,9 @@ class GlobalSocketManager with WidgetsBindingObserver {
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
 
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = null;
+
     // 6.8.3 — Connectivity cleanup in dispose bhi
     _connectivitySub?.cancel();
     _connectivitySub = null;
@@ -562,6 +572,9 @@ class GlobalSocketManager with WidgetsBindingObserver {
       // 6.4.6 — Reconnect timer pause karo — futile attempts band
       _reconnectTimer?.cancel();
       _reconnectTimer = null;
+
+      _heartbeatTimer?.cancel();
+      _heartbeatTimer = null;
       // Server ko signal karo ki ye user offline ho gaya
       // TCP FIN/RST server tak pahuchega → ws.on("close") fire hoga
       // Agar nahi pahuncha (internet truly dead) → heartbeat 10s mein detect karega
@@ -683,6 +696,18 @@ class GlobalSocketManager with WidgetsBindingObserver {
       }
     } catch (_) {
       // ignore — stale state rehne do
+    }
+  }
+
+  // ─────────────────────────────────────────────────────
+  // Heartbeat — presence TTL refresh karta hai (~40s)
+  // ─────────────────────────────────────────────────────
+  Future<void> _sendHeartbeat() async {
+    if (_socketService?.isConnected != true) return;
+    try {
+      await ApiClient.post('/realtime/heartbeat', {});
+    } catch (_) {
+      // ignore — agla tick retry karega
     }
   }
 }
