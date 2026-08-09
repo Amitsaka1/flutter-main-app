@@ -54756,11 +54756,11 @@ var $async$j8=A.q(function(a,b){if(a===1){o=b
 s=p}while(true)switch(s){case 0:if(n.b!=null){s=1
 break}p=4
 k=n.a
-A.kE("\u26a1 Connecting Centrifugo for user: "+k+" \u2192 ws://localhost:8000/connection/websocket")
+A.kE("\u26a1 Connecting Centrifugo for user: "+k+" \u2192 wss://momo-centryfugo.onrender.com/connection/websocket")
 j=A.bb2(new A.acQ())
 i=t.N
 h=A.a([],t.LU)
-g=new A.RM(A.boK(),A.z(i,t.vU),A.z(i,t.K7),"ws://localhost:8000/connection/websocket",j,A.z(i,i),B.fd,h,new A.ca(null,null,t.aJ),new A.ca(null,null,t._C),new A.ca(null,null,t.jM),new A.ca(null,null,t.o1),new A.ca(null,null,t.OQ),new A.ca(null,null,t.MW),new A.ca(null,null,t.Dw),new A.ca(null,null,t.Hk),new A.ca(null,null,t.dr),new A.ca(null,null,t.Nv),new A.ca(null,null,t.Lf))
+g=new A.RM(A.boK(),A.z(i,t.vU),A.z(i,t.K7),"wss://momo-centryfugo.onrender.com/connection/websocket",j,A.z(i,i),B.fd,h,new A.ca(null,null,t.aJ),new A.ca(null,null,t._C),new A.ca(null,null,t.jM),new A.ca(null,null,t.o1),new A.ca(null,null,t.OQ),new A.ca(null,null,t.MW),new A.ca(null,null,t.Dw),new A.ca(null,null,t.Hk),new A.ca(null,null,t.dr),new A.ca(null,null,t.Nv),new A.ca(null,null,t.Lf))
 g.r=A.k_(B.hg,i,i)
 m=g
 n.b=m
