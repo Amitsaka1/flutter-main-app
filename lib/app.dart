@@ -11,10 +11,7 @@ import 'package:app_project/features/profile/presentation/create_profile_screen.
 import 'package:app_project/features/profile/presentation/profile_details_screen.dart';
 import 'package:app_project/features/profile/presentation/my_profile_screen.dart';
 import 'package:app_project/features/profile/presentation/edit_profile_screen.dart';
-import 'package:app_project/features/subscription/presentation/premium_screen.dart';
 import 'package:flutter/foundation.dart';
-// 🔥 VOICE WORLD — NEW
-import 'package:app_project/features/voice_world/presentation/screens/voice_world_gate.dart';
 import 'main.dart';
 import 'core/debug/global_debug_widget.dart';
 import 'core/network/internet_banner.dart';
@@ -97,32 +94,6 @@ class _MyAppState extends State<MyApp> {
                 pageBuilder: (context, state) =>
                     const NoTransitionPage(
                   child: ChatListScreen(),
-                ),
-              ),
-            ],
-          ),
-
-          // ── Voice World ────────────────────
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: "/voice-world",
-                pageBuilder: (context, state) =>
-                    const NoTransitionPage(
-                  child: VoiceWorldGate(),
-                ),
-              ),
-            ],
-          ),
-
-          // ── Premium ────────────────────────
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: "/premium",
-                pageBuilder: (context, state) =>
-                    const NoTransitionPage(
-                  child: PremiumScreen(),
                 ),
               ),
             ],
