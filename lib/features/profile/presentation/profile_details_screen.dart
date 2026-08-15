@@ -8,7 +8,6 @@ import 'package:app_project/providers/online_users_provider.dart';
 
 import 'widgets/profile_details_avatar.dart';
 import 'widgets/profile_pill_stat.dart';
-import 'widgets/profile_xp_card.dart';
 import 'widgets/profile_follow_button.dart';
 import 'widgets/profile_message_button.dart';
 
@@ -515,22 +514,6 @@ class _ProfileDetailsScreenState
                                 ),
                               ),
                             ],
-                          ),
-                        ),
-
-                        const SizedBox(height: 28),
-
-                        _buildDivider(),
-
-                        const SizedBox(height: 24),
-
-                        // ── XP Card ────────────────────────
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: ProfileXpCard(
-                            level: level,
-                            xp: xp,
-                            progress: progress,
                           ),
                         ),
 
