@@ -22,7 +22,7 @@ import 'package:app_project/providers/online_users_provider.dart';
 import 'package:app_project/core/session/user_session.dart';
 import 'package:app_project/core/database/cache_service.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:app_project/features/call/presentation/call_screen.dart';
+
 
 // ──────────────────────────────────────────────────────────────
 //  DESIGN TOKENS  (single source of truth)
@@ -533,63 +533,6 @@ class _ChatConversationScreenState
         curve: Curves.easeOutCubic,
       );
     });
-  }
-
-  // ── Start call (original logic — untouched) ───────────────
-
-  Future<void> _startCall(String type) async {
-    if (_myId == null) return;
-
-    final response = await ApiClient.post('/call/start', {
-      'receiverId': widget.chatUserId,
-      'type':       type,
-    });
-
-    if (!mounted) return;
-
-    if (response['success'] != true) {
-      if (response['status'] == 'OFFLINE') {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => CallScreen(
-              channelName:   '',
-              callType:      type,
-              initialStatus: 'OFFLINE',
-            ),
-          ),
-        );
-        return;
-      }
-
-      String msg = (response['message'] as String?) ?? 'Call failed';
-      if (msg == 'Insufficient balance') msg = 'Low balance. Please recharge.';
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content:         Text(msg),
-          backgroundColor: Colors.redAccent.shade700,
-          behavior:        SnackBarBehavior.floating,
-          margin:          const EdgeInsets.all(16),
-          shape:           RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-        ),
-      );
-      return;
-    }
-
-    final sessionId = response['sessionId'] as String;
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => CallScreen(
-          channelName:   sessionId,
-          callType:      type,
-          initialStatus: 'RINGING',
-        ),
-      ),
-    );
   }
 
   // ── Gallery (new — clickable) ─────────────────────────────
