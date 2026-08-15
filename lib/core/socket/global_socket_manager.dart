@@ -16,7 +16,6 @@ import 'package:app_project/core/controllers/conversation_controller.dart';
 import 'package:app_project/providers/online_users_provider.dart';
 import 'package:app_project/providers/messages_provider.dart';
 import 'package:app_project/providers/recent_chats_provider.dart';
-import 'package:app_project/providers/voice_world_provider.dart'; // new: Fix #5
 import 'package:app_project/core/session/user_session.dart';
 import 'package:app_project/core/location/location_service.dart';
 import 'package:app_project/core/network/api_client.dart';
