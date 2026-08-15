@@ -11,7 +11,6 @@ import '../../../core/database/cache_service.dart';
 
 import 'widgets/profile_avatar_section.dart';
 import 'widgets/profile_stat_box.dart';
-import 'widgets/profile_wallet_card.dart';
 import 'widgets/profile_edit_button.dart';
 import 'widgets/profile_loading.dart';
 import 'widgets/profile_not_found.dart';
@@ -95,18 +94,6 @@ class _MyProfileScreenState extends State<MyProfileScreen>
     }
 
     _fetchProfile();
-
-    // Socket — wallet update
-    _socketSub = GlobalSocketManager.instance.messages.listen((data) {
-      if (data["type"] == "WALLET_UPDATED") {
-        final newBalance = data["balance"];
-        if (!mounted || profile == null) return;
-        setState(() {
-          profile!["user"]["wallet"] = newBalance;
-        });
-        _cache = Map.from(profile!);
-      }
-    });
   }
 
   @override
@@ -344,7 +331,6 @@ class _MyProfileScreenState extends State<MyProfileScreen>
     final followers = profile!["followers"] ?? 0;
     final following = profile!["following"] ?? 0;
     final level     = user?["level"]        ?? 1;
-    final wallet    = user?["wallet"]       ?? 0;
 
     // ===================== UI START =====================
 
@@ -506,14 +492,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
 
                               const SizedBox(width: 12),
 
-                              Expanded(
-                                flex: 2,
-                                child: ProfileWalletCard(
-                                  wallet: wallet,
-                                ),
-                              ),
-
-                            ],
+                              ],
                           ),
                         ),
 
