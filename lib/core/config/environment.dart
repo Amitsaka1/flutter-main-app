@@ -40,19 +40,7 @@ class Environment {
     defaultValue: 'https://momo-qd13.onrender.com', // ✅ Same production URL
   );
 
-  // ✅ FIX: LiveKit URL bhi dart-define se
-  //
-  // Pehle: hardcoded Koyeb URL
-  // Ab: inject karo, default production URL same hai
-  //
-  static const String _livekitUrl = String.fromEnvironment(
-    'LIVEKIT_URL',
-    defaultValue: 'wss://acceptable-marleen-amitsaka12345-ddc0c198.koyeb.app',
-  );
-
-  // ✅ NEW: Centrifugo WebSocket URL
-  // ⚠️ TODO: Centrifugo server deploy hone ke baad yahan production
-  //          wss://... URL daalo (ya --dart-define=CENTRIFUGO_URL=...)
+  // ✅ Centrifugo WebSocket URL
   static const String _centrifugoUrl = String.fromEnvironment(
     'CENTRIFUGO_URL',
     defaultValue: 'wss://momo-centryfugo.onrender.com/connection/websocket',
@@ -75,34 +63,19 @@ class Environment {
   static const bool _dartProduction =
       bool.fromEnvironment('dart.vm.product');
 
-  // ── ✅ UNCHANGED: Saare getters same hain — koi breaking change nahi ──
-
-  // ── TURN Server credentials (Metered.ca) ──────────────
-  static const String _turnUsername = String.fromEnvironment(
-    'TURN_USERNAME',
-    defaultValue: '4da275ede5cf7b8ed396b34e',
-  );
-
-  static const String _turnCredential = String.fromEnvironment(
-    'TURN_CREDENTIAL',
-    defaultValue: 'TG5h5cY3aUIN80T4',
-  );
-
   static String get baseUrl        => _apiUrl;
-  static String get livekitUrl     => _livekitUrl;
   static String get centrifugoUrl  => _centrifugoUrl;
   static String get apiUrl         => _apiUrl;
-  static String get turnUsername   => _turnUsername;
-  static String get turnCredential => _turnCredential;
 
   static bool get isProduction => _dartProduction && !_devMode;
-  // ✅ NEW: Debug logging ke liye useful
+
+  // ✅ Debug logging ke liye useful
   // Koi bhi screen pe show kar sako current config — debugging easy
   static void printConfig() {
     if (!isProduction) {
       print("🔧 Environment Config:");
       print("   API URL     : $_apiUrl");
-      print("   LiveKit URL : $_livekitUrl");
+      print("   Centrifugo  : $_centrifugoUrl");
       print("   Production  : $isProduction");
       print("   Dev Mode    : $_devMode");
     }
