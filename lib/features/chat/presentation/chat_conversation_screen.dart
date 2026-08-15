@@ -764,24 +764,7 @@ class _ChatConversationScreenState
                     ),
                   ),
 
-                  // Voice call
-                  _BarBtn(
-                    icon: Icons.call_rounded,
-                    onTap: () => _startCall('VOICE_CALL'),
-                    glowColor: _C.a2,
-                  ),
-
-                  const SizedBox(width: 4),
-
-                  // Video call
-                  _BarBtn(
-                    icon: Icons.videocam_rounded,
-                    onTap: () => _startCall('VIDEO_CALL'),
-                    glowColor: _C.a1,
-                  ),
-
-                  const SizedBox(width: 4),
-                ],
+                  ],
               ),
             ),
           ),
