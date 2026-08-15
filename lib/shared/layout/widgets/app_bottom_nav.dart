@@ -44,9 +44,7 @@ class _AppBottomNavState extends State<AppBottomNav>
   // new: Fix #20 — branch index constants, app.dart ke order se match
   static const int _iDashboard   = 0;
   static const int _iChat        = 1;
-  static const int _iVoiceWorld  = 2;
-  static const int _iPremium     = 3;
-  static const int _iProfile     = 4;
+  static const int _iProfile     = 2;
 
   late AnimationController _indicatorCtrl;
   late Animation<double>   _indicatorScale;
@@ -134,32 +132,6 @@ class _AppBottomNavState extends State<AppBottomNav>
               unreadCount: widget.unreadCount,
               active:      currentIndex == _iChat,
               onTap:       () => safeGo(_iChat),
-            ),
-          ),
-
-          // 🔥 Voice World
-          _NavWrapper(
-            active:         currentIndex == _iVoiceWorld,
-            indicatorScale: _indicatorScale,
-            child: NavItem(
-              label:  "World",
-              icon:   Icons.language_rounded,
-              active: currentIndex == _iVoiceWorld,
-              onTap:  () => safeGo(_iVoiceWorld),
-            ),
-          ),
-
-          // ── Premium ────────────────────────────
-          _NavWrapper(
-            active:         currentIndex == _iPremium,
-            indicatorScale: _indicatorScale,
-            isPremium:      true,
-            child: NavItem(
-              label:          "Premium",
-              icon:           Icons.workspace_premium_rounded,
-              active:         currentIndex == _iPremium,
-              highlightColor: const Color(0xFFFFD700),
-              onTap:          () => safeGo(_iPremium),
             ),
           ),
 
