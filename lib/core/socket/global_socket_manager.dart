@@ -103,11 +103,6 @@ class GlobalSocketManager with WidgetsBindingObserver {
           _messageController.add(event);
         }
 
-        // ── INCOMING_CALL — unchanged ────────────────────
-        else if (type == "INCOMING_CALL") {
-          _handleIncomingCall(event);
-        }
-
         // ── NEW_MESSAGE — unchanged ──────────────────────
         else if (type == "NEW_MESSAGE") {
 
@@ -192,36 +187,6 @@ class GlobalSocketManager with WidgetsBindingObserver {
             }
 
             recentNotifier.state = recentChats;
-          }
-
-          _messageController.add(event);
-        }
-
-        // new: Fix #5 — VOICE_PROMOTED WebSocket handler
-        //
-        // Pehle: Ye event "else" block mein jaata tha
-        //        _messageController mein forward hota tha
-        //        Lekin koi sun nahi raha tha → promotion kabhi work nahi karta tha
-        //
-        // Ab: VoiceRoomNotifier directly notify karo
-        //     try-catch: Provider disposed ho toh silently skip karo
-        //     groupId match: Sirf current room ka promotion handle karo
-        //
-        else if (type == "VOICE_PROMOTED") {
-          final groupId = event["groupId"]?.toString();
-
-          debugPrint("🎙️ VOICE_PROMOTED received — groupId: $groupId");
-
-          try {
-            // VoiceRoomNotifier read karo — autoDispose hai
-            // Room screen open hai toh available hoga
-            // Band hai toh ProviderException → catch block
-            final roomNotifier = globalProviderContainer
-                .read(voiceRoomProvider.notifier);
-            roomNotifier.handleWebSocketPromotion(groupId); // new: Fix #5
-          } catch (_) {
-            // Room screen open nahi hai — promotion ignore karo
-            // Normal case — no action needed
           }
 
           _messageController.add(event);
