@@ -4,12 +4,14 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/controllers/chat_controller.dart';
+import '../../../core/controllers/nearby_controller.dart';
+import '../../../core/location/nearby_service.dart';
 import '../../../core/session/user_session.dart';
+import '../../../shared/widgets/radius_picker_dialog.dart';
 
 /// Dashboard = "Home" tab. Discovery-grid poori tarah hataya gaya hai --
-/// ab sirf header (chat shortcut) + Find button ka jagah hai. Radius
-/// popup + "Official Group" tile agle step me wire honge, jab backend
-/// ka /nearby endpoint ban jayega.
+/// ab sirf header (chat shortcut) + circular "Find" button + "Official
+/// Group" tile hai (jab tak koi group na ho, tile hidden rehta hai).
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
@@ -29,6 +31,8 @@ class _DashboardScreenState extends State<DashboardScreen>
   static const _textMuted = Color(0xFF55556A);
 
   int unreadCount = 0;
+  final _nearby = NearbyController.instance;
+  bool _findBusy = false;
 
   late AnimationController _headerCtrl;
   late AnimationController _badgeCtrl;
@@ -68,7 +72,14 @@ class _DashboardScreenState extends State<DashboardScreen>
       CurvedAnimation(parent: _badgeCtrl, curve: Curves.easeInOut),
     );
 
+    _nearby.addListener(_onNearbyChanged);
+    _nearby.loadFromDisk();
+
     _init();
+  }
+
+  void _onNearbyChanged() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _init() async {
@@ -118,9 +129,142 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   @override
   void dispose() {
+    _nearby.removeListener(_onNearbyChanged);
     _headerCtrl.dispose();
     _badgeCtrl.dispose();
     super.dispose();
+  }
+
+  // ── Find button (circular) ──────────────────────────────────
+
+  Future<void> _onFindTap() async {
+    final radius = await showRadiusPickerDialog(
+      context,
+      initialRadiusKm: _nearby.hasGroup ? _nearby.radiusKm : 5.0,
+      confirmLabel: "Find",
+    );
+    if (radius == null || !mounted) return;
+
+    final wasNewGroup = !_nearby.hasGroup;
+    setState(() => _findBusy = true);
+    final result = await _nearby.findWithRadius(radius);
+    if (!mounted) return;
+    setState(() => _findBusy = false);
+
+    if (result == NearbyLocationResult.success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(wasNewGroup ? "Group created" : "Group updated successfully"),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_locationErrorMessage(result))),
+      );
+    }
+  }
+
+  String _locationErrorMessage(NearbyLocationResult result) {
+    switch (result) {
+      case NearbyLocationResult.gpsOff:
+        return "GPS on karke dobara try karo";
+      case NearbyLocationResult.permissionDenied:
+        return "Location permission chahiye";
+      case NearbyLocationResult.permissionPermanentlyDenied:
+        return "Settings me jaake location permission on karo";
+      case NearbyLocationResult.locationUnavailable:
+        return "Location nahi mil paayi, dobara try karo";
+      default:
+        return "Kuch galat ho gaya, dobara try karo";
+    }
+  }
+
+  Widget _buildFindArea() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (_nearby.hasGroup) ...[
+          GestureDetector(
+            onTap: () => context.push("/nearby-chat"),
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 18),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: _surface,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: _border, width: 1),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(colors: [_goldA, _goldC]),
+                    ),
+                    child: const Icon(Icons.groups_rounded, color: Color(0xFF0A0A0F), size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "Official Group",
+                          style: TextStyle(color: Colors.white, fontSize: 14.5, fontWeight: FontWeight.w700),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          "${_fmtKm(_nearby.radiusKm)} radius",
+                          style: const TextStyle(color: _textMuted, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right_rounded, color: _textMuted),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 28),
+        ],
+        GestureDetector(
+          onTap: _findBusy ? null : _onFindTap,
+          child: Container(
+            width: 92,
+            height: 92,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: const LinearGradient(
+                colors: [_goldA, _goldC],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              boxShadow: [
+                BoxShadow(color: _goldA.withOpacity(0.35), blurRadius: 24, spreadRadius: 2),
+              ],
+            ),
+            child: _findBusy
+                ? const Padding(
+                    padding: EdgeInsets.all(28),
+                    child: CircularProgressIndicator(color: Color(0xFF0A0A0F), strokeWidth: 3),
+                  )
+                : const Icon(Icons.explore_rounded, color: Color(0xFF0A0A0F), size: 34),
+          ),
+        ),
+        const SizedBox(height: 12),
+        const Text(
+          "Find",
+          style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700, letterSpacing: 0.4),
+        ),
+      ],
+    );
+  }
+
+  String _fmtKm(double km) {
+    if (km < 1) return "${(km * 1000).round()} m";
+    return km == km.roundToDouble() ? "${km.toStringAsFixed(0)} km" : "${km.toStringAsFixed(1)} km";
   }
 
   Widget _buildHeader() {
@@ -293,15 +437,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                   ),
                 ),
               ),
-              // Find button + "Official Group" tile -- agle step me
-              // yahan wire honge (backend /nearby endpoint bante hi).
-              const Expanded(
-                child: Center(
-                  child: Text(
-                    "Find button yahan aayega",
-                    style: TextStyle(color: _textMuted),
-                  ),
-                ),
+              Expanded(
+                child: Center(child: _buildFindArea()),
               ),
             ],
           ),
