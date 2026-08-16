@@ -11,6 +11,7 @@ import 'package:app_project/features/profile/presentation/create_profile_screen.
 import 'package:app_project/features/profile/presentation/profile_details_screen.dart';
 import 'package:app_project/features/profile/presentation/my_profile_screen.dart';
 import 'package:app_project/features/profile/presentation/edit_profile_screen.dart';
+import 'package:app_project/features/nearby/presentation/nearby_group_chat_screen.dart';
 import 'package:flutter/foundation.dart';
 import 'main.dart';
 import 'core/debug/global_debug_widget.dart';
@@ -141,6 +142,12 @@ class _MyAppState extends State<MyApp> {
           final id = state.pathParameters["id"]!;
           return ProfileDetailsScreen(userId: id);
         },
+      ),
+
+      // ===== NEARBY GROUP CHAT (OUTSIDE SHELL) =====
+      GoRoute(
+        path: "/nearby-chat",
+        builder: (context, state) => const NearbyGroupChatScreen(),
       ),
 
       GoRoute(
