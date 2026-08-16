@@ -34,7 +34,6 @@ class GlobalSocketManager with WidgetsBindingObserver {
 
   bool _initialized        = false;
   bool _observerAdded      = false;
-  bool _incomingScreenOpen = false;
   bool _isReconnecting     = false;
   bool _wasAutoDisabledByGps = false;
 
@@ -317,24 +316,6 @@ class GlobalSocketManager with WidgetsBindingObserver {
     _startConnectivityListener();
 
     _initialized = true;
-  }
-
-  // ── Incoming Call — unchanged ─────────────────────────
-  void _handleIncomingCall(Map<String, dynamic> data) {
-    if (_incomingScreenOpen) return;
-    final context = appNavigatorKey.currentContext;
-    if (context == null) return;
-
-    _incomingScreenOpen = true;
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => IncomingCallScreen(
-          sessionId: data["sessionId"],
-          callerId:  data["callerId"],
-          callType:  data["callType"],
-        ),
-      ),
-    ).then((_) => _incomingScreenOpen = false);
   }
 
   // ── Send — unchanged ──────────────────────────────────
