@@ -89,4 +89,19 @@ class NearbyController extends ChangeNotifier {
     if (messages.length > 100) messages.removeAt(0);
     notifyListeners();
   }
+
+  /// Optimistic tempId wale message ko real (server-confirmed) data se
+  /// replace karta hai -- taaki apna hi bheja hua message Centrifugo echo
+  /// se dobara na jud jaye (duplicate bubble na bane).
+  void replaceMessage(String tempId, Map<String, dynamic> realData) {
+    final idx = messages.indexWhere((m) => m["id"] == tempId);
+    if (idx == -1) {
+      addIncomingMessage(realData);
+      return;
+    }
+    final updated = [...messages];
+    updated[idx] = realData;
+    messages = updated;
+    notifyListeners();
+  }
 }
