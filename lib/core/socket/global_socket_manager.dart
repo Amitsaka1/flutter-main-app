@@ -378,6 +378,15 @@ class GlobalSocketManager with WidgetsBindingObserver {
   // ── Send — unchanged ──────────────────────────────────
   void send(Map<String, dynamic> data) => _socketService?.send(data);
 
+  // ── Nearby (Find feature) ──────────────────────────────
+  Future<void> subscribeToNearby(List<String> channels) async {
+    await _socketService?.subscribeToNearbyChannels(channels);
+  }
+
+  Future<void> unsubscribeFromNearby() async {
+    await _socketService?.unsubscribeFromNearbyChannels();
+  }
+
   // ── Lifecycle — unchanged ─────────────────────────────
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
