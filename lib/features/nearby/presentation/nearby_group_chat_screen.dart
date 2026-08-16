@@ -73,6 +73,14 @@ class _NearbyGroupChatScreenState extends State<NearbyGroupChatScreen> {
       if (event["type"] != "NEARBY_MESSAGE") return;
       final data = event["data"] as Map<String, dynamic>?;
       if (data == null) return;
+
+      // Apna hi bheja message Centrifugo se echo hoke wapas aata hai
+      // (apna geohash-cell apne hi subscribed channels me hota hai) --
+      // usko _sendMessage() ke response se already replace kar chuke
+      // hain, isliye yaha dobara add nahi karna (warna duplicate bubble
+      // ban jayega).
+      if (data["senderId"]?.toString() == UserSession.userId) return;
+
       _controller.addIncomingMessage(data);
       _scrollToBottom();
     });
@@ -185,12 +193,15 @@ class _NearbyGroupChatScreenState extends State<NearbyGroupChatScreen> {
     _scrollToBottom();
 
     try {
-      await NearbyService.send(
+      final realData = await NearbyService.send(
         text: text,
         latitude: _controller.latitude!,
         longitude: _controller.longitude!,
         radiusKm: _controller.radiusKm,
       );
+      // Optimistic tempId ko server ke real id/data se replace karo --
+      // taaki Centrifugo echo aane pe duplicate na bane.
+      _controller.replaceMessage(tempId, realData);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
