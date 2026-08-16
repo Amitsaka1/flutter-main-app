@@ -31,6 +31,12 @@ class CentrifugoService {
   centrifuge.Subscription? _personalSub;
   centrifuge.Subscription? _presenceSub;
 
+  // "Find" feature -- dynamic geohash-cell channels. Naya radius/location
+  // select hote hi purane replace ho jate hain (naye Subscribe karte
+  // pehle purane unsubscribe).
+  final Map<String, centrifuge.Subscription> _nearbySubs = {};
+  final Map<String, StreamSubscription> _nearbyPubSubs = {};
+
   StreamSubscription? _connectedSub;
   StreamSubscription? _disconnectedSub;
   StreamSubscription? _errorSub;
@@ -140,6 +146,38 @@ class CentrifugoService {
     }
   }
 
+  // ================= NEARBY (dynamic channels) =================
+
+  /// "Find" dabane pe naye radius/location ke geohash channels
+  /// subscribe karta hai -- purane automatically unsubscribe ho jate
+  /// hain pehle (koi stale channel leak nahi hota).
+  Future<void> subscribeToNearbyChannels(List<String> channels) async {
+    if (_client == null) return;
+    await unsubscribeFromNearbyChannels();
+
+    for (final channel in channels) {
+      final sub = _client!.newSubscription(channel);
+      final pubSub = sub.publication.listen((event) => _routeIncoming(event.data));
+      _nearbySubs[channel] = sub;
+      _nearbyPubSubs[channel] = pubSub;
+      await sub.subscribe();
+    }
+  }
+
+  /// Group chat screen se bahar niklo -- live feed se disconnect
+  /// (persistent membership nahi, jaisa design kiya tha). Connection
+  /// khud zinda rehta hai, sirf ye channels chhodte hain.
+  Future<void> unsubscribeFromNearbyChannels() async {
+    for (final sub in _nearbySubs.values) {
+      await sub.unsubscribe();
+    }
+    for (final pubSub in _nearbyPubSubs.values) {
+      await pubSub.cancel();
+    }
+    _nearbySubs.clear();
+    _nearbyPubSubs.clear();
+  }
+
   // ================= DISCONNECT (temporary) =================
 
   void disconnect() {
@@ -174,6 +212,11 @@ class CentrifugoService {
     _errorSub?.cancel();
     _personalPubSub?.cancel();
     _presencePubSub?.cancel();
+    for (final pubSub in _nearbyPubSubs.values) {
+      pubSub.cancel();
+    }
+    _nearbySubs.clear();
+    _nearbyPubSubs.clear();
 
     // ⚠️ centrifuge ^0.17.0 mein Client.close() nahi hai (sirf 0.19.0+ mein
     // aaya), isliye disconnect() use karo — instance yahan se reuse nahi hoga
