@@ -206,29 +206,6 @@ class _ChatCardState extends State<ChatCard>
                               ),
                             ),
                     ),
-
-                    // new: Online dot — sirf online users pe dikhega
-                    if (widget.isOnline)
-                      Positioned(
-                        bottom: 1,
-                        right:  1,
-                        child: Container(
-                          width:  11,
-                          height: 11,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: _online,
-                            // new: Dark border taaki background se alag dikhe
-                            border: Border.all(color: _surfaceHi, width: 2),
-                            boxShadow: [
-                              BoxShadow(
-                                color:      _online.withOpacity(0.6),
-                                blurRadius: 6,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
                   ],
                 ),
 
