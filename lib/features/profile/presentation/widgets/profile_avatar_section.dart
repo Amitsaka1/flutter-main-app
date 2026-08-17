@@ -7,13 +7,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 
 class ProfileAvatarSection extends StatefulWidget {
   final String?   avatar;
-  final int       level;
   final VoidCallback onPickImage;
 
   const ProfileAvatarSection({
     super.key,
     required this.avatar,
-    required this.level,
     required this.onPickImage,
   });
 
@@ -37,12 +35,10 @@ class _ProfileAvatarSectionState extends State<ProfileAvatarSection>
   late AnimationController _ringCtrl;    // rotating gold ring
   late AnimationController _pulseCtrl;   // avatar glow breathe
   late AnimationController _camCtrl;     // camera button bounce
-  late AnimationController _levelCtrl;   // level badge entrance
 
   late Animation<double> _ringRotate;
   late Animation<double> _glowPulse;
   late Animation<double> _camScale;
-  late Animation<double> _levelScale;
 
   bool _camPressed = false;
 
@@ -78,16 +74,6 @@ class _ProfileAvatarSectionState extends State<ProfileAvatarSection>
 
     _camScale = Tween<double>(begin: 1.0, end: 0.88).animate(
       CurvedAnimation(parent: _camCtrl, curve: Curves.easeOut),
-    );
-
-    // Level badge entrance
-    _levelCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 700),
-    )..forward();
-
-    _levelScale = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _levelCtrl, curve: Curves.elasticOut),
     );
   }
 
