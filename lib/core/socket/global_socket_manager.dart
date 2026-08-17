@@ -80,8 +80,24 @@ class GlobalSocketManager with WidgetsBindingObserver {
           _messageController.add(event);
         }
 
-        // ── USER_ONLINE — unchanged ──────────────────────
+        // ── USER_ONLINE — FIX Bug 1: pehle .remove(uid) tha, ulta ho raha
+        // tha (online hote hi user set se hat jata tha, isliye green
+        // dot/"Online" text kabhi sahi nahi dikhta tha) ─────────────
         if (type == "USER_ONLINE") {
+          final uid = event["userId"]?.toString();
+          if (uid != null) {
+            final n       = globalProviderContainer.read(onlineUsersProvider.notifier);
+            final updated = { ...n.state };
+            updated.add(uid);
+            n.state = updated;
+          }
+          _messageController.add(event);
+        }
+
+        // ── USER_OFFLINE — FIX Bug 2: ye event pehle kahin bhi handle
+        // nahi hota tha, backend se aata tha aur silently drop ho jata
+        // tha — isliye "last seen" kabhi realtime update nahi hota tha ──
+        if (type == "USER_OFFLINE") {
           final uid = event["userId"]?.toString();
           if (uid != null) {
             final n       = globalProviderContainer.read(onlineUsersProvider.notifier);
