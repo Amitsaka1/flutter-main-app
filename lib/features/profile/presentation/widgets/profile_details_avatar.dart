@@ -28,7 +28,6 @@ class _ProfileDetailsAvatarState extends State<ProfileDetailsAvatar>
   static const _goldB   = Color(0xFFE8C86A);
   static const _goldC   = Color(0xFFB8892E);
   static const _accent  = Color(0xFF6C63FF);
-  static const _online  = Color(0xFF39E27A);
 
   // ── Controllers ──────────────────────────────
   late AnimationController _ringCtrl;   // rotating arc
@@ -210,88 +209,6 @@ class _ProfileDetailsAvatarState extends State<ProfileDetailsAvatar>
                 ),
               ),
             ),
-
-            // ── Online dot + ripple ───────────────
-            Positioned(
-              bottom: 12,
-              right:  12,
-              child: SizedBox(
-                width:  28,
-                height: 28,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-
-                    // Ripple ring
-                    if (widget.isOnline)
-                      AnimatedBuilder(
-                        animation: _dotCtrl,
-                        builder: (_, __) => Transform.scale(
-                          scale: _dotPulse.value,
-                          child: Opacity(
-                            opacity: _dotOpacity.value,
-                            child: Container(
-                              width:  14,
-                              height: 14,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: _online.withOpacity(0.5),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-
-                    // Dark bg disc
-                    Container(
-                      width:  18,
-                      height: 18,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: _bg,
-                      ),
-                    ),
-
-                    // Core dot
-                    Container(
-                      width:  12,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: widget.isOnline
-                            ? _online
-                            : const Color(0xFF3A3A55),
-                        boxShadow: widget.isOnline
-                            ? [
-                                BoxShadow(
-                                  color: _online.withOpacity(0.7),
-                                  blurRadius: 8,
-                                  spreadRadius: 1,
-                                ),
-                              ]
-                            : [],
-                      ),
-                    ),
-
-                    // Specular
-                    if (widget.isOnline)
-                      Positioned(
-                        top:  7,
-                        left: 8,
-                        child: Container(
-                          width:  3.5,
-                          height: 3.5,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white.withOpacity(0.6),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-
           ],
         ),
       ),
