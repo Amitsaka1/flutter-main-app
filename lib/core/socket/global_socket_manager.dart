@@ -81,17 +81,7 @@ class GlobalSocketManager with WidgetsBindingObserver {
         }
 
         // ── USER_ONLINE — unchanged ──────────────────────
-        else if (type == "USER_ONLINE") {
-          final uid = event["userId"]?.toString();
-          if (uid != null) {
-            final n = globalProviderContainer.read(onlineUsersProvider.notifier);
-            n.state = { ...n.state, uid };
-          }
-          _messageController.add(event);
-        }
-
-        // ── USER_OFFLINE — unchanged ─────────────────────
-        else if (type == "USER_OFFLINE") {
+        if (type == "USER_ONLINE") {
           final uid = event["userId"]?.toString();
           if (uid != null) {
             final n       = globalProviderContainer.read(onlineUsersProvider.notifier);
