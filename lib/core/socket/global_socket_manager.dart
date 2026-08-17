@@ -300,10 +300,15 @@ class GlobalSocketManager with WidgetsBindingObserver {
 
     await _socketService!.connect();
 
+    // ✅ FIX Bug A — connect hote hi backend ko batao "main online hoon"
+    // (pehle ye kabhi call hi nahi hoti thi, isliye USER_ONLINE
+    // event kabhi fire nahi hota tha)
+    _notifyOnConnect();
+
     _reconnectTimer?.cancel();
     _reconnectTimer = Timer.periodic(
       const Duration(seconds: 10),
-      (_) => _onReconnectTick(),
+      (_) => _onConnectionCheckTick(),
     );
 
     _heartbeatTimer?.cancel();
@@ -316,6 +321,15 @@ class GlobalSocketManager with WidgetsBindingObserver {
     _startConnectivityListener();
 
     _initialized = true;
+  }
+
+  // ✅ NEW — Bug A fix: connect hote hi backend ko notify karo
+  Future<void> _notifyOnConnect() async {
+    try {
+      await ApiClient.get('/realtime/on-connect');
+    } catch (_) {
+      // ignore — agla heartbeat retry karega
+    }
   }
 
   // ── Send — unchanged ──────────────────────────────────
@@ -554,6 +568,7 @@ class GlobalSocketManager with WidgetsBindingObserver {
 
       if (_socketService?.isConnected == true) {
         _reconnectFailCount = 0;
+        _notifyOnConnect();  // ✅ reconnect ke baad bhi online mark karo
         ConversationController.instance.forceReloadAll();
         // Step 2 — Recent chats refresh
         await _refreshRecentChats();
