@@ -548,22 +548,23 @@ class GlobalSocketManager with WidgetsBindingObserver {
   }
 
   // ─────────────────────────────────────────────────────
-  // 6.9 — Reconnect And Sync Helper (7.6 — sirf ek call hogi)
+  // 6.9 — Resync Helper (7.6 — sirf ek call hogi)
+  //
+  // NOTE: Ye function khud WebSocket reconnect NAHI karta —
+  // Centrifugo client apna reconnect internally khud hi
+  // exponential backoff se handle karta hai (CentrifugoService
+  // ke andar). Ye function sirf ye check karta hai ki abhi
+  // connected hai kya, aur agar hai toh app-level data resync
+  // karta hai (recent chats, online status, unread).
   // ─────────────────────────────────────────────────────
-  Future<void> _reconnectAndSync() async {
+  Future<void> _resyncIfConnected() async {
     if (_isReconnecting) return; // 7.6 — concurrent calls prevent
     _isReconnecting = true;
     try {
-      // Step 1 — WebSocket reconnect
-      await _socketService?.connect();
-
       if (_socketService?.isConnected == true) {
         _reconnectFailCount = 0;
-        _notifyOnConnect();  // ✅ reconnect ke baad bhi online mark karo
         ConversationController.instance.forceReloadAll();
-        // Step 2 — Recent chats refresh
         await _refreshRecentChats();
-        // Step 3 — Bulk online status fetch (6.5.2 — sequential)
         await _fetchOnlineStatusForRecentChats();
 
         final activeChat = ChatController.instance.activeChatUserId;
@@ -572,42 +573,34 @@ class GlobalSocketManager with WidgetsBindingObserver {
         }
       }
     } catch (_) {
-      // ignore — reconnect timer handle karega
+      // ignore — agla tick retry karega
     } finally {
       _isReconnecting = false;
     }
   }
 
   // ─────────────────────────────────────────────────────
-  // Reconnect Timer Tick — failure tracking (6.10)
+  // Connection Check Tick — failure tracking (6.10)
+  //
+  // NOTE: Ye Centrifugo ko reconnect nahi karta (wo khud karta
+  // hai) — sirf har 10s check karta hai ki connected hai kya.
+  // Agar 3 baar (30s) tak disconnected dikha toh stale online
+  // dots UI se clear kar deta hai.
   // ─────────────────────────────────────────────────────
-  void _onReconnectTick() {
-    if (_socketService?.isConnected != true && !_isReconnecting) {
-      _isReconnecting = true;
-      _socketService?.connect().whenComplete(() {
-        _isReconnecting = false;
-        if (_socketService?.isConnected == true) {
-          // 6.10.3 — Success → reset count
-          _reconnectFailCount = 0;
-          ConversationController.instance.forceReloadAll();
-          _refreshRecentChats();
-          _fetchOnlineStatusForRecentChats();
+  void _onConnectionCheckTick() {
+    if (_isReconnecting) return;
 
-          final activeChat = ChatController.instance.activeChatUserId;
-          if (activeChat != null) {
-            ConversationController.instance.markConversationRead(activeChat);
-          }
-        } else {
-          // 6.10.1 — Failure tracking
-          _reconnectFailCount++;
-          if (_reconnectFailCount >= 3) {
-            debugPrint("⚠️ 3 reconnect fail — stale dots clear");
-            globalProviderContainer
-                .read(onlineUsersProvider.notifier)
-                .state = {};
-          }
-        }
-      });
+    if (_socketService?.isConnected == true) {
+      _isReconnecting = true;
+      _resyncIfConnected().whenComplete(() => _isReconnecting = false);
+    } else {
+      _reconnectFailCount++;
+      if (_reconnectFailCount >= 3) {
+        debugPrint("⚠️ 3 ticks disconnected — stale dots clear");
+        globalProviderContainer
+            .read(onlineUsersProvider.notifier)
+            .state = {};
+      }
     }
   }
 
