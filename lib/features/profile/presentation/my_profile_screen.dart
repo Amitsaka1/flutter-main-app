@@ -163,15 +163,11 @@ class _MyProfileScreenState extends State<MyProfileScreen>
         response["data"] as Map<String, dynamic>,
       );
 
-      // ── ADD THESE 3 LINES ──────────────────
-      final user        = response["data"]?["user"];
       final userProfile = response["data"]?["profile"];
       UserSession.setProfile(
         name:      userProfile?["name"]      ?? "",
         avatarUrl: userProfile?["avatarUrl"],
-        level:     user?["level"]            ?? 1,
       );
-      // ───────────────────────────────────────
 
       setState(() {
         profile = response["data"];
@@ -324,13 +320,11 @@ class _MyProfileScreenState extends State<MyProfileScreen>
     if (profile == null)           return const ProfileNotFound();
 
     // ── Data ──────────────────────────────────────
-    final user      = profile!["user"];
     final avatar    = profile!["avatarUrl"];
     final name      = profile!["name"]      ?? "";
     final username  = profile!["username"]  ?? "";
     final followers = profile!["followers"] ?? 0;
     final following = profile!["following"] ?? 0;
-    final level     = user?["level"]        ?? 1;
 
     // ===================== UI START =====================
 
@@ -389,7 +383,6 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                           ),
                           child: ProfileAvatarSection(
                             avatar: avatar,
-                            level: level,
                             onPickImage: _pickImage,
                           ),
                         ),
