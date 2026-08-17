@@ -82,17 +82,7 @@ class _ProfileAvatarSectionState extends State<ProfileAvatarSection>
     _ringCtrl.dispose();
     _pulseCtrl.dispose();
     _camCtrl.dispose();
-    _levelCtrl.dispose();
     super.dispose();
-  }
-
-  // ── Level color tier ──────────────────────────
-  List<Color> _levelGradient() {
-    final lv = widget.level;
-    if (lv >= 50) return [const Color(0xFFE8C86A), const Color(0xFFD4A843)]; // gold
-    if (lv >= 30) return [const Color(0xFF9B59B6), const Color(0xFF6C63FF)]; // purple
-    if (lv >= 15) return [const Color(0xFF2ECC71), const Color(0xFF27AE60)]; // green
-    return [const Color(0xFF5DADE2), const Color(0xFF2E86C1)];               // blue
   }
 
   @override
@@ -101,8 +91,6 @@ class _ProfileAvatarSectionState extends State<ProfileAvatarSection>
 
     final bool hasAvatar = widget.avatar != null &&
         widget.avatar!.isNotEmpty;
-
-    final levelColors = _levelGradient();
 
     return SizedBox(
       width:  160,
@@ -240,64 +228,6 @@ class _ProfileAvatarSectionState extends State<ProfileAvatarSection>
               ),
             ),
           ),
-
-          // ── Level badge ────────────────────────
-          Positioned(
-            top: -2,
-            child: AnimatedBuilder(
-              animation: _levelScale,
-              builder: (_, child) => Transform.scale(
-                scale: _levelScale.value,
-                child: child,
-              ),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical:   5,
-                ),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  gradient: LinearGradient(
-                    colors: levelColors,
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  border: Border.all(
-                    color: _bg,
-                    width: 2,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: levelColors.first.withOpacity(0.5),
-                      blurRadius: 12,
-                      spreadRadius: 1,
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.bolt_rounded,
-                      size: 11,
-                      color: Color(0xFF0A0A0F),
-                    ),
-                    const SizedBox(width: 3),
-                    Text(
-                      "LV ${widget.level}",
-                      style: const TextStyle(
-                        color:       Color(0xFF0A0A0F),
-                        fontSize:    11,
-                        fontWeight:  FontWeight.w800,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
         ],
       ),
     );
