@@ -53,14 +53,6 @@ class LocalDatabase {
       )
     ''');
 
-    // ── Rooms table (Voice World) ────────────────
-    await db.execute('''
-      CREATE TABLE rooms (
-        id          TEXT PRIMARY KEY,
-        data        TEXT NOT NULL,
-        updated_at  INTEGER NOT NULL
-      )
-    ''');
 
     // ── My profile table ─────────────────────────
     await db.execute('''
