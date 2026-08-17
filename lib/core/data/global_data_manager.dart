@@ -9,7 +9,6 @@ class GlobalDataManager {
 
   List<dynamic>? profiles;
   List<dynamic>? chats;
-  List<dynamic>? rooms;
 
   int unreadCount = 0;
 
@@ -29,16 +28,13 @@ class GlobalDataManager {
 
       final p = await cache.getProfiles();
       final c = await cache.getChats();
-      final r = await cache.getRooms();
 
       if (p.isNotEmpty) profiles = p;
       if (c.isNotEmpty) chats    = c;
-      if (r.isNotEmpty) rooms    = r;
 
       debugPrint("✅ Cache loaded — "
           "profiles:${profiles?.length} "
-          "chats:${chats?.length} "
-          "rooms:${rooms?.length}");
+          "chats:${chats?.length}");
 
       notify();
     } catch (e) {
@@ -65,15 +61,6 @@ class GlobalDataManager {
   }
 
   // ─────────────────────────────────────────────
-  // Rooms
-  // ─────────────────────────────────────────────
-  Future<void> setRooms(List<dynamic> data) async {
-    rooms = data;
-    notify();
-    await CacheService.instance.saveRooms(data);
-  }
-
-  // ─────────────────────────────────────────────
   // Unread count
   // ─────────────────────────────────────────────
   void setUnread(int count) {
@@ -87,7 +74,6 @@ class GlobalDataManager {
   Future<void> clear() async {
     profiles    = null;
     chats       = null;
-    rooms       = null;
     unreadCount = 0;
     notify();
     await CacheService.instance.clearAll();
