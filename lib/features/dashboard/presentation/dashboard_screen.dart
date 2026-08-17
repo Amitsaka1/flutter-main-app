@@ -106,7 +106,6 @@ class _DashboardScreenState extends State<DashboardScreen>
         UserSession.setProfile(
           name:      data["name"]      as String? ?? "",
           avatarUrl: data["avatarUrl"] as String?,
-          level:     (data["user"]?["level"]) as int? ?? 1,
         );
       }
     });
