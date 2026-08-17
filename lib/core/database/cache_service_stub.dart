@@ -17,8 +17,6 @@ class CacheService {
   Future<List<dynamic>> getMessages(
       String conversationId)                   async => [];
 
-  Future<void> saveRooms(List<dynamic> r)     async {}
-  Future<List<dynamic>> getRooms()             async => [];
 
   Future<void> saveMyProfile(
       Map<String, dynamic> p)                  async {}
