@@ -395,16 +395,6 @@ class _ProfileLoadingState extends State<ProfileLoading>
                           ),
                         ],
                       ),
-
-                      const SizedBox(height: 24),
-
-                      // XP card skeleton
-                      _skeletonBox(
-                        width:  double.infinity,
-                        height: 90,
-                        radius: 18,
-                      ),
-
                     ],
                   ),
                 ),
