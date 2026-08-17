@@ -130,45 +130,6 @@ class CacheService {
       return [];
     }
   }
-
-  // ─────────────────────────────────────────────
-  // ROOMS (Voice World)
-  // ─────────────────────────────────────────────
-
-  Future<void> saveRooms(List<dynamic> rooms) async {
-    try {
-      final db  = await LocalDatabase.instance.db;
-      final now = DateTime.now().millisecondsSinceEpoch;
-      final batch = db.batch();
-
-      for (final r in rooms) {
-        final id = r["id"]?.toString() ?? r["_id"]?.toString();
-        if (id == null) continue;
-        batch.insert("rooms", {
-          "id":         id,
-          "data":       jsonEncode(r),
-          "updated_at": now,
-        }, conflictAlgorithm: ConflictAlgorithm.replace);
-      }
-
-      await batch.commit(noResult: true);
-      debugPrint("✅ Rooms cached: ${rooms.length}");
-    } catch (e) {
-      debugPrint("⚠️ saveRooms failed: $e");
-    }
-  }
-
-  Future<List<dynamic>> getRooms() async {
-    try {
-      final db   = await LocalDatabase.instance.db;
-      final rows = await db.query("rooms", orderBy: "updated_at DESC");
-      return rows.map((r) => jsonDecode(r["data"] as String)).toList();
-    } catch (e) {
-      debugPrint("⚠️ getRooms failed: $e");
-      return [];
-    }
-  }
-
   // ─────────────────────────────────────────────
   // MY PROFILE
   // ─────────────────────────────────────────────
@@ -268,7 +229,6 @@ class CacheService {
       await db.delete("profiles");
       await db.delete("chats");
       await db.delete("messages");
-      await db.delete("rooms");
       await db.delete("my_profile");
       await db.delete("message_queue");
       debugPrint("✅ Cache cleared");
