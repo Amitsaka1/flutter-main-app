@@ -338,10 +338,7 @@ class _ProfileDetailsScreenState
     final avatar      = profile!["avatarUrl"];
     final followers   = profile!["followers"]   ?? 0;
     final following   = profile!["following"]   ?? 0;
-    final xp          = user?["xp"]             ?? 0;
-    final level       = user?["level"]          ?? 1;
     final isFollowing = profile!["isFollowing"] ?? false;
-    final progress    = (xp % 100) / 100;
     final chatUserId  = user?["id"]?.toString();
 
     // ===================== UI START =====================
