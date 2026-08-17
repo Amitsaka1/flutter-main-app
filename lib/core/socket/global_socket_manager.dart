@@ -359,8 +359,9 @@ class GlobalSocketManager with WidgetsBindingObserver {
       _checkLocationOnResume();
 
     } else if (state == AppLifecycleState.paused) {
-      // 6.6.1 — Background → disconnect (server ko signal milega → USER_OFFLINE)
+      // 6.6.1 — Background → disconnect + backend ko explicitly batao
       _socketService?.disconnect();
+      ApiClient.post('/realtime/disconnect', {}).catchError((_) {});
       // 6.6.2 — Set CLEAR MAT KARO — stale data rakho
     }
   }
