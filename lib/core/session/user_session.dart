@@ -2,7 +2,6 @@ class UserSession {
   static String? userId;
   static String? name;
   static String? avatarUrl;
-  static int     level = 1;
   static bool    locationEnabled = false;
 
   static void setUserId(String id) {
@@ -12,11 +11,9 @@ class UserSession {
   static void setProfile({
     required String name,
     String?         avatarUrl,
-    int             level = 1,
   }) {
     UserSession.name      = name;
     UserSession.avatarUrl = avatarUrl;
-    UserSession.level     = level;
   }
 
   static String? getUserId() => userId;
@@ -25,7 +22,6 @@ class UserSession {
     userId          = null;
     name            = null;
     avatarUrl       = null;
-    level           = 1;
     locationEnabled = false;
   }
 }
