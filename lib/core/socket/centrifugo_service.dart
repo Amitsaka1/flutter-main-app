@@ -218,9 +218,11 @@ class CentrifugoService {
     _nearbySubs.clear();
     _nearbyPubSubs.clear();
 
-    // ⚠️ centrifuge ^0.17.0 mein Client.close() nahi hai (sirf 0.19.0+ mein
-    // aaya), isliye disconnect() use karo — instance yahan se reuse nahi hoga
-    _client?.disconnect();
+    // ✅ centrifuge ^0.20.0 (upgrade ke baad) — ab Client.close() available
+    // hai. Ye disconnect() se behtar hai kyunki saare event streams aur
+    // subscriptions bhi properly release karta hai — dispose() ke liye
+    // sahi method yahi hai.
+    _client?.close();
     _client = null;
 
     _connected = false;
