@@ -235,22 +235,6 @@ class _ChatCardState extends State<ChatCard>
                             ),
                           ),
 
-                          // new: Online text ya last seen — right side pe
-                          Text(
-                            widget.isOnline
-                                ? "Online"
-                                : _formatLastSeen(lastSeen),
-                            style: TextStyle(
-                              color:    widget.isOnline
-                                  ? _online
-                                  : _textMuted.withOpacity(0.5),
-                              fontSize: 10,
-                              fontWeight: widget.isOnline
-                                  ? FontWeight.w600
-                                  : FontWeight.w400,
-                            ),
-                          ),
-
                         ],
                       ),
 
