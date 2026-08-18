@@ -358,7 +358,7 @@ class GlobalSocketManager with WidgetsBindingObserver {
       Connectivity().checkConnectivity().then((result) {
         if (result != ConnectivityResult.none) {
           // 6.7.4 — Same helper — internet ON flow same hai
-          _reconnectAndSync();
+          _resyncIfConnected();
         }
         // No internet → set already cleared tha connectivity listener se (6.4.4)
       });
@@ -554,11 +554,11 @@ class GlobalSocketManager with WidgetsBindingObserver {
     } else {
       // 6.5 — Internet ON → exact sequence: reconnect → bulk fetch
       debugPrint("📡 Internet ON — reconnect + sync");
-      _reconnectAndSync();
+      _resyncIfConnected();
       // Timer restart karo agar band tha
       _reconnectTimer ??= Timer.periodic(
         const Duration(seconds: 10),
-        (_) => _onReconnectTick(),
+        (_) => _onConnectionCheckTick(),
       );
     }
   }
