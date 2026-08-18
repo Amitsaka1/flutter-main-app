@@ -42,6 +42,8 @@ class CentrifugoService {
   StreamSubscription? _errorSub;
   StreamSubscription? _personalPubSub;
   StreamSubscription? _presencePubSub;
+  StreamSubscription? _presenceJoinSub;
+  StreamSubscription? _presenceLeaveSub;
 
   bool _connected = false;
 
@@ -115,6 +117,19 @@ class CentrifugoService {
       _presenceSub = client.newSubscription(CentrifugoChannels.presence);
       _presencePubSub = _presenceSub!.publication.listen((event) {
         _routeIncoming(event.data);
+      });
+
+      // ✅ Centrifugo-native presence — ab CENTRIFUGO_CHANNEL_NAMESPACES mein
+      // "broadcast" namespace pe presence+join_leave on hai, isliye Centrifugo
+      // khud har user ke connect/disconnect pe join/leave event push karega.
+      // Isse synthesize karke wahi USER_ONLINE/USER_OFFLINE shape bhejte hain
+      // jo global_socket_manager.dart pehle se handle karta hai — koi aur
+      // jagah change karne ki zaroorat nahi.
+      _presenceJoinSub = _presenceSub!.join.listen((event) {
+        _messageController.add({"type": "USER_ONLINE", "userId": event.user});
+      });
+      _presenceLeaveSub = _presenceSub!.leave.listen((event) {
+        _messageController.add({"type": "USER_OFFLINE", "userId": event.user});
       });
 
       // ✅ Official Centrifugo SDK pattern: subscribe() pehle, connect() baad mein
@@ -212,6 +227,8 @@ class CentrifugoService {
     _errorSub?.cancel();
     _personalPubSub?.cancel();
     _presencePubSub?.cancel();
+    _presenceJoinSub?.cancel();
+    _presenceLeaveSub?.cancel();
     for (final pubSub in _nearbyPubSubs.values) {
       pubSub.cancel();
     }
