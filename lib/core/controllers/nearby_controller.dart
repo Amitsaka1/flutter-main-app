@@ -16,10 +16,9 @@ class NearbyController extends ChangeNotifier {
 
   bool hasGroup = false;
   bool loading = false;
+  bool locationEnabled = false;
 
   double radiusKm = 5.0;
-  double? latitude;
-  double? longitude;
   List<String> channels = [];
   List<Map<String, dynamic>> messages = [];
 
@@ -30,44 +29,42 @@ class NearbyController extends ChangeNotifier {
     if (saved != null) {
       hasGroup = true;
       radiusKm = saved.radiusKm;
-      latitude = saved.latitude;
-      longitude = saved.longitude;
       channels = saved.channels;
       notifyListeners();
     }
   }
 
-  /// "Find" (ya "change") dabane pe -- fresh GPS + naye radius se
-  /// /nearby/find call karta hai, Official Group state update karta hai.
+  /// "Your Location" button (radius popup) -- fresh GPS lekar Profile me
+  /// save karta hai. Har baar call hone pe naya fresh fetch hota hai.
+  Future<NearbyLocationResult> updateMyLocation() async {
+    loading = true;
+    notifyListeners();
+
+    final result = await NearbyService.updateMyLocation();
+    if (result == NearbyLocationResult.success) locationEnabled = true;
+
+    loading = false;
+    notifyListeners();
+    return result;
+  }
+
+  /// "Find" (ya "change") dabane pe -- naye radius se /nearby/find call
+  /// karta hai (location backend khud Profile se leta hai), Official
+  /// Group state update karta hai.
   Future<NearbyLocationResult> findWithRadius(double newRadiusKm) async {
     loading = true;
     notifyListeners();
 
-    final (locResult, pos) = await NearbyService.getFreshLocation();
-    if (locResult != NearbyLocationResult.success || pos == null) {
-      loading = false;
-      notifyListeners();
-      return locResult;
-    }
-
     try {
-      final result = await NearbyService.find(
-        latitude: pos.latitude,
-        longitude: pos.longitude,
-        radiusKm: newRadiusKm,
-      );
+      final result = await NearbyService.find(radiusKm: newRadiusKm);
 
       radiusKm = newRadiusKm;
-      latitude = pos.latitude;
-      longitude = pos.longitude;
       channels = result.channels;
       messages = result.messages;
       hasGroup = true;
 
       await NearbyGroupState.save(
         radiusKm: radiusKm,
-        latitude: pos.latitude,
-        longitude: pos.longitude,
         channels: channels,
       );
 
@@ -77,16 +74,37 @@ class NearbyController extends ChangeNotifier {
     } catch (e) {
       loading = false;
       notifyListeners();
+      // Backend "Your Location is not set" bhi isi raste error karta hai
+      // -- caller ko exact message dikhana ho toh e.toString() use karo.
       return NearbyLocationResult.failed;
     }
   }
 
   /// Chat screen ke andar live-push se aaya naya message add karta hai.
+  /// Distance jaan-boojh kar broadcast payload me nahi aata (privacy) --
+  /// isliye add karte hi background me alag se fetch karke patch karte
+  /// hain (2-step: message turant dikhega, badge 1 second baad aayega).
   void addIncomingMessage(Map<String, dynamic> msg) {
     final alreadyExists = messages.any((m) => m["id"] == msg["id"]);
     if (alreadyExists) return;
     messages = [...messages, msg];
     if (messages.length > 100) messages.removeAt(0);
+    notifyListeners();
+
+    final id = msg["id"]?.toString();
+    if (id != null && msg["distance"] == null) {
+      _fetchDistanceFor(id);
+    }
+  }
+
+  Future<void> _fetchDistanceFor(String messageId) async {
+    final distance = await NearbyService.getDistance(messageId);
+    if (distance == null) return;
+    final idx = messages.indexWhere((m) => m["id"] == messageId);
+    if (idx == -1) return;
+    final updated = [...messages];
+    updated[idx] = {...updated[idx], "distance": distance};
+    messages = updated;
     notifyListeners();
   }
 
