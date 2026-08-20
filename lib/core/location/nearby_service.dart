@@ -16,15 +16,11 @@ enum NearbyLocationResult {
 class NearbyFindResult {
   final List<Map<String, dynamic>> messages;
   final List<String> channels;
-  final double latitude;
-  final double longitude;
   final double radiusKm;
 
   NearbyFindResult({
     required this.messages,
     required this.channels,
-    required this.latitude,
-    required this.longitude,
     required this.radiusKm,
   });
 }
@@ -117,19 +113,38 @@ class NearbyService {
     return null;
   }
 
+  // ================= YOUR LOCATION (profile-saved GPS) =================
+
+  /// "Your Location" button (radius popup ke andar) -- fresh GPS leta hai
+  /// (getFreshLocation() wala hi robust flow -- GPS-on check, permission,
+  /// 3-try fallback) aur backend Profile me save karta hai. Find/Send ab
+  /// isi saved location ko use karte hain, alag se lat/lng nahi bhejte.
+  static Future<NearbyLocationResult> updateMyLocation() async {
+    final (result, pos) = await getFreshLocation();
+    if (result != NearbyLocationResult.success || pos == null) return result;
+
+    try {
+      final res = await ApiClient.patch("/profile/location", {
+        "latitude": pos.latitude,
+        "longitude": pos.longitude,
+      });
+      if (res["success"] != true) return NearbyLocationResult.failed;
+      return NearbyLocationResult.success;
+    } catch (e) {
+      debugPrint("📍 updateMyLocation save failed: $e");
+      return NearbyLocationResult.failed;
+    }
+  }
+
   // ================= FIND =================
 
-  /// Fresh lat/lng + user-selected radiusKm ke saath /nearby/find call
-  /// karta hai -- history (exact Haversine) + geohash channels (live
-  /// subscribe ke liye) dono return hote hain.
-  static Future<NearbyFindResult> find({
-    required double latitude,
-    required double longitude,
-    required double radiusKm,
-  }) async {
+  /// User-selected radiusKm ke saath /nearby/find call karta hai -- backend
+  /// khud "Your Location" (Profile me saved) use karta hai, isliye yahan
+  /// lat/lng bhejne ki zaroorat nahi. History (mutual-range filtered,
+  /// formatted distance ke saath) + geohash channels (live subscribe ke
+  /// liye) dono return hote hain.
+  static Future<NearbyFindResult> find({required double radiusKm}) async {
     final res = await ApiClient.post("/nearby/find", {
-      "latitude": latitude,
-      "longitude": longitude,
       "radiusKm": radiusKm,
     });
 
@@ -141,26 +156,20 @@ class NearbyService {
     return NearbyFindResult(
       messages: List<Map<String, dynamic>>.from(data["messages"] ?? []),
       channels: List<String>.from(data["channels"] ?? []),
-      latitude: latitude,
-      longitude: longitude,
       radiusKm: radiusKm,
     );
   }
 
   // ================= SEND =================
 
-  /// Group me message bhejna -- sender ki current location + us waqt ka
-  /// selected radius tag hoti hai (jaisa design kiya tha).
+  /// Group me message bhejna -- backend "Your Location" (Profile) + us
+  /// waqt ka selected radius khud tag karta hai.
   static Future<Map<String, dynamic>> send({
     required String text,
-    required double latitude,
-    required double longitude,
     required double radiusKm,
   }) async {
     final res = await ApiClient.post("/nearby/send", {
       "text": text,
-      "latitude": latitude,
-      "longitude": longitude,
       "radiusKm": radiusKm,
     });
 
@@ -169,5 +178,21 @@ class NearbyService {
     }
 
     return res["data"] as Map<String, dynamic>;
+  }
+
+  // ================= LIVE MESSAGE DISTANCE =================
+
+  /// Live-push se turant aaye message ka distance-badge sahi karne ke liye
+  /// -- privacy-safe (sirf formatted "X km" string aata hai, coordinates
+  /// kabhi nahi).
+  static Future<String?> getDistance(String messageId) async {
+    try {
+      final res = await ApiClient.get("/nearby/distance/$messageId");
+      if (res["success"] != true) return null;
+      return (res["data"] as Map<String, dynamic>)["distance"]?.toString();
+    } catch (e) {
+      debugPrint("📍 getDistance failed: $e");
+      return null;
+    }
   }
 }
