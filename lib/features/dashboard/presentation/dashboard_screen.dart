@@ -107,6 +107,7 @@ class _DashboardScreenState extends State<DashboardScreen>
           name:      data["name"]      as String? ?? "",
           avatarUrl: data["avatarUrl"] as String?,
         );
+        UserSession.locationEnabled = data["locationEnabled"] as bool? ?? false;
       }
     });
   }
@@ -139,7 +140,15 @@ class _DashboardScreenState extends State<DashboardScreen>
   Future<void> _onFindTap() async {
     final radius = await showRadiusPickerDialog(
       context,
-      initialRadiusKm: _nearby.hasGroup ? _nearby.radiusKm : 5.0,
+      initialRadiusKm: _nearby.hasGroup ? _nearby.radiusKm : 0,
+      initialLocationEnabled: UserSession.locationEnabled,
+      onRequestLocation: () async {
+        final result = await _nearby.updateMyLocation();
+        if (result == NearbyLocationResult.success) {
+          UserSession.locationEnabled = true;
+        }
+        return result == NearbyLocationResult.success;
+      },
       confirmLabel: "Find",
     );
     if (radius == null || !mounted) return;
@@ -165,14 +174,10 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   String _locationErrorMessage(NearbyLocationResult result) {
     switch (result) {
-      case NearbyLocationResult.gpsOff:
-        return "GPS on karke dobara try karo";
-      case NearbyLocationResult.permissionDenied:
-        return "Location permission chahiye";
-      case NearbyLocationResult.permissionPermanentlyDenied:
-        return "Settings me jaake location permission on karo";
-      case NearbyLocationResult.locationUnavailable:
-        return "Location nahi mil paayi, dobara try karo";
+      case NearbyLocationResult.locationNotSet:
+        return "Pehle apni Location set karo";
+      default:
+        return "Kuch galat ho gaya, dobara try karo";
       default:
         return "Kuch galat ho gaya, dobara try karo";
     }
