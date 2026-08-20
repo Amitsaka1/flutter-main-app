@@ -56,7 +56,7 @@ class _RadiusPickerDialogState extends State<_RadiusPickerDialog> {
   static const _border  = Color(0xFF1E1E2E);
   static const _muted   = Color(0xFF55556A);
 
-  static const _step = 5.0; // ✅ Fixed steps: 0 -> 5 -> 10 -> 15 -> 20
+  static const _stepKm = 5.0; // ✅ Fixed steps: 0 -> 5 -> 10 -> 15 -> 20
 
   late double _radiusKm;
   bool _radiusTouched = false;
@@ -158,7 +158,7 @@ class _RadiusPickerDialogState extends State<_RadiusPickerDialog> {
               children: [
                 _StepButton(
                   icon: Icons.remove_rounded,
-                  onTap: () => _step(-_step),
+                  onTap: () => _step(-_stepKm),
                 ),
                 Expanded(
                   child: SliderTheme(
@@ -176,7 +176,7 @@ class _RadiusPickerDialogState extends State<_RadiusPickerDialog> {
                       value: _radiusKm,
                       min: 0,
                       max: widget.maxRadiusKm,
-                      divisions: (widget.maxRadiusKm / _step).round(),
+                      divisions: (widget.maxRadiusKm / _stepKm).round(),
                       onChanged: (v) => setState(() {
                         _radiusKm = v;
                         _radiusTouched = true;
@@ -186,7 +186,7 @@ class _RadiusPickerDialogState extends State<_RadiusPickerDialog> {
                 ),
                 _StepButton(
                   icon: Icons.add_rounded,
-                  onTap: () => _step(_step),
+                  onTap: () => _step(_stepKm),
                 ),
               ],
             ),
