@@ -129,6 +129,11 @@ class _NearbyGroupChatScreenState extends State<NearbyGroupChatScreen> {
     final newRadius = await showRadiusPickerDialog(
       context,
       initialRadiusKm: _controller.radiusKm,
+      initialLocationEnabled: _controller.locationEnabled,
+      onRequestLocation: () async {
+        final result = await _controller.updateMyLocation();
+        return result == NearbyLocationResult.success;
+      },
       confirmLabel: "Update",
     );
     if (newRadius == null || !mounted) return;
@@ -174,7 +179,6 @@ class _NearbyGroupChatScreenState extends State<NearbyGroupChatScreen> {
   Future<void> _sendMessage() async {
     final text = _textCtrl.text.trim();
     if (text.isEmpty || _sending) return;
-    if (_controller.latitude == null || _controller.longitude == null) return;
 
     final tempId = DateTime.now().millisecondsSinceEpoch.toString();
     final tempMsg = {
@@ -183,7 +187,6 @@ class _NearbyGroupChatScreenState extends State<NearbyGroupChatScreen> {
       "senderName": UserSession.name ?? "You",
       "senderAvatarUrl": UserSession.avatarUrl,
       "text": text,
-      "radiusKm": _controller.radiusKm,
       "createdAt": DateTime.now().toIso8601String(),
     };
 
@@ -195,8 +198,6 @@ class _NearbyGroupChatScreenState extends State<NearbyGroupChatScreen> {
     try {
       final realData = await NearbyService.send(
         text: text,
-        latitude: _controller.latitude!,
-        longitude: _controller.longitude!,
         radiusKm: _controller.radiusKm,
       );
       // Optimistic tempId ko server ke real id/data se replace karo --
@@ -332,7 +333,7 @@ class _NearbyGroupChatScreenState extends State<NearbyGroupChatScreen> {
     final text = msg["text"]?.toString() ?? "";
     final senderName = msg["senderName"]?.toString() ?? "Someone";
     final senderAvatar = msg["senderAvatarUrl"]?.toString();
-    final senderRadius = (msg["radiusKm"] as num?)?.toDouble();
+    final distance = msg["distance"]?.toString();
     final senderId = msg["senderId"]?.toString();
 
     return Padding(
@@ -394,7 +395,7 @@ class _NearbyGroupChatScreenState extends State<NearbyGroupChatScreen> {
                     ),
                   ),
                 ),
-                if (senderRadius != null)
+                if (!isMe && distance != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 3, left: 4, right: 4),
                     child: Container(
@@ -405,10 +406,11 @@ class _NearbyGroupChatScreenState extends State<NearbyGroupChatScreen> {
                         border: Border.all(color: _C.divider, width: 0.6),
                       ),
                       child: Text(
-                        // Ye sender ka apna selected radius hai (Find karte
-                        // waqt), na ki calculated distance -- taaki sabko
-                        // pata chale "isko mera reply pahuchega ya nahi".
-                        _fmtKm(senderRadius),
+                        // ✅ Ab sender ka khud-chuna radius nahi -- real
+                        // calculated distance (mutual-range se, backend se
+                        // aata hai, sirf formatted string -- kabhi raw
+                        // coordinates nahi).
+                        distance,
                         style: const TextStyle(color: _C.hint, fontSize: 9.5, fontWeight: FontWeight.w600),
                       ),
                     ),
