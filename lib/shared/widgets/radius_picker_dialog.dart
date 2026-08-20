@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 
 /// "Find" / "change" dono jagah se use hone wala popup -- lever (slider)
-/// + 1km ke -/+ buttons se radius select karte hain, phir andar ka
-/// "Find"/"Update" button dabate hi confirm hota hai.
+/// + fixed 5km steps ke -/+ buttons se radius select karte hain, ek
+/// "Your Location" row (real GPS -> Profile me save) bhi hai, phir andar
+/// ka "Find"/"Update" button dabate hi confirm hota hai.
 ///
 /// Result: selected radius (double, km) -- null agar user ne cancel kiya.
+/// Confirm button tabhi enable hota hai jab radius touch kiya ho AND
+/// location set ho (pehli baar) -- doosri baar location optional hai.
 Future<double?> showRadiusPickerDialog(
   BuildContext context, {
-  double initialRadiusKm = 5.0,
-  double minRadiusKm = 0.5,
+  double initialRadiusKm = 0,
   double maxRadiusKm = 20.0,
+  required bool initialLocationEnabled,
+  required Future<bool> Function() onRequestLocation,
   String confirmLabel = "Find",
 }) {
   return showDialog<double>(
@@ -17,8 +21,9 @@ Future<double?> showRadiusPickerDialog(
     barrierColor: Colors.black.withOpacity(0.7),
     builder: (_) => _RadiusPickerDialog(
       initialRadiusKm: initialRadiusKm,
-      minRadiusKm: minRadiusKm,
       maxRadiusKm: maxRadiusKm,
+      initialLocationEnabled: initialLocationEnabled,
+      onRequestLocation: onRequestLocation,
       confirmLabel: confirmLabel,
     ),
   );
@@ -26,14 +31,16 @@ Future<double?> showRadiusPickerDialog(
 
 class _RadiusPickerDialog extends StatefulWidget {
   final double initialRadiusKm;
-  final double minRadiusKm;
   final double maxRadiusKm;
+  final bool initialLocationEnabled;
+  final Future<bool> Function() onRequestLocation;
   final String confirmLabel;
 
   const _RadiusPickerDialog({
     required this.initialRadiusKm,
-    required this.minRadiusKm,
     required this.maxRadiusKm,
+    required this.initialLocationEnabled,
+    required this.onRequestLocation,
     required this.confirmLabel,
   });
 
@@ -49,32 +56,47 @@ class _RadiusPickerDialogState extends State<_RadiusPickerDialog> {
   static const _border  = Color(0xFF1E1E2E);
   static const _muted   = Color(0xFF55556A);
 
+  static const _step = 5.0; // ✅ Fixed steps: 0 -> 5 -> 10 -> 15 -> 20
+
   late double _radiusKm;
+  bool _radiusTouched = false;
+  late bool _locationEnabled;
+  bool _locationBusy = false;
 
   @override
   void initState() {
     super.initState();
-    _radiusKm = widget.initialRadiusKm.clamp(
-      widget.minRadiusKm,
-      widget.maxRadiusKm,
-    );
+    _radiusKm = widget.initialRadiusKm.clamp(0, widget.maxRadiusKm);
+    _locationEnabled = widget.initialLocationEnabled;
   }
+
+  bool get _canConfirm => _radiusTouched && _locationEnabled;
 
   void _step(double delta) {
     setState(() {
-      _radiusKm = (_radiusKm + delta).clamp(
-        widget.minRadiusKm,
-        widget.maxRadiusKm,
-      );
+      _radiusKm = (_radiusKm + delta).clamp(0, widget.maxRadiusKm);
+      _radiusTouched = true;
     });
   }
 
+  Future<void> _handleLocationTap() async {
+    if (_locationBusy) return;
+    setState(() => _locationBusy = true);
+    final ok = await widget.onRequestLocation();
+    if (!mounted) return;
+    setState(() {
+      _locationBusy = false;
+      if (ok) _locationEnabled = true;
+    });
+    if (!ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Location nahi mil paayi, dobara try karo")),
+      );
+    }
+  }
+
   String get _label {
-    // 1km ke neeche meters me dikhao (jaise "500 m"), warna km
-    if (_radiusKm < 1) return "${(_radiusKm * 1000).round()} m";
-    final rounded = _radiusKm == _radiusKm.roundToDouble()
-        ? _radiusKm.toStringAsFixed(0)
-        : _radiusKm.toStringAsFixed(1);
+    final rounded = _radiusKm.toStringAsFixed(0);
     return "$rounded km";
   }
 
@@ -131,12 +153,12 @@ class _RadiusPickerDialogState extends State<_RadiusPickerDialog> {
             ),
             const SizedBox(height: 18),
 
-            // ── -/+ 1km buttons + lever/slider ──────────────────
+            // ── -/+ 5km buttons + lever/slider (fixed steps) ────
             Row(
               children: [
                 _StepButton(
                   icon: Icons.remove_rounded,
-                  onTap: () => _step(-1),
+                  onTap: () => _step(-_step),
                 ),
                 Expanded(
                   child: SliderTheme(
@@ -152,15 +174,19 @@ class _RadiusPickerDialogState extends State<_RadiusPickerDialog> {
                     ),
                     child: Slider(
                       value: _radiusKm,
-                      min: widget.minRadiusKm,
+                      min: 0,
                       max: widget.maxRadiusKm,
-                      onChanged: (v) => setState(() => _radiusKm = v),
+                      divisions: (widget.maxRadiusKm / _step).round(),
+                      onChanged: (v) => setState(() {
+                        _radiusKm = v;
+                        _radiusTouched = true;
+                      }),
                     ),
                   ),
                 ),
                 _StepButton(
                   icon: Icons.add_rounded,
-                  onTap: () => _step(1),
+                  onTap: () => _step(_step),
                 ),
               ],
             ),
@@ -169,12 +195,7 @@ class _RadiusPickerDialogState extends State<_RadiusPickerDialog> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    widget.minRadiusKm < 1
-                        ? "${(widget.minRadiusKm * 1000).round()} m"
-                        : "${widget.minRadiusKm.toStringAsFixed(0)} km",
-                    style: const TextStyle(color: _muted, fontSize: 11),
-                  ),
+                  const Text("0 km", style: TextStyle(color: _muted, fontSize: 11)),
                   Text(
                     "${widget.maxRadiusKm.toStringAsFixed(0)} km",
                     style: const TextStyle(color: _muted, fontSize: 11),
@@ -182,7 +203,50 @@ class _RadiusPickerDialogState extends State<_RadiusPickerDialog> {
                 ],
               ),
             ),
-            const SizedBox(height: 22),
+            const SizedBox(height: 18),
+
+            // ── Your Location row ────────────────────────────────
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF141420),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: _border, width: 1),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.my_location_rounded, size: 16, color: _goldA),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      "Your Location",
+                      style: TextStyle(color: Colors.white, fontSize: 13.5, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: _locationBusy ? null : _handleLocationTap,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(colors: [_goldA, _goldC]),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        _locationBusy
+                            ? "…"
+                            : (_locationEnabled ? "Change" : "Location"),
+                        style: const TextStyle(
+                          color: Color(0xFF0A0A0F),
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 18),
 
             // ── Cancel + Confirm ─────────────────────────────────
             Row(
@@ -203,29 +267,36 @@ class _RadiusPickerDialogState extends State<_RadiusPickerDialog> {
                 Expanded(
                   flex: 2,
                   child: GestureDetector(
-                    onTap: () => Navigator.of(context).pop(_radiusKm),
+                    onTap: _canConfirm
+                        ? () => Navigator.of(context).pop(_radiusKm)
+                        : null,
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [_goldA, _goldC],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
+                        gradient: _canConfirm
+                            ? const LinearGradient(
+                                colors: [_goldA, _goldC],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              )
+                            : null,
+                        color: _canConfirm ? null : _border,
                         borderRadius: BorderRadius.circular(14),
-                        boxShadow: [
-                          BoxShadow(
-                            color: _goldA.withOpacity(0.35),
-                            blurRadius: 14,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
+                        boxShadow: _canConfirm
+                            ? [
+                                BoxShadow(
+                                  color: _goldA.withOpacity(0.35),
+                                  blurRadius: 14,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ]
+                            : [],
                       ),
                       child: Center(
                         child: Text(
                           widget.confirmLabel,
-                          style: const TextStyle(
-                            color: Color(0xFF0A0A0F),
+                          style: TextStyle(
+                            color: _canConfirm ? const Color(0xFF0A0A0F) : _muted,
                             fontWeight: FontWeight.w800,
                             fontSize: 15,
                           ),
