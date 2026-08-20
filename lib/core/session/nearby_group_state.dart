@@ -11,15 +11,11 @@ class NearbyGroupState {
   static const _key = 'nearby_official_group';
 
   final double radiusKm;
-  final double latitude;
-  final double longitude;
   final List<String> channels;
   final DateTime lastUpdated;
 
   NearbyGroupState({
     required this.radiusKm,
-    required this.latitude,
-    required this.longitude,
     required this.channels,
     required this.lastUpdated,
   });
@@ -31,8 +27,6 @@ class NearbyGroupState {
       final map = jsonDecode(raw) as Map<String, dynamic>;
       return NearbyGroupState(
         radiusKm: (map['radiusKm'] as num).toDouble(),
-        latitude: (map['latitude'] as num).toDouble(),
-        longitude: (map['longitude'] as num).toDouble(),
         channels: List<String>.from(map['channels'] ?? []),
         lastUpdated: DateTime.parse(map['lastUpdated'] as String),
       );
@@ -43,16 +37,12 @@ class NearbyGroupState {
 
   static Future<void> save({
     required double radiusKm,
-    required double latitude,
-    required double longitude,
     required List<String> channels,
   }) async {
     await _storage.write(
       key: _key,
       value: jsonEncode({
         'radiusKm': radiusKm,
-        'latitude': latitude,
-        'longitude': longitude,
         'channels': channels,
         'lastUpdated': DateTime.now().toIso8601String(),
       }),
