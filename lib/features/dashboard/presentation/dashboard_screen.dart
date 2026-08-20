@@ -174,10 +174,14 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   String _locationErrorMessage(NearbyLocationResult result) {
     switch (result) {
-      case NearbyLocationResult.locationNotSet:
-        return "Pehle apni Location set karo";
-      default:
-        return "Kuch galat ho gaya, dobara try karo";
+      case NearbyLocationResult.gpsOff:
+        return "GPS on karke dobara try karo";
+      case NearbyLocationResult.permissionDenied:
+        return "Location permission chahiye";
+      case NearbyLocationResult.permissionPermanentlyDenied:
+        return "Settings me jaake location permission on karo";
+      case NearbyLocationResult.locationUnavailable:
+        return "Location nahi mil paayi, dobara try karo";
       default:
         return "Kuch galat ho gaya, dobara try karo";
     }
