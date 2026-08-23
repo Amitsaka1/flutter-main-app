@@ -191,7 +191,7 @@ class _NearbyGroupChatScreenState extends State<NearbyGroupChatScreen> {
     };
 
     setState(() => _sending = true);
-    _controller.addIncomingMessage(tempMsg); // optimistic UI
+    _controller.addIncomingMessage(tempMsg, fetchDistance: false); // optimistic UI
     _textCtrl.clear();
     _scrollToBottom();
 
@@ -204,6 +204,10 @@ class _NearbyGroupChatScreenState extends State<NearbyGroupChatScreen> {
       // taaki Centrifugo echo aane pe duplicate na bane.
       _controller.replaceMessage(tempId, realData);
     } catch (e) {
+      // ✅ FIX -- send fail hone par optimistic bubble ko WAPAS list se
+      // hatao (rollback). Pehle ye kabhi nahi hota tha, isliye failed
+      // sends ke "ghost bubbles" hamesha ke liye list me reh jaate the.
+      _controller.removeMessage(tempId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Message bhej nahi paya, dobara try karo")),
