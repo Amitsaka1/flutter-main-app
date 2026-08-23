@@ -84,7 +84,13 @@ class NearbyController extends ChangeNotifier {
   /// Distance jaan-boojh kar broadcast payload me nahi aata (privacy) --
   /// isliye add karte hi background me alag se fetch karke patch karte
   /// hain (2-step: message turant dikhega, badge 1 second baad aayega).
-  void addIncomingMessage(Map<String, dynamic> msg) {
+  ///
+  /// ✅ FIX -- fetchDistance=false pass karo optimistic (apna khud ka,
+  /// abhi-tak-unconfirmed) message ke liye. Pehle isse hamesha distance
+  /// fetch trigger hota tha, tempId (ek fake timestamp) ke saath -- jo
+  /// backend me kabhi milta hi nahi (hamesha 404), aur apne message pe
+  /// distance dikhta bhi nahi (bubble sirf !isMe ke liye dikhata hai).
+  void addIncomingMessage(Map<String, dynamic> msg, {bool fetchDistance = true}) {
     final alreadyExists = messages.any((m) => m["id"] == msg["id"]);
     if (alreadyExists) return;
     messages = [...messages, msg];
@@ -92,9 +98,22 @@ class NearbyController extends ChangeNotifier {
     notifyListeners();
 
     final id = msg["id"]?.toString();
-    if (id != null && msg["distance"] == null) {
+    if (fetchDistance && id != null && msg["distance"] == null) {
       _fetchDistanceFor(id);
     }
+  }
+
+  /// ✅ NAYA -- optimistic message ko list se hataata hai (rollback),
+  /// jab uska real send fail ho jaye. Pehle isके bina, failed-send wala
+  /// "ghost bubble" hamesha ke liye list me phasa reh jaata tha (kabhi
+  /// text/distance update nahi hota, kyunki server ne use kabhi save
+  /// hi nahi kiya).
+  void removeMessage(String id) {
+    final idx = messages.indexWhere((m) => m["id"] == id);
+    if (idx == -1) return;
+    final updated = [...messages]..removeAt(idx);
+    messages = updated;
+    notifyListeners();
   }
 
   Future<void> _fetchDistanceFor(String messageId) async {
